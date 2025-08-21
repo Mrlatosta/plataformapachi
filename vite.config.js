@@ -6,7 +6,7 @@ export default defineConfig({
     server: {
     host: true,
     cors: true,
-    origin: 'https://9717875750f2.ngrok-free.app/',
+    origin: 'plataformapachi-production.up.railway.app',
   },
     plugins: [
         laravel({
