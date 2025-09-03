@@ -216,9 +216,12 @@
 
                             {{-- Datos QR --}}
                             <td style="width: 30%;">
-                                <p><strong>Q.F.B Ángel Augusto Pérez Arias</strong></p>
-                                <p>Céd. Prof. 14083392</p>
-                                <p>
+                                <img src="{{ public_path('img/firmados.png') }}" width="100px" alt="error firma">
+                                <hr style="width: 100% ; border: 0.3px solid #000; margin: 0; padding: 0;">
+                                <p style="margin: 0px"><strong>Q.F.B Ángel Augusto Pérez Arias</strong></p>
+                                <p style="margin:0px"> Universidad popular de la chontalpa</p>
+                                <p style="margin: 0px">Céd. Prof. 14083392</p>
+                                <p style="margin: 0px">
                                     <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 923 235 1538
                                 </p>
                             </td>
@@ -230,12 +233,10 @@
 
                             {{-- Datos Biolab --}}
                             <td style="width: 30%;">
-                                <p style="margin: 0"><strong>Q.F.B Ángel Augusto Pérez Arias</strong></p>
-                                <p style="margin: 0">Cédula Prof. 14083392</p>
                                 <p style="margin: 0">Avenida Revolución, Región 75, Calle 37 Norte</p>
                                 <p style="margin: 0">C.P. 77527, Cancún, Quintana Roo</p>
                                 <p style="margin: 0">Tel: 923 235 1538</p>
-                                <p style="margin: 0">Email: perezaugusto210@gmail.com</p>
+                                <p style="margin: 0"><strong>biolab348@gmail.com</strong></p>
                             </td>
 
                         </tr>

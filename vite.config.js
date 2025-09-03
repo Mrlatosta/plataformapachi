@@ -6,7 +6,7 @@ export default defineConfig({
     server: {
     host: true,
     cors: true,
-    origin: 'plataformapachi-production.up.railway.app',
+    origin: 'https://plataformapachi-production.up.railway.app/',
   },
     plugins: [
         laravel({
