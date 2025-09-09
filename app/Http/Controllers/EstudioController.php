@@ -45,6 +45,7 @@ class EstudioController extends Controller
             'leyenda' => $request->leyenda ?? null, // Actualizar leyenda si se proporciona
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
+            
 
         ]);
 

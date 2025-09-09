@@ -120,6 +120,8 @@ const nuevoEstudio = ref({
     nombre: '',
     leyenda: '',
     examenes: [],
+    tipo_muestra: '',
+    metodo: ''
 })
 
 onMounted(async () => {
@@ -138,6 +140,9 @@ const cargarEstudio = () => {
             nombre: estudio.nombre,
             leyenda: estudio.leyenda || '',
             examenes: [...estudio.examenes],
+            tipo_muestra: estudio.tipo_muestra || '',
+            metodo: estudio.metodo || ''
+
         }
     }
 }
