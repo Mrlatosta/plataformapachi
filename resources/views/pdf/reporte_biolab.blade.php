@@ -75,21 +75,21 @@
         }
         
         .study-section {
-            margin: 10px 0;
+            margin: 5px 0;
             page-break-inside: avoid;
         }
         
         .study-title {
           
             padding: 0px;
-            margin: 10px 0 8px 0;
+            margin: 5px 0 8px 0;
             font-weight: bold;
             font-size: 10px;
             text-align: left;
         }
         
         .study-details {
-            margin: 10px 0;
+            margin: 5px 0;
             font-size: 10px;
         }
         
