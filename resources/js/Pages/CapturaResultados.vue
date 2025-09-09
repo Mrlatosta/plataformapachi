@@ -15,18 +15,18 @@
             <h2 class="mb-4">Captura de Resultados</h2>
 
             <div class="row mb-4">
-  <div class="col-md-4">
-    <label class="form-label">Toma de muestra</label>
-    <input type="date" class="form-control" v-model="form.toma_muestra" />
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Fecha de reporte</label>
-    <input type="date" class="form-control" v-model="form.fecha_reporte" />
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Fecha de validación</label>
-    <input type="date" class="form-control" v-model="form.fecha_validacion" />
-  </div>
+      <div class="col-md-4">
+      <label class="form-label">Toma de muestra</label>
+      <input type="datetime-local" class="form-control" v-model="form.toma_muestra" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Fecha de reporte</label>
+      <input type="datetime-local" class="form-control" v-model="form.fecha_reporte" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Fecha de validación</label>
+      <input type="datetime-local" class="form-control" v-model="form.fecha_validacion" />
+    </div>
 
   <div class="col-md-4">
   <label class="form-label">Médico solicitante</label>
