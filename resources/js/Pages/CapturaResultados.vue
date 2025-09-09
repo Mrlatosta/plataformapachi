@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-  import { ref, reactive, onMounted } from 'vue'
+  import { ref, reactive, onMounted, watch } from 'vue'
   import axios from 'axios'
   import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -173,6 +173,23 @@ medico_solicitante: '',
     const response = await axios.get('/api/estudios')
     estudiosDisponibles.value = response.data
   })
+
+  watch(() => form.cliente.fecha_nacimiento, (nuevaFecha) => {
+  if (nuevaFecha) {
+    const hoy = new Date()
+    const nacimiento = new Date(nuevaFecha)
+    let edad = hoy.getFullYear() - nacimiento.getFullYear()
+    const mes = hoy.getMonth() - nacimiento.getMonth()
+
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+      edad--
+    }
+
+    form.cliente.edad = edad
+  } else {
+    form.cliente.edad = ''
+  }
+})
 
   function agregarEstudio() {
     if (!selectedEstudioId.value) return
