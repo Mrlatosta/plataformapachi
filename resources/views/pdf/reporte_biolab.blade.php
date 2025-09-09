@@ -107,12 +107,12 @@
         .tablaExamenes {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
             font-size: 14px;
         }
         .tablaExamenes th, .tablaExamenes td {
             /* border: 1px solid #000; */
-            padding: 6px;
+            padding: 4px;
             text-align: left;
         }
         .tablaExamenes th {
