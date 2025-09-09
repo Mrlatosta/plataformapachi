@@ -16,7 +16,7 @@
                 margin-top: 6cm;
                 margin-left: 0.5cm;
                 margin-right: 0.5cm;
-                margin-bottom: 2cm;
+                margin-bottom: 3cm;
             }
 
             /** Define the header rules **/
@@ -45,7 +45,7 @@
                 bottom: 0cm; 
                 left: 0cm; 
                 right: 0cm;
-                height: 5cm;
+                height: 6cm;
 
                 /** Extra personal styles **/
                 /* background-color: #03a9f4; */
@@ -112,7 +112,7 @@
         }
         .tablaExamenes th, .tablaExamenes td {
             /* border: 1px solid #000; */
-            padding: 4px;
+            padding: 2px;
             text-align: left;
         }
         .tablaExamenes th {
