@@ -108,7 +108,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 5px;
-            font-size: 14px;
+            font-size: 8px;
         }
         .tablaExamenes th, .tablaExamenes td {
             /* border: 1px solid #000; */
@@ -321,7 +321,7 @@
 
                                 <div class="study-details">
                                     
-                                    <table width="100%" style="margin-top: 10px; font-size: 10px;">
+                                    <table width="100%" style="margin-top: 10px; font-size: 8px;">
                                         <tr>
                                             <!-- Columna 1: Elaboró y Validó -->
                                             <td style="vertical-align: top; width: 50%; padding-right: -20px;">
