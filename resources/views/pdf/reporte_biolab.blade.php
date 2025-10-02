@@ -108,7 +108,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 5px;
-            font-size: 8px;
+            font-size: 12px;
         }
         .tablaExamenes th, .tablaExamenes td {
             /* border: 1px solid #000; */
