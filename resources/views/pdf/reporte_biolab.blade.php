@@ -1,15 +1,11 @@
 <html>
     <head>
         <style>
-            /** 
-                Set the margins of the page to 0, so the footer and the header
-                can be of the full height and width !
-             **/
+   
             @page {
                 margin: 0cm 0.5cm;
             }
 
-            /** Define now the real margins of every page in the PDF **/
             body {
                 font-family: DejaVu Sans, sans-serif;
                 font-size: 11px;
@@ -119,6 +115,19 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
+
+        body::before {
+    content: "";
+    position: fixed;
+    top: 25%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("{{ public_path('img/imgbiolabfoot.png') }}") no-repeat center center;
+    background-size: 600px;
+    opacity: 0.15;
+    z-index: -100;
+}
         
 
         </style>
@@ -249,7 +258,7 @@
         <main>
             <main>
                 
-             <div style="
+             {{-- <div style="
                 position: fixed;
                 left: 0;
                 bottom: 250px;
@@ -259,7 +268,7 @@
                 z-index: -100;
             ">
                 <img src="{{ public_path('img/imgbiolabfoot.png') }}" style="width: 600px;" alt="Biolab">
-            </div>
+            </div> --}}
 
                 <div >
                         @foreach ($reporte->estudios as $estudio)
@@ -297,7 +306,7 @@
                                             @endif
 
 
-                                            <tr class="{{ $isOutOfRange ? 'out-of-range' : '' }}">
+                                            <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
                                                 <td class="exam-name">
                                                     @if($hasDash)
                                                         <strong>{{ $examen->nombre_examen }}</strong>

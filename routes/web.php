@@ -70,39 +70,33 @@ Route::get('/prueba-pdf', function () {
         'edad' => 34,
         'sexo' => 'masculino',
         'medico_solicitante' => 'Dr. Ruiz Martínez',
-        'estudios' => [
-            (object) [
-                'elaboro' => 'QFB Angel Augusto Perez Arias',
-                'valido' => 'QFB Angel Augusto Perez Arias',
+        'estudios' => collect(range(1, 12))->map(function ($i) {
+            return (object) [
+                'elaboro' => 'QFB Angel Augusto Pérez Arias',
+                'valido' => 'QFB Angel Augusto Pérez Arias',
                 'tipo_muestra' => 'Sangre',
                 'metodo' => 'Colorimetría',
-                'estudio' => (object) ['nombre' => 'QUÍMICA SANGUÍNEA'],
-                'resultados' => [
-                    (object) [
-                        'resultado' => '85',
-                        'fuera_rango' => false,
+                'estudio' => (object) ['nombre' => 'PRUEBA CLÍNICA #' . $i],
+                'resultados' => collect(range(1, 15))->map(function ($j) {
+                    $fueraRango = rand(0, 10) > 7;
+                    return (object) [
+                        'resultado' => $fueraRango ? rand(200, 300) : rand(70, 110),
+                        'fuera_rango' => $fueraRango,
                         'examen' => (object) [
-                            'nombre_examen' => 'Glucosa',
+                            'nombre_examen' => 'Parámetro ' . $j,
                             'unidad' => 'mg/dL',
                             'valor_referencia' => '70 - 110',
                         ],
-                    ],
-                    (object) [
-                        'resultado' => '250',
-                        'fuera_rango' => true,
-                        'examen' => (object) [
-                            'nombre_examen' => 'Triglicéridos',
-                            'unidad' => 'mg/dL',
-                            'valor_referencia' => '< 150',
-                        ],
-                    ],
-                ],
-            ]
-        ]
+                    ];
+                })->toArray(),
+            ];
+        })->toArray(),
     ];
 
-    $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
-    return $pdf->stream('reporte.pdf');
+    $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'))
+        ->setPaper('letter', 'portrait'); // puedes cambiar a 'a4' si prefieres
+
+    return $pdf->stream('reporte_prueba.pdf');
 });
 
 
