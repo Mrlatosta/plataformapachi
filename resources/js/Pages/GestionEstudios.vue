@@ -53,6 +53,11 @@
         </div>
 
         <div class="mb-4">
+        <label class="block mb-1">Precio del Estudio ($)</label>
+        <input v-model="nuevoEstudio.precio" type="number" step="0.01" min="0" class="w-full p-2 border rounded" />
+        </div>
+
+        <div class="mb-4">
         <label class="block mb-1">Leyenda</label>
         <textarea v-model="nuevoEstudio.leyenda" class="w-full p-2 border rounded"></textarea>
         </div>
@@ -117,11 +122,12 @@ import { Link } from '@inertiajs/vue3';
 const estudios = ref([])
 const selectedEstudioId = ref('')
 const nuevoEstudio = ref({
-    nombre: '',
-    leyenda: '',
-    examenes: [],
-    tipo_muestra: '',
-    metodo: ''
+  nombre: '',
+  leyenda: '',
+  examenes: [],
+  tipo_muestra: '',
+  metodo: '',
+  precio: 0
 })
 
 onMounted(async () => {
@@ -141,7 +147,8 @@ const cargarEstudio = () => {
             leyenda: estudio.leyenda || '',
             examenes: [...estudio.examenes],
             tipo_muestra: estudio.tipo_muestra || '',
-            metodo: estudio.metodo || ''
+            metodo: estudio.metodo || '',
+            precio: estudio.precio || 0
 
         }
     }

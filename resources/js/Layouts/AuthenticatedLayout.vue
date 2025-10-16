@@ -54,6 +54,13 @@ const showingNavigationDropdown = ref(false);
                                     Captura de Resultados
                                     </NavLink>
 
+                                    <NavLink
+                                    :href="route('reimpresion.resultados')"
+                                    :active="route().current('reimpresion.resultados')"
+                                    >
+                                    Reimpresion de Resultados
+                                    </NavLink>
+
                             </div>
                         </div>
 
@@ -174,6 +181,15 @@ const showingNavigationDropdown = ref(false);
                         >
                         Captura de Resultados
                         </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                        :href="route('reimpresion.resultados')"
+                        :active="route().current('reimpresion.resultados')"
+                        >
+                        Reimpresion de Resultados
+                        </ResponsiveNavLink>
+
+
 
                     </div>
 

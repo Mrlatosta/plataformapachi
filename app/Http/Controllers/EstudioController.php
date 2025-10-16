@@ -12,7 +12,7 @@ class EstudioController extends Controller
     public function index()
     {
         return Estudio::with('examenes:id,estudio_id,nombre_examen,unidad,valor_referencia')
-        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo']);
+        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio']);
     }
 
     // Crear nuevo estudio con exámenes
@@ -23,6 +23,7 @@ class EstudioController extends Controller
             'leyenda' => $request->leyenda ?? null, // Agregar leyenda si se proporciona
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
+            'precio' => $request->precio ?? 0,
         ]);
 
         foreach ($request->examenes as $examen) {
@@ -45,6 +46,7 @@ class EstudioController extends Controller
             'leyenda' => $request->leyenda ?? null, // Actualizar leyenda si se proporciona
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
+            'precio' => $request->precio ?? 0,
             
 
         ]);

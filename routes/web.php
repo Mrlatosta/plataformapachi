@@ -36,6 +36,12 @@ Route::get('/captura-resultados', function () {
     return Inertia::render('CapturaResultados');
 })->middleware(['auth', 'verified'])->name('captura.resultados');
 
+
+Route::get('/reimpresion-resultados', function () {
+    return Inertia::render('ReimpresionResultados');
+})->middleware(['auth', 'verified'])->name('reimpresion.resultados');
+
+
 Route::get('/api/estudios', [EstudioController::class, 'index']);
 Route::post('/api/estudios', [EstudioController::class, 'store']);
 Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
@@ -52,6 +58,13 @@ Route::post('/api/reportes', [ReporteController::class, 'store']);
 Route::post('/guardar-reporte', [ReporteController::class, 'guardar'])->name('reporte.guardar');
 
 Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
+
+Route::get('api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
+
+Route::put('api/reportes/{id}', [ReporteController::class, 'actualizarReporte']);
+
+Route::get('api/reportes/{id}/orden', [ReporteController::class, 'generarOrdenTrabajo']);
+
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Reporte;
@@ -77,7 +90,7 @@ Route::get('/prueba-pdf', function () {
                 'tipo_muestra' => 'Sangre',
                 'metodo' => 'Colorimetría',
                 'estudio' => (object) ['nombre' => 'PRUEBA CLÍNICA #' . $i],
-                'resultados' => collect(range(1, 15))->map(function ($j) {
+                'resultados' => collect(range(1, 25))->map(function ($j) {
                     $fueraRango = rand(0, 10) > 7;
                     return (object) [
                         'resultado' => $fueraRango ? rand(200, 300) : rand(70, 110),

@@ -1,5 +1,6 @@
 <template>
 
+
   <Head title="Dashboard" />
 
     <AuthenticatedLayout>
@@ -71,19 +72,56 @@
             <div class="card mb-4">
               <div class="card-header">Estudios</div>
               <div class="card-body">
+                
                 <div class="mb-3">
-                  <label class="form-label">Agregar estudio</label>
-                  <select class="form-select" v-model="selectedEstudioId">
-                    <option value="">Seleccione un estudio</option>
-                    <option v-for="estudio in estudiosDisponibles" :key="estudio.id" :value="estudio.id">
-                      {{ estudio.nombre }}
-                    </option>
-                  </select>
+                  <!-- <label class="form-label">Agregar estudio</label> -->
+
+                  
+                                              <!-- 🔍 Autocompletado de estudios -->
+              <div class="mb-3 position-relative" style="max-width: 500px;">
+                <label class="form-label">Buscar estudio</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Escribe el nombre del estudio o haz clic para ver todos..."
+                  v-model="busquedaEstudio"
+                  @focus="mostrarTodosEstudios"
+                  @input="filtrarEstudios"
+                />
+
+                <!-- Lista de sugerencias con scroll -->
+                <ul
+                  v-if="estudiosFiltrados.length > 0"
+                  class="list-group position-absolute w-100 mt-1 shadow"
+                  style="z-index: 1000; max-height: 180px; overflow-y: auto;"
+                >
+                  <li
+                    v-for="estudio in estudiosFiltrados"
+                    :key="estudio.id"
+                    class="list-group-item list-group-item-action"
+                    @click="seleccionarEstudio(estudio)"
+                    style="cursor: pointer;"
+                  >
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span>{{ estudio.nombre }}</span>
+                      <small class="text-muted">${{ parseFloat(estudio.precio).toFixed(2) }}</small>
+                    </div>
+                    
+                  </li>
+                </ul>
+              </div>
+
+
                   <button class="btn btn-primary mt-2" @click="agregarEstudio">Agregar</button>
                 </div>
 
                 <div v-for="(estudio, index) in form.estudios" :key="index" class="border rounded p-3 mb-4">
-                  <h5>{{ estudio.nombre }}</h5>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="m-0">{{ estudio.nombre }}</h5>
+                    <button class="btn btn-sm btn-outline-danger" @click="eliminarEstudio(index)">
+                      🗑️ Eliminar
+                    </button>
+                  </div>
 
                   <div class="row mb-2">
                     <div class="col-md-3">
@@ -101,6 +139,10 @@
                     <div class="col-md-3">
                       <label class="form-label">Validó</label>
                       <input type="text" class="form-control" v-model="estudio.valido" />
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Precio ($)</label>
+                      <input type="number" class="form-control" step="0.01" v-model="estudio.precio" />
                     </div>
                   </div>
 
@@ -135,8 +177,17 @@
               </div>
             </div>
 
+            <!-- 💵 Total de la orden -->
+            <div class="card">
+              <div class="card-body text-end">
+                <h5 class="fw-bold">
+                  Total: ${{ totalEstudios.toFixed(2) }}
+                </h5>
+              </div>
+            </div>
+
             <!-- Botón para enviar -->
-            <div class="text-end">
+            <div class="text-end" style="padding-bottom: 200px; margin-top: 10px;">
               <button class="btn btn-success" @click="guardarReporte">Guardar Reporte</button>
             </div>
           </div>
@@ -149,7 +200,13 @@
   import { ref, reactive, onMounted, watch } from 'vue'
   import axios from 'axios'
   import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+  import { computed } from 'vue'
+  import { Head } from '@inertiajs/vue3' // ✅ <--- AGREGA ESTA LÍNEA
 
+// 💰 Cálculo automático del total
+const totalEstudios = computed(() => {
+  return form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0)
+})
 
   const estudiosDisponibles = ref([])
   const selectedEstudioId = ref('')
@@ -168,6 +225,8 @@ medico_solicitante: '',
     },
     estudios: [],
   })
+  const busquedaEstudio = ref('')
+  const estudiosFiltrados = ref([])
 
   onMounted(async () => {
     const response = await axios.get('/api/estudios')
@@ -215,19 +274,112 @@ medico_solicitante: '',
 
     selectedEstudioId.value = ''
 }
-  async function guardarReporte() {
-    try {
-      const response = await axios.post('/api/reportes', form)
-      alert('Reporte guardado con éxito')
 
-      // Descargar el PDF
-      const id = response.data.id
-      window.open(`/api/reportes/${id}/pdf`, '_blank')
-      
-      // puedes redireccionar o limpiar el formulario aquí
-    } catch (error) {
-      console.error(error)
-      alert('Error al guardar el reporte')
-    }
+ async function guardarReporte() {
+  try {
+    const response = await axios.post('/api/reportes', form)
+    alert('Reporte guardado con éxito')
+
+    const { id, folio } = response.data;
+
+    // Descargar el PDF
+    const pdfResponse = await axios.get(`/api/reportes/${id}/pdf`, {
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([pdfResponse.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `reporte-${folio}.pdf`) // ✅ usa el folio real
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+        // Descarga también la Orden de Trabajo
+    const ordenResponse = await axios.get(`/api/reportes/${id}/orden`, {
+      responseType: 'blob'
+    })
+    const urlOrden = window.URL.createObjectURL(new Blob([ordenResponse.data]))
+    const linkOrden = document.createElement('a')
+    linkOrden.href = urlOrden
+    linkOrden.setAttribute('download', `orden-trabajo-${folio}.pdf`)
+    document.body.appendChild(linkOrden)
+    linkOrden.click()
+    document.body.removeChild(linkOrden)
+
+      } catch (error) {
+        console.error(error)
+        alert('Error al guardar el reporte')
   }
+}
+
+
+  function filtrarEstudios() {
+  const termino = busquedaEstudio.value.toLowerCase().trim()
+  if (termino === '') {
+    // Si no escribió nada, muestra todos
+    estudiosFiltrados.value = [...estudiosDisponibles.value]
+    return
+  }
+  estudiosFiltrados.value = estudiosDisponibles.value.filter(e =>
+    e.nombre.toLowerCase().includes(termino)
+  )
+}
+
+  // 🆕 Mostrar todos al hacer foco en el input
+  function mostrarTodosEstudios() {
+    estudiosFiltrados.value = [...estudiosDisponibles.value]
+  }
+
+function seleccionarEstudio(estudio) {
+  // Evita duplicados
+  if (form.estudios.some(e => e.id === estudio.id)) {
+    alert('Este estudio ya fue agregado.')
+    busquedaEstudio.value = ''
+    estudiosFiltrados.value = []
+    return
+  }
+
+  form.estudios.push({
+    id: estudio.id,
+    nombre: estudio.nombre,
+    tipo_muestra: estudio.tipo_muestra || '',
+    metodo: estudio.metodo || '',
+    elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
+    valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
+    precio: parseFloat(estudio.precio) || 0, // 💰 Precio sugerido editable
+    examenes: estudio.examenes.map(e => ({
+      id: e.id,
+      nombre_examen: e.nombre_examen,
+      unidad: e.unidad,
+      valor_referencia: e.valor_referencia,
+      resultado: '',
+      fuera_rango: false,
+    })),
+  })
+
+  busquedaEstudio.value = ''
+  estudiosFiltrados.value = []
+}
+
+function eliminarEstudio(index) {
+  if (confirm('¿Deseas eliminar este estudio del reporte?')) {
+    form.estudios.splice(index, 1)
+  }
+}
+
+
+
 </script>
+
+<style>
+.list-group-item:hover {
+  background-color: #e9f0ff;
+}
+
+.list-group-item small {
+  font-size: 11px;
+}
+
+
+
+</style>
