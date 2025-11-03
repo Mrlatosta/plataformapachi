@@ -80,7 +80,7 @@
             padding: 0px;
             margin: 5px 0 8px 0;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 12px;
             text-align: left;
         }
         
@@ -104,17 +104,31 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 5px;
-            font-size: 14px;
+            font-size: 12px;
         }
+
         .tablaExamenes th, .tablaExamenes td {
             /* border: 1px solid #000; */
             padding: 2px;
             text-align: left;
         }
-        .tablaExamenes th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
+       /* Encabezado verde con texto blanco */
+            .tablaExamenes th {
+                background-color: #08cc71;
+                color: white;
+                font-weight: bold;
+            }
+        
+  
+/* Alternar color en las filas de cada tabla */
+.tablaExamenes tbody tr:nth-child(odd) {
+    background-color: #ffffff; /* Blanco */
+}
+
+.tablaExamenes tbody tr:nth-child(even) {
+    background-color: #f8fdf9; /* Verde muy claro */
+}
+
 
         body::before {
     content: "";

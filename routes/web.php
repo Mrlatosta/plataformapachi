@@ -112,5 +112,39 @@ Route::get('/prueba-pdf', function () {
     return $pdf->stream('reporte_prueba.pdf');
 });
 
+Route::get('/prueba-odt', function () {
+    // Simular reporte de orden de trabajo para pruebas
+    $reporte = (object) [
+        'folio' => 'ODT-PRUEBA-001',
+        'id' => 999,
+        'toma_muestra' => now(),
+        'fecha_reporte' => now(),
+        'fecha_validacion' => now(),
+        'nombre_cliente' => 'Carlos Ramírez Torres',
+        'email' => 'carlos@example.com',
+        'fecha_nacimiento' => '1988-02-15',
+        'edad' => 37,
+        'sexo' => 'masculino',
+        'medico_solicitante' => 'Dr. José Luis García',
+        'estudios' => collect(range(1, 5))->map(function ($i) {
+            return (object) [
+                'elaboro' => 'QFB Ángel Augusto Pérez Arias',
+                'valido' => 'QFB Ángel Augusto Pérez Arias',
+                'tipo_muestra' => 'Suero',
+                'metodo' => 'ELISA',
+                'precio' => rand(100, 350),
+                'estudio' => (object) ['nombre' => 'ESTUDIO CLÍNICO #' . $i],
+            ];
+        }),
+    ];
+
+    // Cargar vista de la orden de trabajo (ajusta el nombre si lo cambiaste)
+    $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte'))
+        ->setPaper('a4', 'portrait');
+
+    return $pdf->stream('orden-trabajo-prueba.pdf');
+});
+
+
 
 require __DIR__.'/auth.php';

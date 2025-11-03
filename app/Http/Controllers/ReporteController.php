@@ -131,28 +131,71 @@ public function actualizarReporte(Request $request, $id)
         'sexo' => $cliente['sexo'],
     ]);
 
-    // Actualizar estudios y resultados
-    foreach ($request->input('estudios', []) as $estudioData) {
-        $reporteEstudio = $reporte->estudios()->find($estudioData['id']);
-        if ($reporteEstudio) {
-            $reporteEstudio->update([
-                'tipo_muestra' => $estudioData['tipo_muestra'],
-                'metodo' => $estudioData['metodo'],
-                'elaboro' => $estudioData['elaboro'],
-                'valido' => $estudioData['valido'],
-            ]);
+    $idsNuevos = collect($request->input('estudios'))->pluck('id')->filter();
+    $reporte->estudios()
+        ->whereNotIn('id', $idsNuevos)
+        ->each(function ($estudio) {
+            $estudio->resultados()->delete();
+            $estudio->delete();
+        });
 
-            foreach ($estudioData['resultados'] as $resultadoData) {
+   // Actualizar o crear estudios
+    foreach ($request->input('estudios', []) as $estudioData) {
+    $reporteEstudio = null;
+
+    if (!empty($estudioData['id'])) {
+        // Si ya existe, lo buscamos
+        $reporteEstudio = $reporte->estudios()->find($estudioData['id']);
+    }
+
+    if ($reporteEstudio) {
+        // Actualizar
+        $reporteEstudio->update([
+            'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
+            'metodo' => $estudioData['metodo'] ?? null,
+            'elaboro' => $estudioData['elaboro'] ?? null,
+            'valido' => $estudioData['valido'] ?? null,
+            'precio' => $estudioData['precio'] ?? 0,
+        ]);
+
+        foreach ($estudioData['resultados'] ?? [] as $resultadoData) {
+            if (!empty($resultadoData['id'])) {
                 $resultado = $reporteEstudio->resultados()->find($resultadoData['id']);
                 if ($resultado) {
                     $resultado->update([
-                        'resultado' => $resultadoData['resultado'],
+                        'resultado' => $resultadoData['resultado'] ?? null,
                         'fuera_rango' => $resultadoData['fuera_rango'] ?? false,
                     ]);
                 }
+            } else {
+                // Si no tiene id, es nuevo
+                $reporteEstudio->resultados()->create([
+                    'examen_id' => $resultadoData['examen_id'] ?? $resultadoData['id'],
+                    'resultado' => $resultadoData['resultado'] ?? null,
+                    'fuera_rango' => $resultadoData['fuera_rango'] ?? false,
+                ]);
             }
         }
+    } else {
+        // Crear nuevo estudio
+        $nuevo = $reporte->estudios()->create([
+            'estudio_id' => $estudioData['estudio_id'] ?? $estudioData['id'],
+            'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
+            'metodo' => $estudioData['metodo'] ?? null,
+            'elaboro' => $estudioData['elaboro'] ?? null,
+            'valido' => $estudioData['valido'] ?? null,
+            'precio' => $estudioData['precio'] ?? 0,
+        ]);
+
+        foreach ($estudioData['resultados'] ?? [] as $r) {
+            $nuevo->resultados()->create([
+                'examen_id' => $r['examen_id'] ?? $r['id'],
+                'resultado' => $r['resultado'] ?? null,
+                'fuera_rango' => $r['fuera_rango'] ?? false,
+            ]);
+        }
     }
+}
 
     return response()->json(['message' => 'Reporte actualizado correctamente']);
 }
