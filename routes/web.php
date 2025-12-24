@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\EstudioController;
 use App\Http\Controllers\CapturaResultadosController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\DashboardController;
 
 
 Route::get('/', function () {
@@ -18,9 +19,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -62,6 +63,12 @@ Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
 Route::get('api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
 
 Route::put('api/reportes/{id}', [ReporteController::class, 'actualizarReporte']);
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/{id}', [ReporteController::class, 'show'])->name('reportes.show');
+});
+
 
 Route::get('api/reportes/{id}/orden', [ReporteController::class, 'generarOrdenTrabajo']);
 

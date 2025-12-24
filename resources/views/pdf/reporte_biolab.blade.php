@@ -9,10 +9,10 @@
             body {
                 font-family: DejaVu Sans, sans-serif;
                 font-size: 11px;
-                margin-top: 6cm;
+                margin-top: 6.5cm;
                 margin-left: 0.5cm;
                 margin-right: 0.5cm;
-                margin-bottom: 3cm;
+                margin-bottom: 4.8cm;
             }
 
             /** Define the header rules **/
@@ -22,18 +22,12 @@
                 left: 0cm;
                 right: 0cm;
                 height: 6cm;
-
-                /** Extra personal styles **/
-                /* background-color: #03a9f4;
-                color: white;
-                text-align: center; */
-                /* line-height: 1.5cm; */
             }
 
-                    /* Que las celdas de tbheader no tengan border */
-                .tbheader td {
-                    border: none;
-                }
+            /* Que las celdas de tbheader no tengan border */
+            .tbheader td {
+                border: none;
+            }
 
             /** Define the footer rules **/
             footer {
@@ -41,108 +35,101 @@
                 bottom: 0cm; 
                 left: 0cm; 
                 right: 0cm;
-                height: 6cm;
-
-                /** Extra personal styles **/
-                /* background-color: #03a9f4; */
-                /* color: white;
-                text-align: center;
-                line-height: 1.5cm; */
+                height: 4.3cm;
             }
 
             
-    .footer-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+            .footer-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
 
-    .footer-table td {
-        vertical-align: top;
-        font-size: 10px;
-        padding: 5px;
-    }
+            .footer-table td {
+                vertical-align: top;
+                font-size: 10px;
+                padding: 5px;
+            }
         
 
              
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            width: 250px;
-        }
-        
-        .study-section {
-            margin: 5px 0;
-            page-break-inside: avoid;
-        }
-        
-        .study-title {
-          
-            padding: 0px;
-            margin: 5px 0 8px 0;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: left;
-        }
-        
-        .study-details {
-            margin: 5px 0;
-            font-size: 10px;
-        }
-        
-        .study-details .row {
-            display: flex;
-            margin-bottom: 3px;
-        }
-        
-        .study-details .col {
-            flex: 1;
-            padding-right: 15px;
-        }
+            .info-label {
+                font-weight: bold;
+                display: inline-block;
+                width: 250px;
+            }
+            
+            .study-section {
+                margin: 5px 0;
+                page-break-inside: auto;
+            }
+            
+            .study-title {
+                padding: 0px;
+                margin: 5px 0 8px 0;
+                font-weight: bold;
+                font-size: 12px;
+                text-align: left;
+            }
+            
+            .study-details {
+                margin: 5px 0;
+                font-size: 10px;
+            }
+            
+            .study-details .row {
+                display: flex;
+                margin-bottom: 3px;
+            }
+            
+            .study-details .col {
+                flex: 1;
+                padding-right: 15px;
+            }
 
-        
-        .tablaExamenes {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            font-size: 12px;
-        }
+            
+            .tablaExamenes {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 3px;
+                font-size: 13px;
+            }
 
-        .tablaExamenes th, .tablaExamenes td {
-            /* border: 1px solid #000; */
-            padding: 2px;
-            text-align: left;
-        }
-       /* Encabezado verde con texto blanco */
+            .tablaExamenes th, .tablaExamenes td {
+                padding: 2px;
+                text-align: left;
+            }
+            
+            /* Encabezado verde con texto blanco */
             .tablaExamenes th {
                 background-color: #08cc71;
                 color: white;
                 font-weight: bold;
             }
-        
-  
-/* Alternar color en las filas de cada tabla */
-.tablaExamenes tbody tr:nth-child(odd) {
-    background-color: #ffffff; /* Blanco */
-}
+            
+    
+            /* Alternar color en las filas de cada tabla */
+            .tablaExamenes tbody tr:nth-child(odd) {
+                background-color: #ffffff; /* Blanco */
+            }
 
-.tablaExamenes tbody tr:nth-child(even) {
-    background-color: #f8fdf9; /* Verde muy claro */
-}
+            .tablaExamenes tbody tr:nth-child(even) {
+                background-color: #f8fdf9; /* Verde muy claro */
+            }
 
 
-        body::before {
-    content: "";
-    position: fixed;
-    top: 25%;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url("{{ public_path('img/imgbiolabfoot.png') }}") no-repeat center center;
-    background-size: 600px;
-    opacity: 0.15;
-    z-index: -100;
-}
-        
+            body::before {
+                content: "";
+                position: fixed;
+                top: 25%;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: url("{{ public_path('img/imgbiolabfoot.png') }}") no-repeat center center;
+                background-size: 600px;
+                opacity: 0.15;
+                z-index: -100;
+            }
+            
 
         </style>
     </head>
@@ -184,7 +171,7 @@
                     </div>
                     </td>
                 </tr>
-                </table>
+            </table>
         
 
 
@@ -197,39 +184,37 @@
                             <!-- Columna izquierda -->
                             <td style="vertical-align: top; width: 50%; padding-right: 10px;">
                                 <div style="margin-bottom: 5px;">
-                                    <span > <strong>Paciente/Patient: </strong></span> {{ strtoupper($reporte->nombre_cliente) }}
+                                    <span> <strong>Paciente/Patient: </strong></span> {{ strtoupper($reporte->nombre_cliente) }}
                                 </div>
                                 <div style="margin-bottom: 5px;">
-                                    <span > <strong>Fecha de Nacimiento/Birthdate:</strong></span> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}
+                                    <span> <strong>Fecha de Nacimiento/Birthdate:</strong></span> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}
                                 </div>
                                 <div>
-                                    <span > <strong>Sexo/Sex:</strong></span> {{ ucfirst($reporte->sexo) }}
+                                    <span> <strong>Sexo/Sex:</strong></span> {{ ucfirst($reporte->sexo) }}
                                 </div>
                             </td>
 
                             <!-- Columna derecha -->
                             <td style="vertical-align: top; width: 50%; padding-left: 10px;">
                                 <div style="margin-bottom: 5px;">
-                                    <span > <strong>Correo/E-Mail:</strong></span> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}
+                                    <span> <strong>Correo/E-Mail:</strong></span> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}
                                 </div>
                                 <div>
-                                    <span > <strong>Edad/Age:</strong></span> {{ $reporte->edad }} Años/Years old
+                                    <span> <strong>Edad/Age:</strong></span> {{ $reporte->edad }} Años/Years old
                                 </div>
                             </td>
                         </tr>
                     </table>
                 </div>
 
-                    <hr style="width: 100% ; border: 1px solid #000; margin: 0; padding: 0;">
+                <hr style="width: 100% ; border: 1px solid #000; margin: 0; padding: 0;">
         </header>
 
         <footer>
-
-            
                 <div>
                     <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left; margin-bottom: -10px"> * Resultado fuera de rango</p>
 
-                    <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left"> "Ciencia y compromiso al servicio de tu salud ".</p>
+                    <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left; margin-bottom: 5px;"> "Ciencia y compromiso al servicio de tu salud ".</p>
                     <table class="footer-table">
                         <tr>
                             {{-- QR --}}
@@ -270,120 +255,101 @@
 
         <!-- Wrap the content of your PDF inside a main tag -->
         <main>
-            <main>
-                
-             {{-- <div style="
-                position: fixed;
-                left: 0;
-                bottom: 250px;
-                width: 100%;
-                text-align: center;
-                opacity: 0.3;
-                z-index: -100;
-            ">
-                <img src="{{ public_path('img/imgbiolabfoot.png') }}" style="width: 600px;" alt="Biolab">
-            </div> --}}
+                <div>
+                    @foreach ($reporte->estudios as $estudio)
 
-                <div >
-                        @foreach ($reporte->estudios as $estudio)
-
-                            <div class="study-section">
-                                <div class="study-title">{{ strtoupper($estudio->estudio->nombre) }}</div>
-                                
+                        <div class="study-section">
+                            <div class="study-title">{{ strtoupper($estudio->estudio->nombre) }}</div>
                             
+                        
 
-                                <table class="tablaExamenes">
+                            <table class="tablaExamenes">
 
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 45%;">Examen</th>
-                                            <th style="width: 15%;">Resultado</th>
-                                            <th style="width: 15%;">Unidad</th>
-                                            <th style="width: 25%;">Valor de referencia</th>
-                                        </tr>
-                                    </thead>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 45%;">Examen</th>
+                                        <th style="width: 15%;">Resultado</th>
+                                        <th style="width: 15%;">Unidad</th>
+                                        <th style="width: 25%;">Valor de referencia</th>
+                                    </tr>
+                                </thead>
 
-                                    <tbody>
-                                        @foreach ($estudio->resultados as $resultado)
+                                <tbody>
+                                    @foreach ($estudio->resultados as $resultado)
+                                        @php
+                                            $examen = $resultado->examen;
+                                            $isOutOfRange = $resultado->fuera_rango;
+                                            $hasDash = strpos($resultado->resultado, '-') !== false;
+                                            $hasAsterisk = strpos($resultado->resultado, '*') !== false;
+                                        @endphp
+
+                                        @if($hasAsterisk)
                                             @php
-                                                $examen = $resultado->examen;
-                                                $isOutOfRange = $resultado->fuera_rango;
-                                                $hasDash = strpos($resultado->resultado, '-') !== false; // Verifica si contiene "-"
-                                                $hasAsterisk = strpos($resultado->resultado, '*') !== false; // Verifica si contiene "*"
+                                                continue;
                                             @endphp
-
-                                            @if($hasAsterisk)
-                                                @php
-                                                    //Si tiene asterisco, no incluir el <tr></tr>  ysaltar al otro
-                                                    continue;
-                                                @endphp
-                                            @endif
+                                        @endif
 
 
-                                            <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
-                                                <td class="exam-name">
-                                                    @if($hasDash)
-                                                        <strong>{{ $examen->nombre_examen }}</strong>
-                                                    @else
-                                                        {{ $examen->nombre_examen }}
-                                                    @endif
-                                                </td>
-                                                <td class="result-value">
-                                                    {{ $resultado->resultado }}
-                                                    @if($isOutOfRange)
-                                                        *
-                                                    @endif
-                                                </td>
-                                                <td class="unit">{{ $examen->unidad }}</td>
-                                                <td class="reference">{{ $examen->valor_referencia }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
+                                        <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
+                                            <td class="exam-name">
+                                                @if($hasDash)
+                                                    <strong>{{ $examen->nombre_examen }}</strong>
+                                                @else
+                                                    {{ $examen->nombre_examen }}
+                                                @endif
+                                            </td>
+                                            <td class="result-value">
+                                                {{ $resultado->resultado }}
+                                                @if($isOutOfRange)
+                                                    *
+                                                @endif
+                                            </td>
+                                            <td class="unit">{{ $examen->unidad }}</td>
+                                            <td class="reference">{{ $examen->valor_referencia }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+
+                            </table>
+
+                            <div class="study-details">
+                                
+                                <table width="100%" style="margin-top: 10px; font-size: 8px;">
+                                    <tr>
+                                        <!-- Columna 1: Elaboró y Validó -->
+                                        <td style="vertical-align: top; width: 50%; padding-right: -20px;">
+                                            <div>
+                                                <span style="font-weight: 600">Validó: {{ $estudio->valido }}</span>
+                                            </div>
+                                        </td>
+
+                                        <!-- Columna 2: Tipo de muestra y Método -->
+                                        <td style="vertical-align: top; width: 50%; padding-left: 10px;">
+                                            <div style="margin-bottom: 5px; margin-top: 2px;">
+                                                <span>Tipo de muestra:</span> {{ strtoupper($estudio->tipo_muestra) }}
+                                            </div>
+                                            <div>
+                                                <span>Método:</span> {{ strtoupper($estudio->metodo) }}
+                                            </div>
+                                        </td>
+                                    </tr>
 
                                 </table>
-
-                                <div class="study-details">
-                                    
-                                    <table width="100%" style="margin-top: 10px; font-size: 8px;">
-                                        <tr>
-                                            <!-- Columna 1: Elaboró y Validó -->
-                                            <td style="vertical-align: top; width: 50%; padding-right: -20px;">
-                                                {{-- <div style="margin-bottom: 5px;">
-                                                    <span class="info-label">Elaboró:</span> {{ $estudio->elaboro }}
-                                                </div> --}}
-                                                <div>
-                                                    <span style="font-weight: 600"">Validó: {{ $estudio->valido }}</span>
-                                                </div>
-                                            </td>
-
-                                            <!-- Columna 2: Tipo de muestra y Método -->
-                                            <td style="vertical-align: top; width: 50%; padding-left: 10px;">
-                                                <div style="margin-bottom: 5px; margin-top: 2px;">
-                                                    <span class="">Tipo de muestra:</span> {{ strtoupper($estudio->tipo_muestra) }}
-                                                </div>
-                                                <div>
-                                                    <span class="">Método:</span> {{ strtoupper($estudio->metodo) }}
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                    </table>
-                                    
-                                    
-                                </div>
+                                
+                                
                             </div>
+                        </div>
 
-                            @if(!empty($estudio->estudio->leyenda))
-                            <p style="text-align: center; font-size: 12px; font-style: italic; margin-top: 5px;">
-                                {{ $estudio->estudio->leyenda }}
-                            </p>
-                            
-                            @endif
-                        @endforeach
-
+                        @if(!empty($estudio->estudio->leyenda))
+                        <p style="text-align: center; font-size: 12px; font-style: italic; margin-top: 5px;">
+                            {{ $estudio->estudio->leyenda }}
+                        </p>
                         
+                        @endif
+                    @endforeach
+
+                    
                 </div>
-            </main>
         </main>
     </body>
 </html>

@@ -1,0 +1,218 @@
+<script setup>
+import { ref, watch } from 'vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+
+const props = defineProps({
+    reportes: Object,
+    filters: Object
+});
+
+const search = ref(props.filters.search || '');
+const fechaDesde = ref(props.filters.fecha_desde || '');
+const fechaHasta = ref(props.filters.fecha_hasta || '');
+
+const filterReportes = () => {
+    router.get('/reportes', {
+        search: search.value,
+        fecha_desde: fechaDesde.value,
+        fecha_hasta: fechaHasta.value
+    }, {
+        preserveState: true,
+        replace: true
+    });
+};
+
+const clearFilters = () => {
+    search.value = '';
+    fechaDesde.value = '';
+    fechaHasta.value = '';
+    filterReportes();
+};
+
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+};
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(value);
+};
+</script>
+
+<template>
+    <Head title="Lista de Reportes" />
+
+    <AuthenticatedLayout>
+        <template #header>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Lista de Reportes
+            </h2>
+        </template>
+
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <!-- Filtros -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Filtros de Búsqueda</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- Búsqueda -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+                                <input
+                                    v-model="search"
+                                    type="text"
+                                    placeholder="Folio, nombre o email..."
+                                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    @keyup.enter="filterReportes"
+                                />
+                            </div>
+
+                            <!-- Fecha Desde -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Desde</label>
+                                <input
+                                    v-model="fechaDesde"
+                                    type="date"
+                                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <!-- Fecha Hasta -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Hasta</label>
+                                <input
+                                    v-model="fechaHasta"
+                                    type="date"
+                                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="flex gap-3 mt-4">
+                            <button
+                                @click="filterReportes"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                            >
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                Buscar
+                            </button>
+                            <button
+                                @click="clearFilters"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center"
+                            >
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Reportes -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folio</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edad/Sexo</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudios</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="reporte in reportes.data" :key="reporte.id" class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ reporte.folio }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ reporte.nombre_cliente }}</div>
+                                            <div class="text-sm text-gray-500">{{ reporte.email || 'Sin email' }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ reporte.edad }} años</div>
+                                            <div class="text-sm text-gray-500">{{ reporte.sexo }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                {{ reporte.total_estudios }} estudios
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ formatCurrency(reporte.total_precio) }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ formatDate(reporte.created_at) }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <Link
+                                                :href="route('reportes.show', reporte.id)"
+                                                class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                Ver Detalles
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación CORREGIDA SIN WARNING -->
+                        <div v-if="reportes.links.length > 3" class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="text-sm text-gray-700">
+                                Mostrando {{ reportes.from }} a {{ reportes.to }} de {{ reportes.total }} resultados
+                            </div>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <template v-for="(link, index) in reportes.links" :key="index">
+                                    <Link
+                                        v-if="link.url"
+                                        :href="link.url"
+                                        :class="[
+                                            'px-4 py-2 rounded-lg transition-colors text-sm',
+                                            link.active
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ]"
+                                    >
+                                        <span v-html="link.label"></span>
+                                    </Link>
+                                    <span
+                                        v-else
+                                        :class="[
+                                            'px-4 py-2 rounded-lg text-sm opacity-50 cursor-not-allowed',
+                                            'bg-gray-200 text-gray-700'
+                                        ]"
+                                        v-html="link.label"
+                                    />
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AuthenticatedLayout>
+</template>
