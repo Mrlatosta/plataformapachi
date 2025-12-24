@@ -8,6 +8,7 @@ use App\Http\Controllers\EstudioController;
 use App\Http\Controllers\CapturaResultadosController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CotizacionController;
 
 
 Route::get('/', function () {
@@ -42,6 +43,10 @@ Route::get('/reimpresion-resultados', function () {
     return Inertia::render('ReimpresionResultados');
 })->middleware(['auth', 'verified'])->name('reimpresion.resultados');
 
+Route::get('/cotizaciones', function () {
+    return Inertia::render('Cotizaciones');
+})->middleware(['auth', 'verified'])->name('cotizaciones');
+
 
 Route::get('/api/estudios', [EstudioController::class, 'index']);
 Route::post('/api/estudios', [EstudioController::class, 'store']);
@@ -53,6 +58,7 @@ Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'i
 Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);
 Route::get('/api/resultados/pdf', [CapturaResultadosController::class, 'generarPDF']);
 
+Route::post('/api/cotizaciones', [CotizacionController::class, 'store']);
 
 Route::post('/api/reportes', [ReporteController::class, 'store']);
 
