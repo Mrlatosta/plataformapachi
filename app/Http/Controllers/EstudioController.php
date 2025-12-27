@@ -12,6 +12,7 @@ class EstudioController extends Controller
     public function index()
     {
         return Estudio::with('examenes:id,estudio_id,nombre_examen,unidad,valor_referencia')
+        ->orderBy('nombre', 'asc')
         ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio']);
     }
 
@@ -70,5 +71,20 @@ class EstudioController extends Controller
     public function show($id)
     {
         return Estudio::with('examenes')->findOrFail($id);
+    }
+
+    // Eliminar un estudio y sus exámenes
+    public function destroy($id)
+    {
+        $estudio = Estudio::findOrFail($id);
+        
+        // Los exámenes se eliminarán automáticamente si tienes cascada en la BD
+        // O puedes eliminarlos explícitamente:
+        $estudio->examenes()->delete();
+        
+        // Eliminar el estudio
+        $estudio->delete();
+
+        return response()->json(['message' => 'Estudio eliminado con éxito']);
     }
 }
