@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -13,7 +13,15 @@ const props = defineProps({
     ingresosPorMes: Array,
     estudiosPopulares: Array,
     reportesPorGenero: Object,
-    reportesPorDia: Array
+    reportesPorDia: Array,
+    fechaInicio: String,
+    fechaFin: String
+});
+
+// Estado reactivo para las fechas
+const filtroFechas = ref({
+    fecha_inicio: props.fechaInicio,
+    fecha_fin: props.fechaFin
 });
 
 // Variables reactivas para las gráficas
@@ -29,6 +37,62 @@ const formatCurrency = (value) => {
         style: 'currency',
         currency: 'MXN'
     }).format(value);
+};
+
+// Función para aplicar filtro de fechas
+const aplicarFiltro = () => {
+    router.get(route('dashboard'), filtroFechas.value, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['estadisticas', 'ingresosPorMes', 'reportesPorMes', 'estudiosPopulares', 'reportesPorGenero', 'reportesPorDia']
+    });
+};
+
+// Función para resetear filtro a últimos 6 meses
+const resetearFiltro = () => {
+    const hoy = new Date();
+    const hace6Meses = new Date();
+    hace6Meses.setMonth(hace6Meses.getMonth() - 6);
+    
+    filtroFechas.value.fecha_inicio = hace6Meses.toISOString().split('T')[0];
+    filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+    
+    aplicarFiltro();
+};
+
+// Atajos rápidos de fechas
+const aplicarAtajo = (tipo) => {
+    const hoy = new Date();
+    const inicio = new Date();
+    
+    switch(tipo) {
+        case 'hoy':
+            filtroFechas.value.fecha_inicio = hoy.toISOString().split('T')[0];
+            filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+            break;
+        case 'semana':
+            inicio.setDate(inicio.getDate() - 7);
+            filtroFechas.value.fecha_inicio = inicio.toISOString().split('T')[0];
+            filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+            break;
+        case 'mes':
+            inicio.setMonth(inicio.getMonth() - 1);
+            filtroFechas.value.fecha_inicio = inicio.toISOString().split('T')[0];
+            filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+            break;
+        case 'trimestre':
+            inicio.setMonth(inicio.getMonth() - 3);
+            filtroFechas.value.fecha_inicio = inicio.toISOString().split('T')[0];
+            filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+            break;
+        case 'año':
+            inicio.setFullYear(inicio.getFullYear() - 1);
+            filtroFechas.value.fecha_inicio = inicio.toISOString().split('T')[0];
+            filtroFechas.value.fecha_fin = hoy.toISOString().split('T')[0];
+            break;
+    }
+    
+    aplicarFiltro();
 };
 
 // Crear gráficas cuando el componente se monta
@@ -328,6 +392,89 @@ const createDiasChart = () => {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                
+                <!-- Filtro de Fechas -->
+                <div class="mb-6 overflow-hidden bg-white shadow-lg sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <span class="text-blue-600 mr-2">📅</span>
+                                    Filtrar por Rango de Fechas
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
+                                        <input 
+                                            type="date" 
+                                            v-model="filtroFechas.fecha_inicio"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
+                                        <input 
+                                            type="date" 
+                                            v-model="filtroFechas.fecha_fin"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button 
+                                    @click="aplicarFiltro"
+                                    class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                >
+                                    Aplicar Filtro
+                                </button>
+                                <button 
+                                    @click="resetearFiltro"
+                                    class="px-6 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200"
+                                >
+                                    Resetear
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Atajos rápidos -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Atajos rápidos:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button 
+                                    @click="aplicarAtajo('hoy')"
+                                    class="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                                >
+                                    Hoy
+                                </button>
+                                <button 
+                                    @click="aplicarAtajo('semana')"
+                                    class="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                                >
+                                    Última semana
+                                </button>
+                                <button 
+                                    @click="aplicarAtajo('mes')"
+                                    class="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                                >
+                                    Último mes
+                                </button>
+                                <button 
+                                    @click="aplicarAtajo('trimestre')"
+                                    class="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                                >
+                                    Último trimestre
+                                </button>
+                                <button 
+                                    @click="aplicarAtajo('año')"
+                                    class="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                                >
+                                    Último año
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- KPIs Cards -->
             <div class="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
