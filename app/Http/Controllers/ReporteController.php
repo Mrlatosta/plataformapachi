@@ -35,9 +35,11 @@ public function store(Request $request)
         'estudios.*.elaboro' => 'nullable|string|max:255',
         'estudios.*.valido' => 'nullable|string|max:255',
         'estudios.*.precio' => 'required|numeric|min:0',
+        'estudios.*.observaciones' => 'nullable|string',
         'estudios.*.examenes' => 'required|array|min:1',
         'estudios.*.examenes.*.id' => 'required|exists:examenes,id',
         'estudios.*.examenes.*.resultado' => 'nullable|string',
+        'estudios.*.examenes.*.fuera_rango' => 'nullable|boolean',
     ], [
         'cliente.nombre.required' => 'El nombre del paciente es obligatorio',
         'cliente.fecha_nacimiento.required' => 'La fecha de nacimiento es obligatoria',
@@ -81,13 +83,22 @@ public function store(Request $request)
             'elaboro' => $estudioData['elaboro'] ?? null,
             'valido' => $estudioData['valido'] ?? null,
             'precio' => $estudioData['precio'],
+            'observaciones' => $estudioData['observaciones'] ?? null,
         ]);
 
         foreach ($estudioData['examenes'] as $resultado) {
+            // Debug: Log del valor de fuera_rango recibido
+            \Log::info('Guardando resultado', [
+                'examen_id' => $resultado['id'],
+                'fuera_rango_raw' => $resultado['fuera_rango'] ?? 'NO DEFINIDO',
+                'fuera_rango_tipo' => gettype($resultado['fuera_rango'] ?? null),
+                'fuera_rango_filtered' => filter_var($resultado['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            ]);
+            
             $reporteEstudio->resultados()->create([
                 'examen_id' => $resultado['id'],
                 'resultado' => $resultado['resultado'] ?? null,
-                'fuera_rango' => $resultado['fuera_rango'] ?? false,
+                'fuera_rango' => filter_var($resultado['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ]);
         }
     }
@@ -199,7 +210,7 @@ public function actualizarReporte(Request $request, $id)
                 if ($resultado) {
                     $resultado->update([
                         'resultado' => $resultadoData['resultado'] ?? null,
-                        'fuera_rango' => $resultadoData['fuera_rango'] ?? false,
+                        'fuera_rango' => filter_var($resultadoData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
                     ]);
                 }
             } else {
@@ -207,7 +218,7 @@ public function actualizarReporte(Request $request, $id)
                 $reporteEstudio->resultados()->create([
                     'examen_id' => $resultadoData['examen_id'] ?? $resultadoData['id'],
                     'resultado' => $resultadoData['resultado'] ?? null,
-                    'fuera_rango' => $resultadoData['fuera_rango'] ?? false,
+                    'fuera_rango' => filter_var($resultadoData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 ]);
             }
         }
@@ -226,7 +237,7 @@ public function actualizarReporte(Request $request, $id)
             $nuevo->resultados()->create([
                 'examen_id' => $r['examen_id'] ?? $r['id'],
                 'resultado' => $r['resultado'] ?? null,
-                'fuera_rango' => $r['fuera_rango'] ?? false,
+                'fuera_rango' => filter_var($r['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ]);
         }
     }

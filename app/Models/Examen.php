@@ -13,7 +13,7 @@ class Examen extends Model
 {
     protected $table = 'examenes';
 
-    protected $fillable = ['estudio_id', 'nombre_examen', 'unidad', 'valor_referencia'];
+    protected $fillable = ['estudio_id', 'seccion', 'orden', 'nombre_examen', 'unidad', 'valor_referencia'];
 
     public function estudio()
     {

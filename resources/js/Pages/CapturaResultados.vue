@@ -253,6 +253,22 @@
                   </div>
                 </div>
 
+                <!-- Campo de Observaciones -->
+                <div class="mt-4 space-y-2">
+                  <label class="block text-sm font-medium text-gray-700">
+                    <svg class="w-4 h-4 inline mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                    Observaciones del Estudio
+                  </label>
+                  <textarea 
+                    v-model="estudio.observaciones"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm resize-none"
+                    placeholder="Ingrese observaciones específicas para este estudio (opcional)..."
+                  ></textarea>
+                </div>
+
                 <!-- Tabla de exámenes modernizada -->
                 <div class="overflow-hidden rounded-lg border border-gray-200">
                   <div class="overflow-x-auto">
@@ -282,13 +298,21 @@
                                 v-model="examen.resultado" 
                                 placeholder="Ingrese resultado"
                               />
-                              <label class="flex items-center cursor-pointer">
+                              <label class="flex items-center cursor-pointer group">
                                 <input 
                                   type="checkbox" 
-                                  class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" 
-                                  v-model="examen.fuera_rango" 
+                                  class="w-5 h-5 text-red-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-red-500" 
+                                  v-model="examen.fuera_rango"
+                                  :true-value="true"
+                                  :false-value="false"
+                                  @change="console.log('Checkbox cambiado:', examen.nombre_examen, 'Valor:', examen.fuera_rango, 'Tipo:', typeof examen.fuera_rango)"
                                 />
-                                <span class="ml-2 text-xs font-medium text-gray-700">F.R.</span>
+                                <span 
+                                  class="ml-2 text-xs font-medium transition-colors"
+                                  :class="examen.fuera_rango ? 'text-red-600 font-bold' : 'text-gray-700'"
+                                >
+                                  F.R. {{ examen.fuera_rango ? '✓' : '' }}
+                                </span>
                               </label>
                             </div>
                           </td>
@@ -435,7 +459,8 @@ const form = reactive({
 const busquedaEstudio = ref('')
 const estudiosFiltrados = ref([])
 
-onMounted(async () => {
+// Función para cargar estudios desde el API
+const cargarEstudios = async () => {
   try {
     const response = await axios.get('/api/estudios')
     estudiosDisponibles.value = response.data
@@ -443,6 +468,10 @@ onMounted(async () => {
     console.error('Error al cargar estudios:', error)
     mostrarNotificacion('Error al cargar los estudios disponibles', 'error')
   }
+}
+
+onMounted(async () => {
+  await cargarEstudios()
 })
 
 watch(() => form.cliente.fecha_nacimiento, (nuevaFecha) => {
@@ -475,6 +504,7 @@ function agregarEstudio() {
     elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
     valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
     precio: parseFloat(estudio.precio) || 0,
+    observaciones: '',
     examenes: estudio.examenes.map(e => ({
       id: e.id,
       nombre_examen: e.nombre_examen,
@@ -549,6 +579,17 @@ async function guardarReporte() {
   guardando.value = true
 
   try {
+    // Debug: Verificar valores de fuera_rango antes de enviar
+    console.log('=== DEBUG: Datos antes de enviar ===')
+    form.estudios.forEach((estudio, idx) => {
+      console.log(`Estudio ${idx + 1}: ${estudio.nombre}`)
+      estudio.examenes.forEach((examen, exIdx) => {
+        console.log(`  Examen ${exIdx + 1}: ${examen.nombre_examen}`)
+        console.log(`    Resultado: ${examen.resultado}`)
+        console.log(`    Fuera de rango: ${examen.fuera_rango} (tipo: ${typeof examen.fuera_rango})`)
+      })
+    })
+
     const response = await axios.post('/api/reportes', form)
     mostrarNotificacion('¡Reporte guardado con éxito!', 'success')
 
@@ -629,6 +670,8 @@ function filtrarEstudios() {
 }
 
 function mostrarTodosEstudios() {
+  // Recargar estudios para obtener cambios recientes
+  cargarEstudios()
   estudiosFiltrados.value = [...estudiosDisponibles.value]
 }
 
@@ -649,6 +692,7 @@ function seleccionarEstudio(estudio) {
     elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
     valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
     precio: parseFloat(estudio.precio) || 0,
+    observaciones: '',
     examenes: estudio.examenes.map(e => ({
       id: e.id,
       nombre_examen: e.nombre_examen,

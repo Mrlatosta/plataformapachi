@@ -190,6 +190,13 @@ const descargarOrden = () => {
                             </p>
                         </div>
 
+                        <!-- Observaciones del Estudio -->
+                        <div v-if="estudio.observaciones" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-orange-50 border-l-4 border-orange-400 rounded">
+                            <p class="text-xs sm:text-sm text-gray-700">
+                                <span class="font-semibold">📝 Observaciones:</span> {{ estudio.observaciones }}
+                            </p>
+                        </div>
+
                         <!-- Tabla de Resultados - Vista Móvil -->
                         <div class="block lg:hidden space-y-3">
                             <div v-for="resultado in estudio.resultados" :key="resultado.id" 

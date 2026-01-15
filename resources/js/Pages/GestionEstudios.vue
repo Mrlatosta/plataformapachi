@@ -142,6 +142,8 @@
                                 <table class="w-full">
                                     <thead>
                                         <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                                            <th class="px-2 py-3 text-center font-semibold w-16">Orden</th>
+                                            <th class="px-4 py-3 text-left font-semibold">Sección</th>
                                             <th class="px-4 py-3 text-left font-semibold">Examen</th>
                                             <th class="px-4 py-3 text-left font-semibold">Unidad</th>
                                             <th class="px-4 py-3 text-left font-semibold">Valor de Referencia</th>
@@ -154,6 +156,40 @@
                                             :key="index"
                                             class="border-b hover:bg-blue-50 transition-colors"
                                         >
+                                            <td class="px-2 py-3 text-center">
+                                                <div class="flex flex-col gap-1 items-center">
+                                                    <input 
+                                                        v-model.number="examen.orden" 
+                                                        type="number"
+                                                        class="w-16 p-1 text-center border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    />
+                                                    <div class="flex gap-1">
+                                                        <button 
+                                                            @click="moverExamen(index, -1)"
+                                                            :disabled="index === 0"
+                                                            class="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                                                            title="Mover arriba"
+                                                        >
+                                                            ▲
+                                                        </button>
+                                                        <button 
+                                                            @click="moverExamen(index, 1)"
+                                                            :disabled="index === nuevoEstudio.examenes.length - 1"
+                                                            class="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                                                            title="Mover abajo"
+                                                        >
+                                                            ▼
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input 
+                                                    v-model="examen.seccion" 
+                                                    class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                                    placeholder="Ej: Perfil Lipídico"
+                                                />
+                                            </td>
                                             <td class="px-4 py-3">
                                                 <input 
                                                     v-model="examen.nombre_examen" 
@@ -180,12 +216,12 @@
                                                     @click="eliminarExamen(index)" 
                                                     class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow hover:shadow-lg transform hover:-translate-y-0.5"
                                                 >
-                                                    🗑️ Eliminar
+                                                    🗑️
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr v-if="nuevoEstudio.examenes.length === 0">
-                                            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                                                 No hay exámenes agregados. Haz clic en "Agregar Examen" para comenzar.
                                             </td>
                                         </tr>
@@ -321,10 +357,31 @@ const cancelarEdicion = () => {
 }
 
 const agregarExamen = () => {
+    const siguienteOrden = nuevoEstudio.value.examenes.length > 0 
+        ? Math.max(...nuevoEstudio.value.examenes.map(e => e.orden || 0)) + 1 
+        : 1
+    
     nuevoEstudio.value.examenes.push({
+        seccion: '',
+        orden: siguienteOrden,
         nombre_examen: '',
         unidad: '',
         valor_referencia: ''
+    })
+}
+
+const moverExamen = (index, direccion) => {
+    const nuevoIndex = index + direccion
+    if (nuevoIndex < 0 || nuevoIndex >= nuevoEstudio.value.examenes.length) return
+    
+    // Intercambiar posiciones
+    const temp = nuevoEstudio.value.examenes[index]
+    nuevoEstudio.value.examenes[index] = nuevoEstudio.value.examenes[nuevoIndex]
+    nuevoEstudio.value.examenes[nuevoIndex] = temp
+    
+    // Actualizar números de orden
+    nuevoEstudio.value.examenes.forEach((examen, idx) => {
+        examen.orden = idx + 1
     })
 }
 

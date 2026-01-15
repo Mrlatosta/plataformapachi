@@ -116,6 +116,19 @@
                 background-color: #f8fdf9; /* Verde muy claro */
             }
 
+            /* Estilo para encabezados de sección */
+            .seccion-header {
+                background-color: #e8f5e9 !important;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 5px 2px !important;
+            }
+
+            .seccion-header td {
+                border-top: 1px solid #08cc71;
+                border-bottom: 1px solid #08cc71;
+            }
+
 
             body::before {
                 content: "";
@@ -275,38 +288,57 @@
                                 </thead>
 
                                 <tbody>
-                                    @foreach ($estudio->resultados as $resultado)
-                                        @php
+                                    @php
+                                        // Agrupar resultados por sección
+                                        $resultadosPorSeccion = [];
+                                        foreach ($estudio->resultados as $resultado) {
                                             $examen = $resultado->examen;
-                                            $isOutOfRange = $resultado->fuera_rango;
-                                            $hasDash = strpos($resultado->resultado, '-') !== false;
-                                            $hasAsterisk = strpos($resultado->resultado, '*') !== false;
-                                        @endphp
+                                            $seccion = $examen->seccion ?? 'Sin Sección';
+                                            
+                                            if (!isset($resultadosPorSeccion[$seccion])) {
+                                                $resultadosPorSeccion[$seccion] = [];
+                                            }
+                                            $resultadosPorSeccion[$seccion][] = $resultado;
+                                        }
+                                    @endphp
 
-                                        @if($hasAsterisk)
-                                            @php
-                                                continue;
-                                            @endphp
+                                    @foreach ($resultadosPorSeccion as $nombreSeccion => $resultados)
+                                        {{-- Mostrar encabezado de sección si hay una sección definida --}}
+                                        @if($nombreSeccion !== 'Sin Sección' && count($resultadosPorSeccion) > 1)
+                                            <tr class="seccion-header">
+                                                <td colspan="4">{{ strtoupper($nombreSeccion) }}</td>
+                                            </tr>
                                         @endif
 
+                                        {{-- Mostrar los exámenes de la sección --}}
+                                        @foreach ($resultados as $resultado)
+                                            @php
+                                                $examen = $resultado->examen;
+                                                // Convertir explícitamente a booleano para asegurar la evaluación correcta
+                                                $isOutOfRange = (bool) $resultado->fuera_rango;
+                                                $hasAsterisk = strpos($resultado->resultado, '*') !== false;
+                                            @endphp
 
-                                        <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
-                                            <td class="exam-name">
-                                                @if($hasDash)
-                                                    <strong>{{ $examen->nombre_examen }}</strong>
-                                                @else
+                                            @if($hasAsterisk)
+                                                @php
+                                                    continue;
+                                                @endphp
+                                            @endif
+
+                                            <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
+                                                <td class="exam-name">
                                                     {{ $examen->nombre_examen }}
-                                                @endif
-                                            </td>
-                                            <td class="result-value">
-                                                {{ $resultado->resultado }}
-                                                @if($isOutOfRange)
-                                                    *
-                                                @endif
-                                            </td>
-                                            <td class="unit">{{ $examen->unidad }}</td>
-                                            <td class="reference">{{ $examen->valor_referencia }}</td>
-                                        </tr>
+                                                </td>
+                                                <td class="result-value">
+                                                    {{ $resultado->resultado }}
+                                                    @if($isOutOfRange)
+                                                        *
+                                                    @endif
+                                                </td>
+                                                <td class="unit">{{ $examen->unidad }}</td>
+                                                <td class="reference">{{ $examen->valor_referencia }}</td>
+                                            </tr>
+                                        @endforeach
                                     @endforeach
                                 </tbody>
 
@@ -339,6 +371,15 @@
                                 
                             </div>
                         </div>
+
+                        @if(!empty($estudio->observaciones))
+                        <div style="margin-top: 8px; padding: 8px; background-color: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px;">
+                            <p style="margin: 0; font-size: 10px;">
+                                <strong style="color: #f59e0b;">📝 Observaciones:</strong> 
+                                <span style="color: #374151;">{{ $estudio->observaciones }}</span>
+                            </p>
+                        </div>
+                        @endif
 
                         @if(!empty($estudio->estudio->leyenda))
                         <p style="text-align: center; font-size: 12px; font-style: italic; margin-top: 5px;">
