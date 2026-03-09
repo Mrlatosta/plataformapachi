@@ -9,6 +9,7 @@ use App\Http\Controllers\CapturaResultadosController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CotizacionController;
+use App\Http\Controllers\PacienteController;
 
 
 Route::get('/', function () {
@@ -34,9 +35,8 @@ Route::get('/gestion-estudios', function () {
     return Inertia::render('GestionEstudios');
 })->middleware(['auth', 'verified'])->name('gestion.estudios');
 
-Route::get('/captura-resultados', function () {
-    return Inertia::render('CapturaResultados');
-})->middleware(['auth', 'verified'])->name('captura.resultados');
+Route::get('/captura-resultados', [CapturaResultadosController::class, 'page'])
+    ->middleware(['auth', 'verified'])->name('captura.resultados');
 
 
 Route::get('/reimpresion-resultados', function () {
@@ -46,6 +46,9 @@ Route::get('/reimpresion-resultados', function () {
 Route::get('/cotizaciones', function () {
     return Inertia::render('Cotizaciones');
 })->middleware(['auth', 'verified'])->name('cotizaciones');
+
+Route::get('/pacientes', [PacienteController::class, 'page'])
+    ->middleware(['auth', 'verified'])->name('pacientes');
 
 
 Route::get('/api/estudios', [EstudioController::class, 'index']);
@@ -59,6 +62,18 @@ Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);
 Route::get('/api/resultados/pdf', [CapturaResultadosController::class, 'generarPDF']);
 
 Route::post('/api/cotizaciones', [CotizacionController::class, 'store']);
+Route::get('/api/cotizaciones', [CotizacionController::class, 'index']);
+Route::get('/api/cotizaciones/{id}', [CotizacionController::class, 'show']);
+Route::put('/api/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
+Route::get('/api/cotizaciones/{id}/pdf', [CotizacionController::class, 'generarPDF']);
+Route::delete('/api/cotizaciones/{id}', [CotizacionController::class, 'destroy']);
+
+Route::get('/api/pacientes', [PacienteController::class, 'index']);
+Route::post('/api/pacientes', [PacienteController::class, 'store']);
+Route::get('/api/pacientes/buscar', [PacienteController::class, 'buscar']);
+Route::get('/api/pacientes/{id}', [PacienteController::class, 'show']);
+Route::put('/api/pacientes/{id}', [PacienteController::class, 'update']);
+Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy']);
 
 Route::post('/api/reportes', [ReporteController::class, 'store']);
 

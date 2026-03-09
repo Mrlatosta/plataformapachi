@@ -210,14 +210,11 @@
         }
 
         .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
             border-top: 2px solid #08cc71;
             padding-top: 10px;
+            margin-top: 30px;
             text-align: center;
+            page-break-inside: avoid;
         }
 
         .footer-content {
@@ -434,7 +431,7 @@
     @endif
 
     <!-- Condiciones generales -->
-    <div style="clear: both; margin-top: 40px; font-size: 9px; color: #777; line-height: 1.6;">
+    <div style="clear: both; margin-top: 40px; font-size: 9px; color: #777; line-height: 1.6; page-break-inside: avoid;">
         <p style="margin: 5px 0;"><strong>Condiciones generales:</strong></p>
         <ul style="margin: 5px 0; padding-left: 20px;">
             <li>Los precios están expresados en pesos mexicanos (MXN)</li>

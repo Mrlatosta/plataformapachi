@@ -63,7 +63,7 @@
           </div>
         </div>
 
-        <!-- Datos del Cliente -->
+        <!-- Datos del Paciente -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md">
           <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
@@ -73,55 +73,185 @@
               Datos del Paciente
             </h3>
           </div>
-          <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="space-y-2 md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Nombre completo</label>
-              <input 
-                type="text" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                v-model="form.cliente.nombre" 
-                placeholder="Ingrese el nombre del paciente"
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Email <span class="text-gray-400 text-xs">(opcional)</span>
-              </label>
-              <input 
-                type="email" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                v-model="form.cliente.email" 
-                placeholder="correo@ejemplo.com"
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-              <input 
-                type="date" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                v-model="form.cliente.fecha_nacimiento" 
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Edad</label>
-              <input 
-                type="number" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                v-model="form.cliente.edad" 
-                readonly
-                placeholder="Se calcula automáticamente"
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Sexo</label>
-              <select 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                v-model="form.cliente.sexo"
+          <div class="p-6">
+            <!-- Tabs: Existente / Nuevo -->
+            <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
+              <button
+                @click="modoPaciente = 'existente'"
+                :class="[
+                  'flex-1 flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200',
+                  modoPaciente === 'existente'
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                ]"
               >
-                <option value="">Seleccione</option>
-                <option>Masculino</option>
-                <option>Femenino</option>
-              </select>
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar Paciente Existente
+              </button>
+              <button
+                @click="modoPaciente = 'nuevo'; limpiarPacienteSeleccionado()"
+                :class="[
+                  'flex-1 flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200',
+                  modoPaciente === 'nuevo'
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                ]"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Nuevo Paciente
+              </button>
+            </div>
+
+            <!-- Modo: Buscar paciente existente -->
+            <div v-if="modoPaciente === 'existente'">
+              <div class="relative max-w-2xl mb-4">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="Escribe el nombre del paciente para buscar..."
+                  v-model="busquedaPaciente"
+                  @input="filtrarPacientes"
+                  @focus="filtrarPacientes"
+                />
+
+                <!-- Lista desplegable de pacientes -->
+                <transition
+                  enter-active-class="transition ease-out duration-100"
+                  enter-from-class="transform opacity-0 scale-95"
+                  enter-to-class="transform opacity-100 scale-100"
+                  leave-active-class="transition ease-in duration-75"
+                  leave-from-class="transform opacity-100 scale-100"
+                  leave-to-class="transform opacity-0 scale-95"
+                >
+                  <ul
+                    v-if="pacientesFiltrados.length > 0 && !pacienteSeleccionado"
+                    class="absolute w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50"
+                  >
+                    <li
+                      v-for="paciente in pacientesFiltrados"
+                      :key="paciente.id"
+                      class="px-4 py-3 hover:bg-emerald-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                      @click="seleccionarPaciente(paciente)"
+                    >
+                      <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-semibold text-xs mr-3">
+                            {{ paciente.nombre.charAt(0).toUpperCase() }}
+                          </div>
+                          <div>
+                            <span class="font-medium text-gray-800">{{ paciente.nombre }}</span>
+                            <span v-if="paciente.telefono" class="text-xs text-gray-500 ml-2">{{ paciente.telefono }}</span>
+                          </div>
+                        </div>
+                        <span
+                          :class="{
+                            'bg-blue-100 text-blue-700': paciente.sexo === 'Masculino',
+                            'bg-pink-100 text-pink-700': paciente.sexo === 'Femenino',
+                          }"
+                          class="text-xs font-medium px-2 py-0.5 rounded-full"
+                          v-if="paciente.sexo"
+                        >
+                          {{ paciente.sexo }}
+                        </span>
+                      </div>
+                    </li>
+                  </ul>
+                </transition>
+              </div>
+
+              <!-- Paciente seleccionado badge -->
+              <div v-if="pacienteSeleccionado" class="mb-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-semibold">
+                  {{ pacienteSeleccionado.nombre.charAt(0).toUpperCase() }}
+                </div>
+                <div class="flex-1">
+                  <p class="font-semibold text-emerald-800">{{ pacienteSeleccionado.nombre }}</p>
+                  <p class="text-xs text-emerald-600">
+                    {{ pacienteSeleccionado.sexo || 'Sin sexo' }} &middot; 
+                    {{ pacienteSeleccionado.edad != null ? pacienteSeleccionado.edad + ' años' : 'Sin edad' }}
+                    <span v-if="pacienteSeleccionado.telefono"> &middot; {{ pacienteSeleccionado.telefono }}</span>
+                  </p>
+                </div>
+                <button
+                  @click="limpiarPacienteSeleccionado"
+                  class="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                  title="Cambiar paciente"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Campos del paciente (editables en modo nuevo, readonly en modo existente con paciente seleccionado) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="space-y-2 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Nombre completo</label>
+                <input 
+                  type="text" 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
+                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
+                  v-model="form.cliente.nombre" 
+                  placeholder="Ingrese el nombre del paciente"
+                  :readonly="!!pacienteSeleccionado"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Email <span class="text-gray-400 text-xs">(opcional)</span>
+                </label>
+                <input 
+                  type="email" 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
+                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
+                  v-model="form.cliente.email" 
+                  placeholder="correo@ejemplo.com"
+                  :readonly="!!pacienteSeleccionado"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                <input 
+                  type="date" 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
+                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
+                  v-model="form.cliente.fecha_nacimiento" 
+                  :readonly="!!pacienteSeleccionado"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Edad</label>
+                <input 
+                  type="number" 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
+                  v-model="form.cliente.edad" 
+                  readonly
+                  placeholder="Se calcula automáticamente"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Sexo</label>
+                <select 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
+                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
+                  v-model="form.cliente.sexo"
+                  :disabled="!!pacienteSeleccionado"
+                >
+                  <option value="">Seleccione</option>
+                  <option>Masculino</option>
+                  <option>Femenino</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -415,8 +545,23 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
 
+// Props de Inertia (cotizacion precargada desde Cotizaciones)
+const props = defineProps({
+  cotizacionPrecargada: {
+    type: Object,
+    default: null,
+  },
+})
+
 // Estado de guardado
 const guardando = ref(false)
+
+// Estado del paciente
+const modoPaciente = ref('existente') // 'existente' | 'nuevo'
+const busquedaPaciente = ref('')
+const pacientesDisponibles = ref([])
+const pacientesFiltrados = ref([])
+const pacienteSeleccionado = ref(null)
 
 // Sistema de notificaciones
 const notification = reactive({
@@ -471,8 +616,107 @@ const cargarEstudios = async () => {
 }
 
 onMounted(async () => {
-  await cargarEstudios()
+  await Promise.all([cargarEstudios(), cargarPacientes()])
+
+  // Si viene una cotización precargada, auto-llenar paciente y estudios
+  if (props.cotizacionPrecargada) {
+    precargarDesdeCotizacion(props.cotizacionPrecargada)
+  }
 })
+
+/**
+ * Precarga los datos del paciente y estudios desde una cotización guardada
+ */
+function precargarDesdeCotizacion(cotizacion) {
+  // Precargar paciente
+  if (cotizacion.paciente) {
+    const paciente = cotizacion.paciente
+    pacienteSeleccionado.value = paciente
+    modoPaciente.value = 'existente'
+    form.cliente.nombre = paciente.nombre || ''
+    form.cliente.email = paciente.email || ''
+    form.cliente.fecha_nacimiento = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('T')[0] : ''
+    form.cliente.edad = paciente.edad || ''
+    form.cliente.sexo = paciente.sexo || ''
+  } else if (cotizacion.nombre_cliente) {
+    // Si no tiene paciente registrado, usar los datos directos de la cotización
+    modoPaciente.value = 'nuevo'
+    form.cliente.nombre = cotizacion.nombre_cliente || ''
+    form.cliente.email = cotizacion.email || ''
+  }
+
+  // Precargar estudios
+  if (cotizacion.estudios && cotizacion.estudios.length > 0) {
+    cotizacion.estudios.forEach(ce => {
+      const estudioCompleto = ce.estudio
+      if (!estudioCompleto) return
+
+      // Evitar duplicados
+      if (form.estudios.some(e => e.id === estudioCompleto.id)) return
+
+      form.estudios.push({
+        id: estudioCompleto.id,
+        nombre: estudioCompleto.nombre,
+        tipo_muestra: (estudioCompleto.tipo_muestra && estudioCompleto.tipo_muestra !== 'N/A') ? estudioCompleto.tipo_muestra : '',
+        metodo: (estudioCompleto.metodo && estudioCompleto.metodo !== 'N/A') ? estudioCompleto.metodo : '',
+        elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
+        valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
+        precio: parseFloat(ce.precio) || parseFloat(estudioCompleto.precio) || 0,
+        observaciones: '',
+        examenes: (estudioCompleto.examenes || []).map(e => ({
+          id: e.id,
+          nombre_examen: e.nombre_examen,
+          unidad: e.unidad,
+          valor_referencia: e.valor_referencia,
+          resultado: '',
+          fuera_rango: false,
+        })),
+      })
+    })
+
+    mostrarNotificacion(`Cotización ${cotizacion.folio} cargada: ${form.estudios.length} estudio(s) y datos del paciente`, 'success')
+  }
+}
+
+// Funciones de pacientes
+const cargarPacientes = async () => {
+  try {
+    const response = await axios.get('/api/pacientes')
+    pacientesDisponibles.value = response.data
+  } catch (error) {
+    console.error('Error al cargar pacientes:', error)
+  }
+}
+
+function filtrarPacientes() {
+  const termino = busquedaPaciente.value.toLowerCase().trim()
+  if (termino === '') {
+    pacientesFiltrados.value = [...pacientesDisponibles.value]
+    return
+  }
+  pacientesFiltrados.value = pacientesDisponibles.value.filter(p =>
+    p.nombre.toLowerCase().includes(termino)
+  )
+}
+
+function seleccionarPaciente(paciente) {
+  pacienteSeleccionado.value = paciente
+  form.cliente.nombre = paciente.nombre
+  form.cliente.email = paciente.email || ''
+  form.cliente.fecha_nacimiento = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('T')[0] : ''
+  form.cliente.edad = paciente.edad || ''
+  form.cliente.sexo = paciente.sexo || ''
+  busquedaPaciente.value = ''
+  pacientesFiltrados.value = []
+  mostrarNotificacion(`Paciente "${paciente.nombre}" seleccionado`, 'success')
+}
+
+function limpiarPacienteSeleccionado() {
+  pacienteSeleccionado.value = null
+  form.cliente = { nombre: '', email: '', fecha_nacimiento: '', edad: '', sexo: '' }
+  busquedaPaciente.value = ''
+  pacientesFiltrados.value = []
+}
 
 watch(() => form.cliente.fecha_nacimiento, (nuevaFecha) => {
   if (nuevaFecha) {
@@ -627,6 +871,9 @@ async function guardarReporte() {
       form.fecha_reporte = ''
       form.fecha_validacion = ''
       form.medico_solicitante = ''
+      pacienteSeleccionado.value = null
+      busquedaPaciente.value = ''
+      modoPaciente.value = 'existente'
     }, 2000)
 
   } catch (error) {
