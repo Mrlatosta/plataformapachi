@@ -60,7 +60,14 @@
             
             .study-section {
                 margin: 5px 0;
-                page-break-inside: auto;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .study-block {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin-bottom: 10px;
             }
             
             .study-title {
@@ -97,6 +104,15 @@
             .tablaExamenes th, .tablaExamenes td {
                 padding: 2px;
                 text-align: left;
+            }
+
+            .tablaExamenes thead {
+                display: table-header-group;
+            }
+
+            .tablaExamenes tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
             
             /* Encabezado verde con texto blanco */
@@ -270,6 +286,7 @@
         <main>
                 <div>
                     @foreach ($reporte->estudios as $estudio)
+                        <div class="study-block">
 
                         <div class="study-section">
                             <div class="study-title">{{ strtoupper($estudio->estudio->nombre) }}</div>
@@ -387,6 +404,7 @@
                         </p>
                         
                         @endif
+                        </div>
                     @endforeach
 
                     
