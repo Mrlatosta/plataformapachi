@@ -172,7 +172,7 @@
                     <table>
                         <tr>
                         <td>
-                            <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 100px; margin-right: 10px;">
+                            <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 80px; margin-right: 10px;">
                         </td>
                         <td style="padding-left: 10px;">
                             <div style="font-weight: bold; font-size: 15px;">
@@ -192,11 +192,11 @@
                     </td>
 
                     <!-- DATOS DE FECHA -->
-                    <td width="30%" valign="top">
-                    <div style="background-color: #e9f0fe; padding: 10px 15px; font-size: 10px; border: 1px solid #cbd5e0; border-radius: 5px;">
-                        <div><strong>Toma de muestra:</strong><br>{{ \Carbon\Carbon::parse($reporte->toma_muestra)->format('d/m/Y g:i a') }}</div>
-                        <div style="margin-top: 5px;"><strong>Fecha de Reporte:</strong><br>{{ \Carbon\Carbon::parse($reporte->fecha_reporte)->format('d/m/Y g:i a') }}</div>
-                        <div style="margin-top: 5px;"><strong>Fecha de Validación:</strong><br>{{ \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') }}</div>
+                    <td width="40%" valign="top">
+                    <div style="background-color: #e9f0fe; padding: 5px 5px; font-size: 10px; border: 1px solid #cbd5e0; border-radius: 5px;">
+                        <div><strong>Toma de muestra:</strong> {{ \Carbon\Carbon::parse($reporte->toma_muestra)->format('d/m/Y g:i a') }}</div>
+                        <div style="margin-top: 5px;"><strong>Fecha de Reporte:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_reporte)->format('d/m/Y g:i a') }}</div>
+                        <div style="margin-top: 5px;"><strong>Fecha de Validación:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') }}</div>
                     </div>
                     </td>
                 </tr>
