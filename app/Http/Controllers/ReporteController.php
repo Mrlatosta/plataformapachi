@@ -15,6 +15,15 @@ use Inertia\Inertia;
 class ReporteController extends Controller
 {
 
+private function applyPageNumbers($pdf, float $x = 500, float $y = 820, int $size = 9): void
+{
+    $dompdf = $pdf->getDomPDF();
+    $dompdf->render();
+    $canvas = $dompdf->getCanvas();
+    $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
+    $canvas->page_text($x, $y, 'Pagina {PAGE_NUM} de {PAGE_COUNT}', $font, $size, [0.4, 0.4, 0.4]);
+}
+
 public function store(Request $request)
 {
     // Validar datos antes de guardar
@@ -111,6 +120,7 @@ public function store(Request $request)
 
     // 🔹 Generar PDF de la orden de trabajo
     $pdfOrden = Pdf::loadView('pdf.orden_trabajo', compact('reporte'));
+    $this->applyPageNumbers($pdfOrden, 480, 815, 8);
 
     // Opcional: Guardar el archivo en el servidor
     // Storage::put("ordenes/orden-{$reporte->folio}.pdf", $pdfOrden->output());
@@ -134,9 +144,10 @@ public function store(Request $request)
     'estudios.resultados.examen'
 ])->findOrFail($reporteId);
 
+        $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
+        $this->applyPageNumbers($pdf, 490, 815, 9);
 
-        return Pdf::loadView('pdf.reporte_biolab', compact('reporte'))
-                ->download("reporte-{$reporte->folio}.pdf");
+        return $pdf->download("reporte-{$reporte->folio}.pdf");
     }
 
 public function generarOrdenTrabajo($reporteId)
@@ -147,6 +158,8 @@ public function generarOrdenTrabajo($reporteId)
 
     $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte', 'total'))
         ->setPaper('A4', 'portrait');
+
+    $this->applyPageNumbers($pdf, 480, 815, 8);
 
     return $pdf->download("orden-trabajo-{$reporte->folio}.pdf");
 }

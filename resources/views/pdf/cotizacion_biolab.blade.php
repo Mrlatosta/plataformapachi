@@ -301,6 +301,7 @@
             margin-top: 5px;
             margin-bottom: 3px;
         }
+
     </style>
 </head>
 <body>
@@ -465,5 +466,6 @@
             "Ciencia y compromiso al servicio de tu salud"
         </div>
     </div>
+
 </body>
 </html>

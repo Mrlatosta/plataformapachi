@@ -90,6 +90,7 @@
         vertical-align: top;
         padding: 2px;
       }
+
     </style>
   </head>
   <body>
@@ -220,5 +221,6 @@
       </div>
     </div>
     @endfor
+
   </body>
 </html>

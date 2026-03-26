@@ -11,6 +11,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CotizacionController extends Controller
 {
+    private function applyPageNumbers($pdf, float $x = 500, float $y = 770, int $size = 9): void
+    {
+        $dompdf = $pdf->getDomPDF();
+        $dompdf->render();
+        $canvas = $dompdf->getCanvas();
+        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
+        $canvas->page_text($x, $y, 'Pagina {PAGE_NUM} de {PAGE_COUNT}', $font, $size, [0.4, 0.4, 0.4]);
+    }
+
     /**
      * Listar todas las cotizaciones
      */
@@ -184,6 +193,8 @@ class CotizacionController extends Controller
 
         $pdf = Pdf::loadView('pdf.cotizacion_biolab', $data)
             ->setPaper('letter', 'portrait');
+
+        $this->applyPageNumbers($pdf, 500, 770, 9);
 
         return $pdf->download("cotizacion-{$cotizacion->folio}.pdf");
     }
