@@ -1,33 +1,211 @@
 <script setup>
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
-    reporte: Object
+    reporte: Object,
 });
 
-const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+const estudiosDisponibles = ref([]);
+const estudiosFiltrados = ref([]);
+const busquedaEstudio = ref('');
+const guardando = ref(false);
+
+const normalizeDatetime = (value) => {
+    if (!value) return '';
+    return String(value).replace(' ', 'T').slice(0, 16);
 };
+
+const normalizeDate = (value) => {
+    if (!value) return '';
+    return String(value).slice(0, 10);
+};
+
+const form = reactive({
+    id: null,
+    folio: '',
+    toma_muestra: '',
+    fecha_reporte: '',
+    fecha_validacion: '',
+    medico_solicitante: '',
+    cliente: {
+        nombre: '',
+        email: '',
+        fecha_nacimiento: '',
+        edad: '',
+        sexo: '',
+    },
+    estudios: [],
+});
+
+const hydrateForm = () => {
+    const data = props.reporte;
+
+    form.id = data.id;
+    form.folio = data.folio;
+    form.toma_muestra = normalizeDatetime(data.toma_muestra);
+    form.fecha_reporte = normalizeDatetime(data.fecha_reporte);
+    form.fecha_validacion = normalizeDatetime(data.fecha_validacion);
+    form.medico_solicitante = data.medico_solicitante || '';
+
+    form.cliente.nombre = data.nombre_cliente || '';
+    form.cliente.email = data.email || '';
+    form.cliente.fecha_nacimiento = normalizeDate(data.fecha_nacimiento);
+    form.cliente.edad = data.edad ?? '';
+    form.cliente.sexo = data.sexo || '';
+
+    form.estudios = (data.estudios || []).map((estudio) => ({
+        id: estudio.id,
+        estudio_id: estudio.estudio_id,
+        nombre: estudio.nombre,
+        tipo_muestra: estudio.tipo_muestra || '',
+        metodo: estudio.metodo || '',
+        elaboro: estudio.elaboro || '',
+        valido: estudio.valido || '',
+        observaciones: estudio.observaciones || '',
+        precio: Number(estudio.precio || 0),
+        leyenda: estudio.leyenda || '',
+        resultados: (estudio.resultados || []).map((resultado) => ({
+            id: resultado.id,
+            examen_id: resultado.examen_id,
+            nombre_examen: resultado.nombre_examen || '',
+            unidad: resultado.unidad || '',
+            valor_referencia: resultado.valor_referencia || '',
+            resultado: resultado.resultado || '',
+            fuera_rango: Boolean(resultado.fuera_rango),
+        })),
+    }));
+};
+
+watch(() => props.reporte, hydrateForm, { immediate: true });
+
+onMounted(async () => {
+    const response = await axios.get('/api/estudios');
+    estudiosDisponibles.value = response.data;
+});
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',
-        currency: 'MXN'
-    }).format(value);
+        currency: 'MXN',
+    }).format(value || 0);
 };
 
-const totalPrecio = props.reporte.estudios.reduce((sum, estudio) => sum + Number(estudio.precio), 0);
+const totalPrecio = computed(() => {
+    return form.estudios.reduce((sum, estudio) => sum + (Number(estudio.precio) || 0), 0);
+});
+
+const filtrarEstudios = () => {
+    const termino = busquedaEstudio.value.toLowerCase().trim();
+    if (!termino) {
+        estudiosFiltrados.value = [...estudiosDisponibles.value];
+        return;
+    }
+
+    estudiosFiltrados.value = estudiosDisponibles.value.filter((estudio) =>
+        estudio.nombre.toLowerCase().includes(termino),
+    );
+};
+
+const mostrarTodosEstudios = () => {
+    estudiosFiltrados.value = [...estudiosDisponibles.value];
+};
+
+const agregarEstudio = (estudio) => {
+    const yaExiste = form.estudios.some((item) => Number(item.estudio_id) === Number(estudio.id));
+    if (yaExiste) {
+        window.alert('Este estudio ya esta agregado en el reporte.');
+        return;
+    }
+
+    form.estudios.push({
+        id: null,
+        estudio_id: estudio.id,
+        nombre: estudio.nombre,
+        tipo_muestra: estudio.tipo_muestra || '',
+        metodo: estudio.metodo || '',
+        elaboro: 'Q.F.B ANGEL AUGUSTO PEREZ ARIAS',
+        valido: 'Q.F.B ANGEL AUGUSTO PEREZ ARIAS',
+        observaciones: '',
+        precio: Number(estudio.precio || 0),
+        leyenda: estudio.leyenda || '',
+        resultados: (estudio.examenes || []).map((examen) => ({
+            id: null,
+            examen_id: examen.id,
+            nombre_examen: examen.nombre_examen,
+            unidad: examen.unidad,
+            valor_referencia: examen.valor_referencia,
+            resultado: '',
+            fuera_rango: false,
+        })),
+    });
+
+    busquedaEstudio.value = '';
+    estudiosFiltrados.value = [];
+};
+
+const eliminarEstudio = (index) => {
+    if (!window.confirm('Deseas eliminar este estudio del reporte?')) {
+        return;
+    }
+
+    form.estudios.splice(index, 1);
+};
+
+const guardarCambios = async () => {
+    guardando.value = true;
+
+    try {
+        const payload = {
+            id: form.id,
+            toma_muestra: form.toma_muestra,
+            fecha_reporte: form.fecha_reporte,
+            fecha_validacion: form.fecha_validacion,
+            medico_solicitante: form.medico_solicitante,
+            cliente: {
+                nombre: form.cliente.nombre,
+                email: form.cliente.email,
+                fecha_nacimiento: form.cliente.fecha_nacimiento,
+                edad: form.cliente.edad,
+                sexo: form.cliente.sexo,
+            },
+            estudios: form.estudios.map((estudio) => ({
+                id: estudio.id,
+                estudio_id: estudio.estudio_id,
+                tipo_muestra: estudio.tipo_muestra,
+                metodo: estudio.metodo,
+                elaboro: estudio.elaboro,
+                valido: estudio.valido,
+                observaciones: estudio.observaciones,
+                precio: Number(estudio.precio || 0),
+                resultados: (estudio.resultados || []).map((resultado) => ({
+                    id: resultado.id,
+                    examen_id: resultado.examen_id,
+                    resultado: resultado.resultado,
+                    fuera_rango: Boolean(resultado.fuera_rango),
+                })),
+            })),
+        };
+
+        await axios.put(`/api/reportes/${form.id}`, payload);
+        window.alert('Cambios guardados correctamente.');
+        router.reload({ only: ['reporte'] });
+    } catch (error) {
+        console.error(error);
+        window.alert('No se pudieron guardar los cambios del reporte.');
+    } finally {
+        guardando.value = false;
+    }
+};
 
 const descargarPDF = () => {
     window.open(`/api/reportes/${props.reporte.id}/pdf`, '_blank');
+};
+
+const visualizarPDF = () => {
+    window.open(`/api/reportes/${props.reporte.id}/pdf-preview`, '_blank');
 };
 
 const descargarOrden = () => {
@@ -36,236 +214,276 @@ const descargarOrden = () => {
 </script>
 
 <template>
-    <Head :title="`Reporte ${reporte.folio}`" />
+    <Head :title="`Editar Reporte ${reporte.folio}`" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-col gap-3">
                 <h2 class="font-semibold text-lg sm:text-xl text-gray-800 leading-tight">
-                    Detalles del Reporte - {{ reporte.folio }}
+                    Editar Reporte - {{ form.folio }}
                 </h2>
-                <div class="flex flex-col sm:flex-row gap-2">
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        @click="visualizarPDF"
+                        class="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        Visualizar PDF
+                    </button>
                     <button
                         @click="descargarPDF"
-                        class="flex items-center justify-center px-3 sm:px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                        class="flex items-center justify-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                     >
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Descargar PDF</span>
-                        <span class="sm:hidden">PDF</span>
+                        Descargar PDF
                     </button>
                     <button
                         @click="descargarOrden"
-                        class="flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                        class="flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                     >
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Orden de Trabajo</span>
-                        <span class="sm:hidden">Orden</span>
+                        Orden de Trabajo
                     </button>
                     <Link
                         :href="route('reportes.index')"
-                        class="flex items-center justify-center px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                        class="flex items-center justify-center px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
                         Volver
                     </Link>
                 </div>
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-8 sm:py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                <!-- Información del Paciente -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Folio</label>
+                            <input
+                                type="text"
+                                :value="form.folio"
+                                disabled
+                                class="w-full rounded-lg border-gray-300 bg-gray-100 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Toma de muestra</label>
+                            <input
+                                v-model="form.toma_muestra"
+                                type="datetime-local"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de reporte</label>
+                            <input
+                                v-model="form.fecha_reporte"
+                                type="datetime-local"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de validacion</label>
+                            <input
+                                v-model="form.fecha_validacion"
+                                type="datetime-local"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Medico solicitante</label>
+                            <input
+                                v-model="form.medico_solicitante"
+                                type="text"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-4 sm:p-6">
-                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            Información del Paciente
-                        </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Nombre Completo</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900 font-semibold">{{ reporte.nombre_cliente }}</p>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Datos del Paciente</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input
+                                    v-model="form.cliente.nombre"
+                                    type="text"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                             <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Email</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900 break-all">{{ reporte.email || 'No proporcionado' }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input
+                                    v-model="form.cliente.email"
+                                    type="email"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                             <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Edad</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900">{{ reporte.edad }} años</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de nacimiento</label>
+                                <input
+                                    v-model="form.cliente.fecha_nacimiento"
+                                    type="date"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                             <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Sexo</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900">{{ reporte.sexo }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+                                <input
+                                    v-model="form.cliente.edad"
+                                    type="number"
+                                    min="0"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                             <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Fecha de Nacimiento</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900">{{ formatDate(reporte.fecha_nacimiento) }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Médico Solicitante</label>
-                                <p class="mt-1 text-sm sm:text-base text-gray-900">{{ reporte.medico_solicitante || 'No especificado' }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                                <select
+                                    v-model="form.cliente.sexo"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                    <option value="">Seleccione</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Información del Reporte -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                     <div class="p-4 sm:p-6">
-                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Información del Reporte
-                        </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Folio</label>
-                                <p class="mt-1 text-sm sm:text-base font-bold text-blue-600">{{ reporte.folio }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Toma de Muestra</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900">{{ formatDate(reporte.toma_muestra) }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Fecha de Reporte</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900">{{ formatDate(reporte.fecha_reporte) }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs sm:text-sm font-medium text-gray-500">Fecha de Validación</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900">{{ formatDate(reporte.fecha_validacion) }}</p>
-                            </div>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Agregar Estudio</h3>
+                        <div class="relative z-30 max-w-2xl">
+                            <input
+                                v-model="busquedaEstudio"
+                                type="text"
+                                placeholder="Escribe para buscar estudios..."
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                @focus="mostrarTodosEstudios"
+                                @input="filtrarEstudios"
+                            />
+                            <ul
+                                v-if="estudiosFiltrados.length > 0"
+                                class="absolute z-40 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto"
+                            >
+                                <li
+                                    v-for="estudio in estudiosFiltrados"
+                                    :key="estudio.id"
+                                    class="px-4 py-2 text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-between"
+                                    @click="agregarEstudio(estudio)"
+                                >
+                                    <span>{{ estudio.nombre }}</span>
+                                    <span class="font-semibold text-gray-700">{{ formatCurrency(estudio.precio) }}</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- Estudios y Resultados -->
-                <div v-for="estudio in reporte.estudios" :key="estudio.id" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-4 sm:p-6">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                </svg>
-                                <span class="break-words">{{ estudio.nombre }}</span>
-                            </h3>
-                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
-                                {{ formatCurrency(estudio.precio) }}
-                            </span>
+                <div
+                    v-for="(estudio, index) in form.estudios"
+                    :key="`${estudio.estudio_id}-${index}`"
+                    class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
+                >
+                    <div class="p-4 sm:p-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">{{ estudio.nombre }}</h3>
+                            <button
+                                @click="eliminarEstudio(index)"
+                                class="px-3 py-2 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200 transition-colors"
+                            >
+                                Eliminar Estudio
+                            </button>
                         </div>
 
-                        <!-- Información del estudio -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-gray-500">Tipo de Muestra</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900">{{ estudio.tipo_muestra || 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500">Método</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900">{{ estudio.metodo || 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500">Elaboró</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900 break-words">{{ estudio.elaboro || 'N/A' }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                                <input
+                                    v-model="estudio.tipo_muestra"
+                                    type="text"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-500">Validó</label>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-900 break-words">{{ estudio.valido || 'N/A' }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Metodo</label>
+                                <input
+                                    v-model="estudio.metodo"
+                                    type="text"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Elaboro</label>
+                                <input
+                                    v-model="estudio.elaboro"
+                                    type="text"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Valido</label>
+                                <input
+                                    v-model="estudio.valido"
+                                    type="text"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+                                <input
+                                    v-model.number="estudio.precio"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
                             </div>
                         </div>
 
-                        <!-- Leyenda -->
-                        <div v-if="estudio.leyenda" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                            <p class="text-xs sm:text-sm text-gray-700">
-                                <span class="font-semibold">Nota:</span> {{ estudio.leyenda }}
-                            </p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                            <textarea
+                                v-model="estudio.observaciones"
+                                rows="2"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
                         </div>
 
-                        <!-- Observaciones del Estudio -->
-                        <div v-if="estudio.observaciones" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-orange-50 border-l-4 border-orange-400 rounded">
-                            <p class="text-xs sm:text-sm text-gray-700">
-                                <span class="font-semibold">📝 Observaciones:</span> {{ estudio.observaciones }}
-                            </p>
+                        <div v-if="estudio.leyenda" class="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-sm text-gray-700">
+                            <span class="font-semibold">Leyenda:</span> {{ estudio.leyenda }}
                         </div>
 
-                        <!-- Tabla de Resultados - Vista Móvil -->
-                        <div class="block lg:hidden space-y-3">
-                            <div v-for="resultado in estudio.resultados" :key="resultado.id" 
-                                :class="[
-                                    'p-3 rounded-lg border-2',
-                                    resultado.fuera_rango ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-                                ]">
-                                <div class="font-semibold text-sm text-gray-900 mb-2">{{ resultado.nombre_examen }}</div>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <span class="text-gray-500">Resultado:</span>
-                                        <span :class="[
-                                            'ml-1 font-bold',
-                                            resultado.fuera_rango ? 'text-red-600' : 'text-gray-900'
-                                        ]">{{ resultado.resultado }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-500">Unidad:</span>
-                                        <span class="ml-1 text-gray-900">{{ resultado.unidad || '-' }}</span>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <span class="text-gray-500">Val. Referencia:</span>
-                                        <span class="ml-1 text-gray-900">{{ resultado.valor_referencia || '-' }}</span>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <span v-if="resultado.fuera_rango" class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            Fuera de rango
-                                        </span>
-                                        <span v-else class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            Normal
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tabla de Resultados - Vista Desktop -->
-                        <div class="hidden lg:block overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Examen</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resultado</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor de Referencia</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Examen</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Referencia</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Resultado</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">F.R.</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="resultado in estudio.resultados" :key="resultado.id" :class="resultado.fuera_rango ? 'bg-red-50' : ''">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ resultado.nombre_examen }}
+                                    <tr v-for="resultado in estudio.resultados" :key="`${resultado.examen_id}-${resultado.id || 'new'}`">
+                                        <td class="px-3 py-2 text-sm text-gray-900">{{ resultado.nombre_examen }}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-700">{{ resultado.unidad || '-' }}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-700">{{ resultado.valor_referencia || '-' }}</td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="resultado.resultado"
+                                                type="text"
+                                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                            />
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold" :class="resultado.fuera_rango ? 'text-red-600' : 'text-gray-900'">
-                                            {{ resultado.resultado }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ resultado.unidad || '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ resultado.valor_referencia || '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span v-if="resultado.fuera_rango" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                Fuera de rango
-                                            </span>
-                                            <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                Normal
-                                            </span>
+                                        <td class="px-3 py-2 text-center">
+                                            <input
+                                                v-model="resultado.fuera_rango"
+                                                type="checkbox"
+                                                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                            />
                                         </td>
                                     </tr>
                                 </tbody>
@@ -274,19 +492,27 @@ const descargarOrden = () => {
                     </div>
                 </div>
 
-                <!-- Resumen Total -->
-                <div class="bg-gradient-to-r from-blue-500 to-blue-700 overflow-hidden shadow-lg sm:rounded-lg">
-                    <div class="p-4 sm:p-6 text-white">
-                        <div class="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
-                            <div class="text-center sm:text-left">
-                                <h3 class="text-base sm:text-lg font-semibold mb-2">Total del Reporte</h3>
-                                <p class="text-xs sm:text-sm opacity-90">{{ reporte.estudios.length }} estudios realizados</p>
-                            </div>
-                            <div class="text-center sm:text-right">
-                                <p class="text-2xl sm:text-3xl font-bold">{{ formatCurrency(totalPrecio) }}</p>
-                            </div>
+                <div class="bg-gradient-to-r from-slate-800 to-slate-700 overflow-hidden shadow-lg sm:rounded-lg">
+                    <div class="p-4 sm:p-6 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold">Total del Reporte</h3>
+                            <p class="text-sm opacity-90">{{ form.estudios.length }} estudios agregados</p>
+                        </div>
+                        <div class="text-2xl font-bold">
+                            {{ formatCurrency(totalPrecio) }}
                         </div>
                     </div>
+                </div>
+
+                <div class="flex justify-end pb-12">
+                    <button
+                        @click="guardarCambios"
+                        :disabled="guardando"
+                        class="px-5 py-2.5 rounded-lg text-white text-sm font-semibold transition-colors"
+                        :class="guardando ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                    >
+                        {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+                    </button>
                 </div>
             </div>
         </div>

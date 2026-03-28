@@ -9,7 +9,7 @@
             body {
                 font-family: DejaVu Sans, sans-serif;
                 font-size: 11px;
-                margin-top: 6.5cm;
+                margin-top: 6cm;
                 margin-left: 0.5cm;
                 margin-right: 0.5cm;
                 margin-bottom: 4.8cm;
@@ -59,7 +59,7 @@
             }
             
             .study-section {
-                margin: 5px 0;
+                margin: 0 0 5px 0;
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
@@ -72,7 +72,7 @@
             
             .study-title {
                 padding: 0px;
-                margin: 5px 0 8px 0;
+                margin: 0 0 8px 0;
                 font-weight: bold;
                 font-size: 12px;
                 text-align: left;

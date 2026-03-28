@@ -150,6 +150,19 @@ public function store(Request $request)
         return $pdf->download("reporte-{$reporte->folio}.pdf");
     }
 
+    public function previsualizarPDF($reporteId)
+    {
+        $reporte = Reporte::with([
+            'estudios.estudio',
+            'estudios.resultados.examen'
+        ])->findOrFail($reporteId);
+
+        $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
+        $this->applyPageNumbers($pdf, 490, 815, 9);
+
+        return $pdf->stream("reporte-{$reporte->folio}.pdf");
+    }
+
 public function generarOrdenTrabajo($reporteId)
 {
     $reporte = Reporte::with(['estudios.estudio'])->findOrFail($reporteId);
@@ -215,6 +228,7 @@ public function actualizarReporte(Request $request, $id)
             'elaboro' => $estudioData['elaboro'] ?? null,
             'valido' => $estudioData['valido'] ?? null,
             'precio' => $estudioData['precio'] ?? 0,
+            'observaciones' => $estudioData['observaciones'] ?? null,
         ]);
 
         foreach ($estudioData['resultados'] ?? [] as $resultadoData) {
@@ -244,6 +258,7 @@ public function actualizarReporte(Request $request, $id)
             'elaboro' => $estudioData['elaboro'] ?? null,
             'valido' => $estudioData['valido'] ?? null,
             'precio' => $estudioData['precio'] ?? 0,
+            'observaciones' => $estudioData['observaciones'] ?? null,
         ]);
 
         foreach ($estudioData['resultados'] ?? [] as $r) {
@@ -334,6 +349,7 @@ public function index(Request $request)
                 'estudios' => $reporte->estudios->map(function ($reporteEstudio) {
                     return [
                         'id' => $reporteEstudio->id,
+                        'estudio_id' => $reporteEstudio->estudio_id,
                         'nombre' => $reporteEstudio->estudio->nombre,
                         'precio' => $reporteEstudio->precio,
                         'elaboro' => $reporteEstudio->elaboro,
@@ -341,9 +357,11 @@ public function index(Request $request)
                         'tipo_muestra' => $reporteEstudio->tipo_muestra,
                         'metodo' => $reporteEstudio->metodo,
                         'leyenda' => $reporteEstudio->estudio->leyenda,
+                        'observaciones' => $reporteEstudio->observaciones,
                         'resultados' => $reporteEstudio->resultados->map(function ($resultado) {
                             return [
                                 'id' => $resultado->id,
+                                'examen_id' => $resultado->examen_id,
                                 'nombre_examen' => $resultado->examen->nombre_examen,
                                 'resultado' => $resultado->resultado,
                                 'unidad' => $resultado->examen->unidad,

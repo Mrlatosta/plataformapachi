@@ -150,13 +150,13 @@ const formatCurrency = (value) => {
 
                                 <Link
                                     :href="route('reportes.show', reporte.id)"
-                                    class="w-full inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                    class="w-full inline-flex items-center justify-center px-3 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors"
                                 >
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2.121 1.879l1.414 1.414M17 11v2m-.879 2.121l-1.414 1.414M13 17h-2m-2.121-.879l-1.414-1.414M7 13v-2m.879-2.121l1.414-1.414"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 9.879a3 3 0 10-4.242 4.242L15.5 19.742l4.242-4.242-5.621-5.621z"/>
                                     </svg>
-                                    Ver Detalles
+                                    Editar Reporte
                                 </Link>
                             </div>
                         </div>
@@ -204,13 +204,12 @@ const formatCurrency = (value) => {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <Link
                                                 :href="route('reportes.show', reporte.id)"
-                                                class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                                class="inline-flex items-center px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                                             >
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 011.4 0l1.6 1.6a1 1 0 010 1.4L9.5 17.5 6 18l.5-3.5 8.2-8.2z"/>
                                                 </svg>
-                                                Ver Detalles
+                                                Editar
                                             </Link>
                                         </td>
                                     </tr>

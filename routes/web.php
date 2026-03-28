@@ -39,10 +39,6 @@ Route::get('/captura-resultados', [CapturaResultadosController::class, 'page'])
     ->middleware(['auth', 'verified'])->name('captura.resultados');
 
 
-Route::get('/reimpresion-resultados', function () {
-    return Inertia::render('ReimpresionResultados');
-})->middleware(['auth', 'verified'])->name('reimpresion.resultados');
-
 Route::get('/cotizaciones', function () {
     return Inertia::render('Cotizaciones');
 })->middleware(['auth', 'verified'])->name('cotizaciones');
@@ -80,6 +76,7 @@ Route::post('/api/reportes', [ReporteController::class, 'store']);
 Route::post('/guardar-reporte', [ReporteController::class, 'guardar'])->name('reporte.guardar');
 
 Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
+Route::get('/api/reportes/{id}/pdf-preview', [ReporteController::class, 'previsualizarPDF']);
 
 Route::get('api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
 
