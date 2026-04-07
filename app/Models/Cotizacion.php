@@ -47,8 +47,19 @@ class Cotizacion extends Model
     public static function generarFolio(): string
     {
         $año = date('Y');
-        $ultimo = static::whereYear('created_at', $año)->count();
-        $numero = str_pad($ultimo + 1, 4, '0', STR_PAD_LEFT);
-        return "COT-{$año}-{$numero}";
+
+        // Evita depender de columnas de fecha y reduce colisiones en solicitudes concurrentes.
+        $base = static::where('folio', 'like', "COT-{$año}-%")->count() + 1;
+
+        for ($intento = 0; $intento < 10; $intento++) {
+            $numero = str_pad($base + $intento, 4, '0', STR_PAD_LEFT);
+            $folio = "COT-{$año}-{$numero}";
+
+            if (!static::where('folio', $folio)->exists()) {
+                return $folio;
+            }
+        }
+
+        return 'COT-' . $año . '-' . strtoupper(substr(uniqid(), -6));
     }
 }

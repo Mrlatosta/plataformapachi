@@ -7,6 +7,8 @@ use App\Models\Cotizacion;
 use App\Models\CotizacionEstudio;
 use App\Models\Estudio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class CotizacionController extends Controller
@@ -75,51 +77,68 @@ class CotizacionController extends Controller
             'estudios.*.cantidad.min' => 'La cantidad debe ser al menos 1',
         ]);
 
-        // Calcular totales
-        $subtotal = 0;
-        foreach ($validated['estudios'] as $estudio) {
-            $subtotal += $estudio['precio'] * $estudio['cantidad'];
-        }
+        try {
+            $cotizacion = DB::transaction(function () use ($validated) {
+                // Calcular totales
+                $subtotal = 0;
+                foreach ($validated['estudios'] as $estudio) {
+                    $subtotal += $estudio['precio'] * $estudio['cantidad'];
+                }
 
-        $descuento = $validated['descuento'] ?? 0;
-        $monto_descuento = $subtotal * ($descuento / 100);
-        $total = $subtotal - $monto_descuento;
+                $descuento = $validated['descuento'] ?? 0;
+                $monto_descuento = $subtotal * ($descuento / 100);
+                $total = $subtotal - $monto_descuento;
 
-        // Crear cotización
-        $cotizacion = Cotizacion::create([
-            'folio' => Cotizacion::generarFolio(),
-            'paciente_id' => $validated['paciente_id'] ?? null,
-            'nombre_cliente' => $validated['cliente']['nombre'],
-            'email' => $validated['cliente']['email'] ?? null,
-            'telefono' => $validated['cliente']['telefono'] ?? null,
-            'direccion' => $validated['cliente']['direccion'] ?? null,
-            'fecha_cotizacion' => $validated['fecha_cotizacion'],
-            'vigencia' => $validated['vigencia'] ?? 30,
-            'descuento' => $descuento,
-            'subtotal' => $subtotal,
-            'total' => $total,
-            'notas' => $validated['notas'] ?? null,
-            'estado' => 'pendiente_pago',
-        ]);
+                // Crear cotización
+                $cotizacion = Cotizacion::create([
+                    'folio' => Cotizacion::generarFolio(),
+                    'paciente_id' => $validated['paciente_id'] ?? null,
+                    'nombre_cliente' => $validated['cliente']['nombre'],
+                    'email' => $validated['cliente']['email'] ?? null,
+                    'telefono' => $validated['cliente']['telefono'] ?? null,
+                    'direccion' => $validated['cliente']['direccion'] ?? null,
+                    'fecha_cotizacion' => $validated['fecha_cotizacion'],
+                    'vigencia' => $validated['vigencia'] ?? 30,
+                    'descuento' => $descuento,
+                    'subtotal' => $subtotal,
+                    'total' => $total,
+                    'notas' => $validated['notas'] ?? null,
+                    'estado' => 'pendiente_pago',
+                ]);
 
-        // Guardar estudios de la cotización
-        foreach ($validated['estudios'] as $estudio) {
-            CotizacionEstudio::create([
-                'cotizacion_id' => $cotizacion->id,
-                'estudio_id' => $estudio['id'],
-                'precio' => $estudio['precio'],
-                'cantidad' => $estudio['cantidad'],
-                'descripcion' => $estudio['descripcion'] ?? null,
+                // Guardar estudios de la cotización
+                foreach ($validated['estudios'] as $estudio) {
+                    CotizacionEstudio::create([
+                        'cotizacion_id' => $cotizacion->id,
+                        'estudio_id' => $estudio['id'],
+                        'precio' => $estudio['precio'],
+                        'cantidad' => $estudio['cantidad'],
+                        'descripcion' => $estudio['descripcion'] ?? null,
+                    ]);
+                }
+
+                return $cotizacion;
+            });
+
+            // Cargar relaciones para la respuesta
+            $cotizacion->load('estudios.estudio.examenes', 'paciente');
+
+            return response()->json([
+                'message' => 'Cotización guardada exitosamente',
+                'cotizacion' => $cotizacion,
+            ], 201);
+        } catch (\Throwable $e) {
+            Log::error('Error al guardar cotización', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'payload' => $request->all(),
             ]);
+
+            return response()->json([
+                'message' => 'No se pudo guardar la cotización. Verifica que la base de datos esté actualizada e intenta de nuevo.',
+            ], 500);
         }
-
-        // Cargar relaciones para la respuesta
-        $cotizacion->load('estudios.estudio.examenes', 'paciente');
-
-        return response()->json([
-            'message' => 'Cotización guardada exitosamente',
-            'cotizacion' => $cotizacion,
-        ], 201);
     }
 
     /**
