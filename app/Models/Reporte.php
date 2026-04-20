@@ -23,10 +23,16 @@ class Reporte extends Model
     'fecha_reporte',
     'fecha_validacion',
     'medico_solicitante',
+    'medico_id',
 ];
 
     public function estudios()
     {
         return $this->hasMany(ReporteEstudio::class);
+    }
+
+    public function medico()
+    {
+        return $this->belongsTo(Medico::class);
     }
 }

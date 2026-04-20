@@ -37,6 +37,7 @@ public function store(Request $request)
         'fecha_reporte' => 'required|date',
         'fecha_validacion' => 'required|date',
         'medico_solicitante' => 'nullable|string|max:255',
+        'medico_id' => 'nullable|exists:medicos,id',
         'estudios' => 'required|array|min:1',
         'estudios.*.id' => 'required|exists:estudios,id',
         'estudios.*.tipo_muestra' => 'nullable|string|max:255',
@@ -81,6 +82,7 @@ public function store(Request $request)
         'fecha_reporte' => $validated['fecha_reporte'],
         'fecha_validacion' => $validated['fecha_validacion'],
         'medico_solicitante' => $validated['medico_solicitante'] ?? null,
+        'medico_id' => $validated['medico_id'] ?? null,
     ]);
 
     // Crear estudios y resultados
@@ -191,7 +193,7 @@ public function actualizarReporte(Request $request, $id)
 {
     $reporte = Reporte::findOrFail($id);
     $reporte->update($request->only([
-        'toma_muestra', 'fecha_reporte', 'fecha_validacion', 'medico_solicitante'
+        'toma_muestra', 'fecha_reporte', 'fecha_validacion', 'medico_solicitante', 'medico_id'
     ]));
 
     $cliente = $request->input('cliente');

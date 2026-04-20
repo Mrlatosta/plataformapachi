@@ -10,6 +10,8 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CotizacionController;
 use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\MedicoController;
+use App\Http\Controllers\MedicoPortalController;
 
 
 Route::get('/', function () {
@@ -85,6 +87,22 @@ Route::put('api/reportes/{id}', [ReporteController::class, 'actualizarReporte'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
     Route::get('/reportes/{id}', [ReporteController::class, 'show'])->name('reportes.show');
+    Route::get('/gestion-medicos', [MedicoController::class, 'page'])->name('gestion.medicos');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/medicos', [MedicoController::class, 'index']);
+    Route::post('/api/medicos', [MedicoController::class, 'store']);
+    Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
+    Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
+});
+
+// Portal médicos (sin autenticación de admin)
+Route::get('/medico/login', [MedicoPortalController::class, 'showLogin'])->name('medico.login');
+Route::post('/medico/login', [MedicoPortalController::class, 'login'])->name('medico.login.post');
+Route::post('/medico/logout', [MedicoPortalController::class, 'logout'])->name('medico.logout');
+Route::middleware(['medico.auth'])->group(function () {
+    Route::get('/medico/reportes', [MedicoPortalController::class, 'reportes'])->name('medico.reportes');
 });
 
 

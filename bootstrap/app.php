@@ -17,7 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        $middleware->alias([
+            'medico.auth' => \App\Http\Middleware\MedicoAuth::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

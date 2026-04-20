@@ -53,12 +53,46 @@
               <label class="block text-sm font-medium text-gray-700">
                 Médico solicitante <span class="text-gray-400 text-xs">(opcional)</span>
               </label>
-              <input 
-                type="text" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                v-model="form.medico_solicitante" 
-                placeholder="Ingrese el nombre del médico"
+              <!-- Selector de modo -->
+              <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium">
+                <button type="button"
+                  @click="onModoMedicoChange('registrado')"
+                  :class="['flex-1 py-1.5 transition-colors', modoMedico === 'registrado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                  Registrado
+                </button>
+                <button type="button"
+                  @click="onModoMedicoChange('otro')"
+                  :class="['flex-1 py-1.5 border-x border-gray-300 transition-colors', modoMedico === 'otro' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                  Otro
+                </button>
+                <button type="button"
+                  @click="onModoMedicoChange('na')"
+                  :class="['flex-1 py-1.5 transition-colors', modoMedico === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                  N/A
+                </button>
+              </div>
+              <!-- Dropdown médicos registrados -->
+              <select v-if="modoMedico === 'registrado'"
+                v-model="form.medico_id"
+                @change="form.medico_solicitante = medicosDisponibles.find(m => m.id === form.medico_id)?.nombre ?? ''"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
+              >
+                <option :value="null">— Selecciona un médico —</option>
+                <option v-for="m in medicosDisponibles" :key="m.id" :value="m.id">
+                  {{ m.nombre }}{{ m.especialidad ? ` (${m.especialidad})` : '' }}
+                </option>
+              </select>
+              <!-- Texto libre -->
+              <input v-else-if="modoMedico === 'otro'"
+                v-model="form.medico_solicitante"
+                type="text"
+                placeholder="Nombre del médico"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
               />
+              <!-- N/A badge -->
+              <div v-else class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-500">
+                N/A — Sin médico solicitante
+              </div>
             </div>
           </div>
         </div>
@@ -587,11 +621,26 @@ const totalEstudios = computed(() => {
 
 const estudiosDisponibles = ref([])
 const selectedEstudioId = ref('')
+const medicosDisponibles = ref([])
+const modoMedico = ref('registrado') // 'registrado' | 'otro' | 'na'
+
+const onModoMedicoChange = (modo) => {
+  modoMedico.value = modo
+  form.medico_id = null
+  if (modo === 'na') {
+    form.medico_solicitante = 'N/A'
+  } else if (modo === 'registrado') {
+    form.medico_solicitante = ''
+  } else {
+    form.medico_solicitante = ''
+  }
+}
 const form = reactive({
   toma_muestra: '',
   fecha_reporte: '',
   fecha_validacion: '',
   medico_solicitante: '',
+  medico_id: null,
   cliente: {
     nombre: '',
     email: '',
@@ -615,8 +664,17 @@ const cargarEstudios = async () => {
   }
 }
 
+const cargarMedicos = async () => {
+  try {
+    const res = await axios.get('/api/medicos')
+    medicosDisponibles.value = res.data.filter(m => m.activo)
+  } catch (e) {
+    console.error('Error al cargar médicos:', e)
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([cargarEstudios(), cargarPacientes()])
+  await Promise.all([cargarEstudios(), cargarPacientes(), cargarMedicos()])
 
   // Si viene una cotización precargada, auto-llenar paciente y estudios
   if (props.cotizacionPrecargada) {
@@ -871,6 +929,8 @@ async function guardarReporte() {
       form.fecha_reporte = ''
       form.fecha_validacion = ''
       form.medico_solicitante = ''
+      form.medico_id = null
+      modoMedico.value = 'registrado'
       pacienteSeleccionado.value = null
       busquedaPaciente.value = ''
       modoPaciente.value = 'existente'
