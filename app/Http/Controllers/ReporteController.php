@@ -347,6 +347,7 @@ public function index(Request $request)
                 'fecha_reporte' => $reporte->fecha_reporte,
                 'fecha_validacion' => $reporte->fecha_validacion,
                 'medico_solicitante' => $reporte->medico_solicitante,
+                'medico_id' => $reporte->medico_id,
                 'created_at' => $reporte->created_at,
                 'estudios' => $reporte->estudios->map(function ($reporteEstudio) {
                     return [

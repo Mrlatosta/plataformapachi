@@ -12,6 +12,8 @@ const estudiosDisponibles = ref([]);
 const estudiosFiltrados = ref([]);
 const busquedaEstudio = ref('');
 const guardando = ref(false);
+const medicosDisponibles = ref([]);
+const modoMedico = ref('registrado');
 
 const normalizeDatetime = (value) => {
     if (!value) return '';
@@ -30,6 +32,7 @@ const form = reactive({
     fecha_reporte: '',
     fecha_validacion: '',
     medico_solicitante: '',
+    medico_id: null,
     cliente: {
         nombre: '',
         email: '',
@@ -49,6 +52,16 @@ const hydrateForm = () => {
     form.fecha_reporte = normalizeDatetime(data.fecha_reporte);
     form.fecha_validacion = normalizeDatetime(data.fecha_validacion);
     form.medico_solicitante = data.medico_solicitante || '';
+    form.medico_id = data.medico_id ?? null;
+
+    if (data.medico_id) {
+        modoMedico.value = 'registrado';
+    } else if (!data.medico_solicitante || data.medico_solicitante === 'N/A') {
+        modoMedico.value = 'na';
+        form.medico_solicitante = 'N/A';
+    } else {
+        modoMedico.value = 'otro';
+    }
 
     form.cliente.nombre = data.nombre_cliente || '';
     form.cliente.email = data.email || '';
@@ -82,9 +95,23 @@ const hydrateForm = () => {
 watch(() => props.reporte, hydrateForm, { immediate: true });
 
 onMounted(async () => {
-    const response = await axios.get('/api/estudios');
-    estudiosDisponibles.value = response.data;
+    const [estudiosRes, medicosRes] = await Promise.all([
+        axios.get('/api/estudios'),
+        axios.get('/api/medicos'),
+    ]);
+    estudiosDisponibles.value = estudiosRes.data;
+    medicosDisponibles.value = medicosRes.data.filter(m => m.activo);
 });
+
+const onModoMedicoChange = (modo) => {
+    modoMedico.value = modo;
+    form.medico_id = null;
+    if (modo === 'na') {
+        form.medico_solicitante = 'N/A';
+    } else {
+        form.medico_solicitante = '';
+    }
+};
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-MX', {
@@ -164,6 +191,7 @@ const guardarCambios = async () => {
             fecha_reporte: form.fecha_reporte,
             fecha_validacion: form.fecha_validacion,
             medico_solicitante: form.medico_solicitante,
+            medico_id: form.medico_id,
             cliente: {
                 nombre: form.cliente.nombre,
                 email: form.cliente.email,
@@ -289,12 +317,43 @@ const descargarOrden = () => {
                             />
                         </div>
                         <div class="sm:col-span-2 lg:col-span-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Medico solicitante</label>
-                            <input
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Médico solicitante</label>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium mb-2">
+                                <button type="button"
+                                    @click="onModoMedicoChange('registrado')"
+                                    :class="['flex-1 py-1.5 transition-colors', modoMedico === 'registrado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                                    Registrado
+                                </button>
+                                <button type="button"
+                                    @click="onModoMedicoChange('otro')"
+                                    :class="['flex-1 py-1.5 border-x border-gray-300 transition-colors', modoMedico === 'otro' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                                    Otro
+                                </button>
+                                <button type="button"
+                                    @click="onModoMedicoChange('na')"
+                                    :class="['flex-1 py-1.5 transition-colors', modoMedico === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+                                    N/A
+                                </button>
+                            </div>
+                            <select v-if="modoMedico === 'registrado'"
+                                v-model="form.medico_id"
+                                @change="form.medico_solicitante = medicosDisponibles.find(m => m.id === form.medico_id)?.nombre ?? ''"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500 bg-white px-3 py-2"
+                            >
+                                <option :value="null">— Selecciona un médico —</option>
+                                <option v-for="m in medicosDisponibles" :key="m.id" :value="m.id">
+                                    {{ m.nombre }}{{ m.especialidad ? ` (${m.especialidad})` : '' }}
+                                </option>
+                            </select>
+                            <input v-else-if="modoMedico === 'otro'"
                                 v-model="form.medico_solicitante"
                                 type="text"
-                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="Nombre del médico"
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2"
                             />
+                            <div v-else class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-500">
+                                N/A — Sin médico solicitante
+                            </div>
                         </div>
                     </div>
                 </div>
