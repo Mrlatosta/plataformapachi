@@ -3,7 +3,7 @@
         <style>
    
             @page {
-                margin: 5.5cm 0.5cm 4.5cm 0.5cm;
+                margin: 3.2cm 0.5cm 4.5cm 0.5cm;
             }
 
             body {
@@ -16,10 +16,18 @@
             /** Define the header rules **/
             header {
                 position: fixed;
-                top: -5.3cm;
+                top: -3cm;
                 left: 0cm;
                 right: 0cm;
-                height: 5.3cm;
+                height: 3cm;
+            }
+
+            .patient-block {
+                margin: 0 0 8px 0;
+                padding: 6px 8px;
+                border: 1px solid #cbd5e0;
+                border-radius: 4px;
+                background-color: #f9fafb;
             }
 
             /* Que las celdas de tbheader no tengan border */
@@ -58,15 +66,14 @@
             
             .study-section {
                 margin: 0 0 5px 0;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
 
             .study-block {
+                page-break-inside: avoid;
+                break-inside: avoid;
                 margin-bottom: 10px;
-            }
-
-            .study-title {
-                page-break-after: avoid;
-                break-after: avoid;
             }
             
             .study-title {
@@ -170,78 +177,42 @@
 
         <!-- Define header and footer blocks before your content -->
         <header>
-            <table width="100%" style="font-size: 10px; border: none" class="tbheader">
+            <table width="100%" style="font-size: 9px; border: none" class="tbheader">
                 <tr>
                     <!-- LOGO Y DATOS -->
-                    <td width="70%" valign="top">
-                    <table>
-                        <tr>
-                        <td>
-                            <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 80px; margin-right: 10px;">
-                        </td>
-                        <td style="padding-left: 10px;">
-                            <div style="font-weight: bold; font-size: 15px;">
-                            Laboratorio de Análisis Clínicos "BIOLAB"
-                            </div>
-                            <div style="font-size: 10px;">
-                            <div>Folio: {{ $reporte->folio }}</div>
-                            <div><img src="{{public_path('img/codbarras.png') }}" style="width: 80px; height: 20px;" alt=""></div>
-                            <div style="margin-top: 5px;">
-                                Médico solicitante: 
-                                <strong>{{ strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
-                            </div>
-                            </div>
-                        </td>
-                        </tr>
-                    </table>
+                    <td width="60%" valign="top">
+                        <table>
+                            <tr>
+                                <td valign="top" style="width: 70px;">
+                                    <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 65px;">
+                                </td>
+                                <td valign="top" style="padding-left: 6px;">
+                                    <div style="font-weight: bold; font-size: 13px;">
+                                        Laboratorio de Análisis Clínicos "BIOLAB"
+                                    </div>
+                                    <div style="font-size: 9px; margin-top: 2px;">Folio: <strong>{{ $reporte->folio }}</strong></div>
+                                    <div style="margin-top: 1px;">
+                                        <img src="{{public_path('img/codbarras.png') }}" style="width: 70px; height: 16px;" alt="">
+                                    </div>
+                                    <div style="font-size: 9px; margin-top: 2px;">
+                                        Médico: <strong>{{ strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
 
                     <!-- DATOS DE FECHA -->
                     <td width="40%" valign="top">
-                    <div style="background-color: #e9f0fe; padding: 5px 5px; font-size: 10px; border: 1px solid #cbd5e0; border-radius: 5px;">
-                        <div><strong>Toma de muestra:</strong> {{ \Carbon\Carbon::parse($reporte->toma_muestra)->format('d/m/Y g:i a') }}</div>
-                        <div style="margin-top: 5px;"><strong>Fecha de Reporte:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_reporte)->format('d/m/Y g:i a') }}</div>
-                        <div style="margin-top: 5px;"><strong>Fecha de Validación:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') }}</div>
-                    </div>
+                        <div style="background-color: #e9f0fe; padding: 4px 6px; font-size: 9px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                            <div><strong>Toma de muestra:</strong> {{ \Carbon\Carbon::parse($reporte->toma_muestra)->format('d/m/Y g:i a') }}</div>
+                            <div style="margin-top: 2px;"><strong>Fecha de Reporte:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_reporte)->format('d/m/Y g:i a') }}</div>
+                            <div style="margin-top: 2px;"><strong>Fecha de Validación:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') }}</div>
+                        </div>
                     </td>
                 </tr>
             </table>
-        
-
-
-
-
-        <!-- Contenido principal -->
-                <div class="patient-info">
-                    <table width="100%" style="font-size: 12px;">
-                        <tr>
-                            <!-- Columna izquierda -->
-                            <td style="vertical-align: top; width: 50%; padding-right: 10px;">
-                                <div style="margin-bottom: 5px;">
-                                    <span> <strong>Paciente/Patient: </strong></span> {{ strtoupper($reporte->nombre_cliente) }}
-                                </div>
-                                <div style="margin-bottom: 5px;">
-                                    <span> <strong>Fecha de Nacimiento/Birthdate:</strong></span> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}
-                                </div>
-                                <div>
-                                    <span> <strong>Sexo/Sex:</strong></span> {{ ucfirst($reporte->sexo) }}
-                                </div>
-                            </td>
-
-                            <!-- Columna derecha -->
-                            <td style="vertical-align: top; width: 50%; padding-left: 10px;">
-                                <div style="margin-bottom: 5px;">
-                                    <span> <strong>Correo/E-Mail:</strong></span> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}
-                                </div>
-                                <div>
-                                    <span> <strong>Edad/Age:</strong></span> {{ $reporte->edad }} Años/Years old
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <hr style="width: 100% ; border: 1px solid #000; margin: 0; padding: 0;">
+            <hr style="width: 100%; border: 0.5px solid #000; margin: 2px 0 0 0; padding: 0;">
         </header>
 
         <footer>
@@ -289,6 +260,23 @@
 
         <!-- Wrap the content of your PDF inside a main tag -->
         <main style="margin: 0; padding: 0;">
+                <!-- Datos del paciente (solo aparece en la primera página) -->
+                <div class="patient-block">
+                    <table width="100%" style="font-size: 11px;">
+                        <tr>
+                            <td style="vertical-align: top; width: 55%; padding-right: 10px;">
+                                <div><strong>Paciente/Patient:</strong> {{ strtoupper($reporte->nombre_cliente) }}</div>
+                                <div style="margin-top: 2px;"><strong>Fecha de Nacimiento/Birthdate:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}</div>
+                                <div style="margin-top: 2px;"><strong>Sexo/Sex:</strong> {{ ucfirst($reporte->sexo) }}</div>
+                            </td>
+                            <td style="vertical-align: top; width: 45%;">
+                                <div><strong>Correo/E-Mail:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</div>
+                                <div style="margin-top: 2px;"><strong>Edad/Age:</strong> {{ $reporte->edad }} Años/Years old</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
                 <div>
                     @foreach ($reporte->estudios as $estudio)
                         <div class="study-block" @if(!$loop->first) style="margin-top: 8px;" @endif>
