@@ -3,7 +3,7 @@
         <style>
    
             @page {
-                margin: 3.2cm 0.5cm 4.5cm 0.5cm;
+                margin: 4.3cm 0.5cm 4.5cm 0.5cm;
             }
 
             body {
@@ -16,18 +16,22 @@
             /** Define the header rules **/
             header {
                 position: fixed;
-                top: -3cm;
+                top: -4.1cm;
                 left: 0cm;
                 right: 0cm;
-                height: 3cm;
+                height: 4.1cm;
             }
 
-            .patient-block {
-                margin: 0 0 8px 0;
-                padding: 6px 8px;
-                border: 1px solid #cbd5e0;
-                border-radius: 4px;
-                background-color: #f9fafb;
+            .patient-row {
+                margin-top: 3px;
+                padding: 3px 5px;
+                background-color: #f3f4f6;
+                border: 1px solid #d1d5db;
+                border-radius: 3px;
+                font-size: 9px;
+            }
+            .patient-row td {
+                padding: 1px 6px 1px 0;
             }
 
             /* Que las celdas de tbheader no tengan border */
@@ -212,7 +216,21 @@
                     </td>
                 </tr>
             </table>
-            <hr style="width: 100%; border: 0.5px solid #000; margin: 2px 0 0 0; padding: 0;">
+            <!-- Datos del paciente (en todas las páginas) -->
+            <div class="patient-row">
+                <table width="100%">
+                    <tr>
+                        <td><strong>Paciente:</strong> {{ strtoupper($reporte->nombre_cliente) }}</td>
+                        <td><strong>Edad:</strong> {{ $reporte->edad }} años</td>
+                        <td><strong>Sexo:</strong> {{ ucfirst($reporte->sexo) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>F. Nacimiento:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}</td>
+                        <td colspan="2"><strong>E-Mail:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</td>
+                    </tr>
+                </table>
+            </div>
+            <hr style="width: 100%; border: 0.5px solid #000; margin: 3px 0 0 0; padding: 0;">
         </header>
 
         <footer>
@@ -260,23 +278,6 @@
 
         <!-- Wrap the content of your PDF inside a main tag -->
         <main style="margin: 0; padding: 0;">
-                <!-- Datos del paciente (solo aparece en la primera página) -->
-                <div class="patient-block">
-                    <table width="100%" style="font-size: 11px;">
-                        <tr>
-                            <td style="vertical-align: top; width: 55%; padding-right: 10px;">
-                                <div><strong>Paciente/Patient:</strong> {{ strtoupper($reporte->nombre_cliente) }}</div>
-                                <div style="margin-top: 2px;"><strong>Fecha de Nacimiento/Birthdate:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}</div>
-                                <div style="margin-top: 2px;"><strong>Sexo/Sex:</strong> {{ ucfirst($reporte->sexo) }}</div>
-                            </td>
-                            <td style="vertical-align: top; width: 45%;">
-                                <div><strong>Correo/E-Mail:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</div>
-                                <div style="margin-top: 2px;"><strong>Edad/Age:</strong> {{ $reporte->edad }} Años/Years old</div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
                 <div>
                     @foreach ($reporte->estudios as $estudio)
                         <div class="study-block" @if(!$loop->first) style="margin-top: 8px;" @endif>
