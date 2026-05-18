@@ -3,25 +3,23 @@
         <style>
    
             @page {
-                margin: 0cm 0.5cm;
+                margin: 5.5cm 0.5cm 4.5cm 0.5cm;
             }
 
             body {
                 font-family: DejaVu Sans, sans-serif;
                 font-size: 11px;
-                margin-top: 6cm;
-                margin-left: 0.5cm;
-                margin-right: 0.5cm;
-                margin-bottom: 4.8cm;
+                margin: 0;
+                padding: 0;
             }
 
             /** Define the header rules **/
             header {
                 position: fixed;
-                top: 0cm;
+                top: -5.3cm;
                 left: 0cm;
                 right: 0cm;
-                height: 6cm;
+                height: 5.3cm;
             }
 
             /* Que las celdas de tbheader no tengan border */
@@ -31,9 +29,9 @@
 
             /** Define the footer rules **/
             footer {
-                position: fixed; 
-                bottom: 0cm; 
-                left: 0cm; 
+                position: fixed;
+                bottom: -4.3cm;
+                left: 0cm;
                 right: 0cm;
                 height: 4.3cm;
             }
@@ -60,14 +58,15 @@
             
             .study-section {
                 margin: 0 0 5px 0;
-                page-break-inside: avoid;
-                break-inside: avoid;
             }
 
             .study-block {
-                page-break-inside: avoid;
-                break-inside: avoid;
                 margin-bottom: 10px;
+            }
+
+            .study-title {
+                page-break-after: avoid;
+                break-after: avoid;
             }
             
             .study-title {
@@ -146,26 +145,32 @@
             }
 
 
-            body::before {
-                content: "";
+            .watermark {
                 position: fixed;
-                top: 25%;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: url("{{ public_path('img/imgbiolabfoot.png') }}") no-repeat center center;
-                background-size: 600px;
-                opacity: 0.15;
+                top: 40%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                opacity: 0.10;
                 z-index: -100;
+                width: 500px;
+                text-align: center;
+            }
+            .watermark img {
+                width: 500px;
             }
             
 
         </style>
     </head>
     <body>
+        <!-- Watermark de fondo -->
+        <div class="watermark">
+            <img src="{{ public_path('img/imgbiolabfoot.png') }}" alt="">
+        </div>
+
         <!-- Define header and footer blocks before your content -->
         <header>
-            <table width="100%" style="margin-top: 10px; font-size: 10px; border: none" class="tbheader">
+            <table width="100%" style="font-size: 10px; border: none" class="tbheader">
                 <tr>
                     <!-- LOGO Y DATOS -->
                     <td width="70%" valign="top">
@@ -283,10 +288,10 @@
         </footer>
 
         <!-- Wrap the content of your PDF inside a main tag -->
-        <main>
+        <main style="margin: 0; padding: 0;">
                 <div>
                     @foreach ($reporte->estudios as $estudio)
-                        <div class="study-block">
+                        <div class="study-block" @if(!$loop->first) style="margin-top: 8px;" @endif>
 
                         <div class="study-section">
                             <div class="study-title">{{ strtoupper($estudio->estudio->nombre) }}</div>
