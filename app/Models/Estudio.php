@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Estudio extends Model
 {
-protected $fillable = ['nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio'];
+    protected $fillable = ['nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio', 'costo'];
+
+    protected $casts = [
+        'precio' => 'decimal:2',
+        'costo' => 'decimal:2',
+    ];
 
     public function examenes()
     {

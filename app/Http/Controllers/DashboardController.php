@@ -33,6 +33,12 @@ class DashboardController extends Controller
                 ->join('reportes', 'reporte_estudio.reporte_id', '=', 'reportes.id')
                 ->whereBetween('reportes.created_at', [$fechaInicio, $fechaFin])
                 ->sum('reporte_estudio.precio'),
+
+            'ganancias_mes' => DB::table('reporte_estudio')
+                ->join('reportes', 'reporte_estudio.reporte_id', '=', 'reportes.id')
+                ->leftJoin('estudios', 'reporte_estudio.estudio_id', '=', 'estudios.id')
+                ->whereBetween('reportes.created_at', [$fechaInicio, $fechaFin])
+                ->sum(DB::raw('reporte_estudio.precio - COALESCE(estudios.costo, 0)')),
             
             'total_estudios' => DB::table('reporte_estudio')
                 ->join('reportes', 'reporte_estudio.reporte_id', '=', 'reportes.id')
@@ -51,6 +57,19 @@ class DashboardController extends Controller
             ->select(
                 DB::raw("TO_CHAR(reportes.created_at, 'Mon YYYY') as mes"),
                 DB::raw('SUM(reporte_estudio.precio) as total')
+            )
+            ->whereBetween('reportes.created_at', [$fechaInicio, $fechaFin])
+            ->groupBy(DB::raw("TO_CHAR(reportes.created_at, 'Mon YYYY')"), DB::raw("DATE_TRUNC('month', reportes.created_at)"))
+            ->orderBy(DB::raw("DATE_TRUNC('month', reportes.created_at)"))
+            ->get();
+
+        // Ganancias por mes según rango seleccionado
+        $gananciasPorMes = DB::table('reportes')
+            ->join('reporte_estudio', 'reportes.id', '=', 'reporte_estudio.reporte_id')
+            ->leftJoin('estudios', 'reporte_estudio.estudio_id', '=', 'estudios.id')
+            ->select(
+                DB::raw("TO_CHAR(reportes.created_at, 'Mon YYYY') as mes"),
+                DB::raw('SUM(reporte_estudio.precio - COALESCE(estudios.costo, 0)) as total')
             )
             ->whereBetween('reportes.created_at', [$fechaInicio, $fechaFin])
             ->groupBy(DB::raw("TO_CHAR(reportes.created_at, 'Mon YYYY')"), DB::raw("DATE_TRUNC('month', reportes.created_at)"))
@@ -121,6 +140,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'estadisticas' => $estadisticas,
             'ingresosPorMes' => $ingresosPorMes,
+            'gananciasPorMes' => $gananciasPorMes,
             'reportesPorMes' => $reportesPorMes,
             'estudiosPopulares' => $estudiosPopulares,
             'reportesPorGenero' => $reportesPorGenero,

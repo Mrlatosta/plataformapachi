@@ -16,7 +16,7 @@ class EstudioController extends Controller
                   ->orderBy('orden', 'asc');
         }])
         ->orderBy('nombre', 'asc')
-        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio']);
+        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio', 'costo']);
     }
 
     // Crear nuevo estudio con exámenes
@@ -28,15 +28,20 @@ class EstudioController extends Controller
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
             'precio' => $request->precio ?? 0,
+            'costo' => $request->costo ?? 0,
         ]);
 
         foreach ($request->examenes as $examen) {
+            // Ignorar filas vacías (sin nombre de examen)
+            if (empty($examen['nombre_examen'])) {
+                continue;
+            }
             $estudio->examenes()->create([
                 'seccion'           => $examen['seccion'] ?? null,
                 'orden'             => $examen['orden'] ?? 0,
                 'nombre_examen'     => $examen['nombre_examen'],
-                'unidad'            => $examen['unidad'],
-                'valor_referencia'  => $examen['valor_referencia'],
+                'unidad'            => $examen['unidad'] ?? null,
+                'valor_referencia'  => $examen['valor_referencia'] ?? null,
             ]);
         }
 
@@ -53,6 +58,7 @@ class EstudioController extends Controller
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
             'precio' => $request->precio ?? 0,
+            'costo' => $request->costo ?? 0,
         ]);
 
         // Obtener IDs de los exámenes que vienen en la petición
@@ -64,6 +70,10 @@ class EstudioController extends Controller
 
         // Actualizar o crear exámenes
         foreach ($request->examenes as $examenData) {
+            // Ignorar filas vacías (sin nombre de examen)
+            if (empty($examenData['nombre_examen'])) {
+                continue;
+            }
             if (isset($examenData['id']) && $examenData['id']) {
                 // Actualizar examen existente
                 $examen = $estudio->examenes()->find($examenData['id']);
@@ -72,8 +82,8 @@ class EstudioController extends Controller
                         'seccion'           => $examenData['seccion'] ?? null,
                         'orden'             => $examenData['orden'] ?? 0,
                         'nombre_examen'     => $examenData['nombre_examen'],
-                        'unidad'            => $examenData['unidad'],
-                        'valor_referencia'  => $examenData['valor_referencia'],
+                        'unidad'            => $examenData['unidad'] ?? null,
+                        'valor_referencia'  => $examenData['valor_referencia'] ?? null,
                     ]);
                 }
             } else {
@@ -82,8 +92,8 @@ class EstudioController extends Controller
                     'seccion'           => $examenData['seccion'] ?? null,
                     'orden'             => $examenData['orden'] ?? 0,
                     'nombre_examen'     => $examenData['nombre_examen'],
-                    'unidad'            => $examenData['unidad'],
-                    'valor_referencia'  => $examenData['valor_referencia'],
+                    'unidad'            => $examenData['unidad'] ?? null,
+                    'valor_referencia'  => $examenData['valor_referencia'] ?? null,
                 ]);
             }
         }

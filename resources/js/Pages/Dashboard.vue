@@ -11,6 +11,7 @@ const props = defineProps({
     estadisticas: Object,
     reportesPorMes: Array,
     ingresosPorMes: Array,
+    gananciasPorMes: Array,
     estudiosPopulares: Array,
     reportesPorGenero: Object,
     reportesPorDia: Array,
@@ -24,12 +25,24 @@ const filtroFechas = ref({
     fecha_fin: props.fechaFin
 });
 
+const modoFinanciero = ref('precio_total');
+const esGanancia = computed(() => modoFinanciero.value === 'ganancia');
+const serieFinanciera = computed(() => esGanancia.value ? props.gananciasPorMes || [] : props.ingresosPorMes || []);
+const etiquetaFinanciera = computed(() => esGanancia.value ? 'Ganancia' : 'Precio Total');
+const subtituloFinanciero = computed(() => esGanancia.value ? 'Utilidad después de costo' : 'Ventas totales');
+const valorFinancieroMes = computed(() => esGanancia.value ? (props.estadisticas?.ganancias_mes || 0) : (props.estadisticas?.ingresos_mes || 0));
+const ticketFinancieroPromedio = computed(() => {
+    const totalReportes = props.estadisticas?.total_reportes || 0;
+    return totalReportes > 0 ? valorFinancieroMes.value / totalReportes : 0;
+});
+
 // Variables reactivas para las gráficas
 const chartIngresos = ref(null);
 const chartEstudios = ref(null);
 const chartReportes = ref(null);
 const chartGenero = ref(null);
 const chartDias = ref(null);
+let financialChartInstance = null;
 
 // Función para formatear moneda
 const formatCurrency = (value) => {
@@ -44,7 +57,7 @@ const aplicarFiltro = () => {
     router.get(route('dashboard'), filtroFechas.value, {
         preserveState: true,
         preserveScroll: true,
-        only: ['estadisticas', 'ingresosPorMes', 'reportesPorMes', 'estudiosPopulares', 'reportesPorGenero', 'reportesPorDia']
+        only: ['estadisticas', 'ingresosPorMes', 'gananciasPorMes', 'reportesPorMes', 'estudiosPopulares', 'reportesPorGenero', 'reportesPorDia']
     });
 };
 
@@ -97,30 +110,41 @@ const aplicarAtajo = (tipo) => {
 
 // Crear gráficas cuando el componente se monta
 onMounted(() => {
-    createIngresosChart();
+    createFinancialChart();
     createEstudiosChart();
     createReportesChart();
     createGeneroChart();
     createDiasChart();
 });
 
-// Gráfica de ingresos por mes
-const createIngresosChart = () => {
+watch([modoFinanciero, () => props.ingresosPorMes, () => props.gananciasPorMes], () => {
+    createFinancialChart();
+}, { deep: true });
+
+// Gráfica de precio total o ganancia por mes
+const createFinancialChart = () => {
     const ctx = chartIngresos.value?.getContext('2d');
     if (!ctx) return;
 
-    new Chart(ctx, {
+    if (financialChartInstance) {
+        financialChartInstance.destroy();
+    }
+
+    const dataSeries = serieFinanciera.value;
+    const chartColor = esGanancia.value ? '#7c3aed' : '#08cc71';
+
+    financialChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: props.ingresosPorMes?.map(item => item.mes) || [],
+            labels: dataSeries.map(item => item.mes) || [],
             datasets: [{
-                label: 'Ingresos',
-                data: props.ingresosPorMes?.map(item => item.total) || [],
-                borderColor: '#08cc71',
-                backgroundColor: 'rgba(8, 204, 113, 0.1)',
+                label: etiquetaFinanciera.value,
+                data: dataSeries.map(item => item.total) || [],
+                borderColor: chartColor,
+                backgroundColor: esGanancia.value ? 'rgba(124, 58, 237, 0.1)' : 'rgba(8, 204, 113, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointBackgroundColor: '#08cc71',
+                pointBackgroundColor: chartColor,
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointRadius: 5,
@@ -139,11 +163,11 @@ const createIngresosChart = () => {
                     padding: 12,
                     titleColor: '#fff',
                     bodyColor: '#fff',
-                    borderColor: '#08cc71',
+                    borderColor: chartColor,
                     borderWidth: 2,
                     callbacks: {
                         label: function(context) {
-                            return 'Ingresos: ' + formatCurrency(context.parsed.y);
+                            return `${etiquetaFinanciera.value}: ${formatCurrency(context.parsed.y)}`;
                         }
                     }
                 }
@@ -475,6 +499,29 @@ const createDiasChart = () => {
                         </div>
                     </div>
                 </div>
+
+                <div class="mt-4 flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700">Modo financiero</p>
+                        <p class="text-xs text-gray-500">Cambia entre precio total facturado y ganancia neta.</p>
+                    </div>
+                    <div class="inline-flex rounded-full bg-white p-1 shadow-sm">
+                        <button
+                            @click="modoFinanciero = 'precio_total'"
+                            class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                            :class="modoFinanciero === 'precio_total' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'"
+                        >
+                            Precio total
+                        </button>
+                        <button
+                            @click="modoFinanciero = 'ganancia'"
+                            class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                            :class="modoFinanciero === 'ganancia' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:text-gray-900'"
+                        >
+                            Ganancia
+                        </button>
+                    </div>
+                </div>
                 
                 <!-- KPIs Cards -->
             <div class="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -501,9 +548,9 @@ const createDiasChart = () => {
                     <div class="p-6 text-white">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-green-100">Ingresos del Mes</p>
-                                <p class="mt-2 text-3xl font-bold">{{ formatCurrency(estadisticas?.ingresos_mes || 0) }}</p>
-                                <p class="mt-1 text-xs text-green-100">Ventas totales</p>
+                                <p class="text-sm font-medium text-green-100">{{ etiquetaFinanciera }}</p>
+                                <p class="mt-2 text-3xl font-bold">{{ formatCurrency(valorFinancieroMes || 0) }}</p>
+                                <p class="mt-1 text-xs text-green-100">{{ subtituloFinanciero }}</p>
                             </div>
                             <div class="p-3 bg-white bg-opacity-30 rounded-full">
                                 <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -519,9 +566,9 @@ const createDiasChart = () => {
                     <div class="p-6 text-white">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-purple-100">Ticket Promedio</p>
-                                <p class="mt-2 text-3xl font-bold">{{ formatCurrency(estadisticas?.ticket_promedio || 0) }}</p>
-                                <p class="mt-1 text-xs text-purple-100">Por reporte</p>
+                                <p class="text-sm font-medium text-purple-100">Promedio por reporte</p>
+                                <p class="mt-2 text-3xl font-bold">{{ formatCurrency(ticketFinancieroPromedio || 0) }}</p>
+                                <p class="mt-1 text-xs text-purple-100">{{ esGanancia ? 'Ganancia media' : 'Venta media' }}</p>
                             </div>
                             <div class="p-3 bg-white bg-opacity-30 rounded-full">
                                 <svg class="w-8 h-8 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -559,7 +606,7 @@ const createDiasChart = () => {
                         <div class="p-6">
                             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="text-green-600 mr-2">💰</span>
-                                Ingresos por Mes
+                                {{ etiquetaFinanciera }} por Mes
                             </h3>
                             <div class="h-80">
                                 <canvas ref="chartIngresos"></canvas>

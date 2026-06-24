@@ -109,6 +109,23 @@
                                 />
                             </div>
 
+                            <!-- Costo -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    🧾 Costo del Estudio ($) *
+                                </label>
+                                <input 
+                                    v-model="nuevoEstudio.costo" 
+                                    type="number" 
+                                    step="0.01" 
+                                    min="0" 
+                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    placeholder="0.00"
+                                    required
+                                />
+                                <p class="mt-2 text-xs text-gray-500">La ganancia se calcula como precio menos costo.</p>
+                            </div>
+
                             <!-- Leyenda -->
                             <div class="mb-4">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -312,7 +329,8 @@ const nuevoEstudio = ref({
     examenes: [],
     tipo_muestra: '',
     metodo: '',
-    precio: 0
+    precio: 0,
+    costo: 0
 })
 
 onMounted(async () => {
@@ -333,7 +351,8 @@ const cargarEstudio = () => {
             examenes: [...estudio.examenes],
             tipo_muestra: estudio.tipo_muestra || '',
             metodo: estudio.metodo || '',
-            precio: estudio.precio || 0
+            precio: estudio.precio || 0,
+            costo: estudio.costo || 0
         }
     }
 }
@@ -346,7 +365,8 @@ const crearNuevoEstudio = () => {
         examenes: [],
         tipo_muestra: '',
         metodo: '',
-        precio: 0
+        precio: 0,
+        costo: 0
     }
 }
 
@@ -401,6 +421,11 @@ const guardarEstudio = async () => {
         return
     }
 
+    if (nuevoEstudio.value.costo === '' || nuevoEstudio.value.costo === null || nuevoEstudio.value.costo === undefined) {
+        alert('⚠️ Por favor, ingresa un costo válido para el estudio.')
+        return
+    }
+
     try {
         if (selectedEstudioId.value) {
             // Actualizar estudio existente
@@ -419,7 +444,8 @@ const guardarEstudio = async () => {
             examenes: [], 
             tipo_muestra: '', 
             metodo: '', 
-            precio: 0 
+            precio: 0,
+            costo: 0
         }
         selectedEstudioId.value = ''
         await cargarEstudios()
@@ -446,7 +472,8 @@ const eliminarEstudio = async () => {
             examenes: [], 
             tipo_muestra: '', 
             metodo: '', 
-            precio: 0 
+            precio: 0,
+            costo: 0
         }
         selectedEstudioId.value = ''
         await cargarEstudios()

@@ -16,7 +16,7 @@ use App\Models\Reporte;
 
 class ReporteEstudio extends Model {
     protected $table = 'reporte_estudio';
-    protected $fillable = ['reporte_id', 'estudio_id', 'elaboro', 'valido', 'tipo_muestra', 'metodo', 'precio', 'observaciones'];
+    protected $fillable = ['reporte_id', 'estudio_id', 'orden', 'elaboro', 'valido', 'tipo_muestra', 'metodo', 'precio', 'observaciones'];
 
     public function reporte() {
         return $this->belongsTo(Reporte::class);

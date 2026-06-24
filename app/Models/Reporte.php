@@ -28,7 +28,7 @@ class Reporte extends Model
 
     public function estudios()
     {
-        return $this->hasMany(ReporteEstudio::class);
+        return $this->hasMany(ReporteEstudio::class)->orderBy('orden')->orderBy('id');
     }
 
     public function medico()

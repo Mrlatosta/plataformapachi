@@ -40,6 +40,7 @@ public function store(Request $request)
         'medico_id' => 'nullable|exists:medicos,id',
         'estudios' => 'required|array|min:1',
         'estudios.*.id' => 'required|exists:estudios,id',
+        'estudios.*.orden' => 'nullable|integer',
         'estudios.*.tipo_muestra' => 'nullable|string|max:255',
         'estudios.*.metodo' => 'nullable|string|max:255',
         'estudios.*.elaboro' => 'nullable|string|max:255',
@@ -86,9 +87,10 @@ public function store(Request $request)
     ]);
 
     // Crear estudios y resultados
-    foreach ($validated['estudios'] as $estudioData) {
+    foreach ($validated['estudios'] as $indice => $estudioData) {
         $reporteEstudio = $reporte->estudios()->create([
             'estudio_id' => $estudioData['id'],
+            'orden' => $estudioData['orden'] ?? $indice,
             'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
             'metodo' => $estudioData['metodo'] ?? null,
             'elaboro' => $estudioData['elaboro'] ?? null,
@@ -214,7 +216,7 @@ public function actualizarReporte(Request $request, $id)
         });
 
    // Actualizar o crear estudios
-    foreach ($request->input('estudios', []) as $estudioData) {
+    foreach ($request->input('estudios', []) as $indice => $estudioData) {
     $reporteEstudio = null;
 
     if (!empty($estudioData['id'])) {
@@ -225,6 +227,7 @@ public function actualizarReporte(Request $request, $id)
     if ($reporteEstudio) {
         // Actualizar
         $reporteEstudio->update([
+            'orden' => $estudioData['orden'] ?? $indice,
             'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
             'metodo' => $estudioData['metodo'] ?? null,
             'elaboro' => $estudioData['elaboro'] ?? null,
@@ -255,6 +258,7 @@ public function actualizarReporte(Request $request, $id)
         // Crear nuevo estudio
         $nuevo = $reporte->estudios()->create([
             'estudio_id' => $estudioData['estudio_id'] ?? $estudioData['id'],
+            'orden' => $estudioData['orden'] ?? $indice,
             'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
             'metodo' => $estudioData['metodo'] ?? null,
             'elaboro' => $estudioData['elaboro'] ?? null,
@@ -353,6 +357,7 @@ public function index(Request $request)
                     return [
                         'id' => $reporteEstudio->id,
                         'estudio_id' => $reporteEstudio->estudio_id,
+                        'orden' => $reporteEstudio->orden,
                         'nombre' => $reporteEstudio->estudio->nombre,
                         'precio' => $reporteEstudio->precio,
                         'elaboro' => $reporteEstudio->elaboro,

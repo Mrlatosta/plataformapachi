@@ -181,6 +181,15 @@ const eliminarEstudio = (index) => {
     form.estudios.splice(index, 1);
 };
 
+const moverEstudio = (index, direccion) => {
+    const destino = index + direccion;
+    if (destino < 0 || destino >= form.estudios.length) {
+        return;
+    }
+    const [estudio] = form.estudios.splice(index, 1);
+    form.estudios.splice(destino, 0, estudio);
+};
+
 const guardarCambios = async () => {
     guardando.value = true;
 
@@ -199,9 +208,10 @@ const guardarCambios = async () => {
                 edad: form.cliente.edad,
                 sexo: form.cliente.sexo,
             },
-            estudios: form.estudios.map((estudio) => ({
+            estudios: form.estudios.map((estudio, index) => ({
                 id: estudio.id,
                 estudio_id: estudio.estudio_id,
+                orden: index,
                 tipo_muestra: estudio.tipo_muestra,
                 metodo: estudio.metodo,
                 elaboro: estudio.elaboro,
@@ -447,13 +457,34 @@ const descargarOrden = () => {
                 >
                     <div class="p-4 sm:p-6 space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">{{ estudio.nombre }}</h3>
-                            <button
-                                @click="eliminarEstudio(index)"
-                                class="px-3 py-2 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200 transition-colors"
-                            >
-                                Eliminar Estudio
-                            </button>
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">{{ index + 1 }}</span>
+                                <h3 class="text-base sm:text-lg font-semibold text-gray-900">{{ estudio.nombre }}</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    @click="moverEstudio(index, -1)"
+                                    :disabled="index === 0"
+                                    title="Subir"
+                                    class="px-2.5 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    ↑
+                                </button>
+                                <button
+                                    @click="moverEstudio(index, 1)"
+                                    :disabled="index === form.estudios.length - 1"
+                                    title="Bajar"
+                                    class="px-2.5 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    ↓
+                                </button>
+                                <button
+                                    @click="eliminarEstudio(index)"
+                                    class="px-3 py-2 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200 transition-colors"
+                                >
+                                    Eliminar Estudio
+                                </button>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
