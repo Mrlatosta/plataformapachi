@@ -84,7 +84,7 @@
                 padding: 0px;
                 margin: 0 0 8px 0;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: 13px;
                 text-align: left;
             }
             
@@ -130,6 +130,7 @@
                 background-color: #08cc71;
                 color: white;
                 font-weight: bold;
+                font-size: 14px;
             }
             
     
@@ -146,8 +147,57 @@
             .seccion-header {
                 background-color: #e8f5e9 !important;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 12px;
                 padding: 5px 2px !important;
+            }
+
+            /* Flechas de resultado fuera de rango */
+            .flecha-rango {
+                font-weight: bold;
+                font-size: 14px;
+                padding-left: 3px;
+            }
+
+            .flecha-alto {
+                color: #c0392b;
+            }
+
+            .flecha-bajo {
+                color: #1d4ed8;
+            }
+
+            .leyenda-flechas {
+                margin-left: 45px;
+                font-size: 8px;
+                color: #4b5563;
+                text-align: left;
+                margin-bottom: -6px;
+            }
+
+            /* Observaciones del estudio (se usan sobre todo en urocultivos) */
+            .observaciones-box {
+                margin-top: 8px;
+                padding: 6px 8px;
+                background-color: #fffbeb;
+                border-left: 3px solid #f59e0b;
+                border-radius: 4px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .observaciones-title {
+                font-weight: bold;
+                color: #b45309;
+                font-size: 11px;
+                margin: 0 0 2px 0;
+            }
+
+            .observaciones-texto {
+                color: #374151;
+                font-size: 10px;
+                line-height: 1.35;
+                text-align: justify;
+                margin: 0;
             }
 
             .seccion-header td {
@@ -235,7 +285,11 @@
 
         <footer>
                 <div>
-                    <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left; margin-bottom: -10px"> * Resultado fuera de rango</p>
+                    <p class="leyenda-flechas">
+                        <span class="flecha-rango flecha-alto">↑</span> Resultado alto (por arriba del valor de referencia)
+                        &nbsp;&nbsp;
+                        <span class="flecha-rango flecha-bajo">↓</span> Resultado bajo (por debajo del valor de referencia)
+                    </p>
 
                     <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left; margin-bottom: 5px;"> "Ciencia y compromiso al servicio de tu salud ".</p>
                     <table class="footer-table">
@@ -253,7 +307,7 @@
                                 <p style="margin:0px"> Universidad popular de la chontalpa</p>
                                 <p style="margin: 0px">Céd. Prof. 14083392</p>
                                 <p style="margin: 0px">
-                                    <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 923 235 1538
+                                    <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 998 654 3958
                                 </p>
                             </td>
 
@@ -266,7 +320,7 @@
                             <td style="width: 30%;">
                                 <p style="margin: 0">Avenida Revolución, Región 75, Calle 37 Norte</p>
                                 <p style="margin: 0">C.P. 77527, Cancún, Quintana Roo</p>
-                                <p style="margin: 0">Tel: 923 235 1538</p>
+                                <p style="margin: 0">Tel: 998 654 3958</p>
                                 <p style="margin: 0"><strong>biolab348@gmail.com</strong></p>
                             </td>
 
@@ -327,10 +381,21 @@
                                                 $examen = $resultado->examen;
                                                 // Convertir explícitamente a booleano para asegurar la evaluación correcta
                                                 $isOutOfRange = (bool) $resultado->fuera_rango;
-                                                $hasAsterisk = strpos($resultado->resultado, '*') !== false;
+
+                                                // Un '*' capturado como resultado significa que ese examen no se imprime
+                                                $examenOculto = strpos((string) $resultado->resultado, '*') !== false;
+                                                $valorResultado = (string) $resultado->resultado;
+
+                                                // Flecha: la guardada por el laboratorio o, si no hay, la deducida
+                                                // comparando el resultado contra el valor de referencia.
+                                                $direccionRango = $isOutOfRange
+                                                    ? (($resultado->direccion_rango ?? null)
+                                                        ?: \App\Support\RangoReferencia::direccion($valorResultado, $examen->valor_referencia))
+                                                    : null;
+                                                $flecha = \App\Support\RangoReferencia::flecha($direccionRango);
                                             @endphp
 
-                                            @if($hasAsterisk)
+                                            @if($examenOculto)
                                                 @php
                                                     continue;
                                                 @endphp
@@ -341,9 +406,9 @@
                                                     {{ $examen->nombre_examen }}
                                                 </td>
                                                 <td class="result-value">
-                                                    {{ $resultado->resultado }}
-                                                    @if($isOutOfRange)
-                                                        *
+                                                    {{ $valorResultado }}
+                                                    @if($flecha !== '')
+                                                        <span class="flecha-rango {{ $direccionRango === 'alto' ? 'flecha-alto' : 'flecha-bajo' }}">{{ $flecha }}</span>
                                                     @endif
                                                 </td>
                                                 <td class="unit">{{ $examen->unidad }}</td>
@@ -383,12 +448,10 @@
                             </div>
                         </div>
 
-                        @if(!empty($estudio->observaciones))
-                        <div style="margin-top: 8px; padding: 8px; background-color: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px;">
-                            <p style="margin: 0; font-size: 10px;">
-                                <strong style="color: #f59e0b;">📝 Observaciones:</strong> 
-                                <span style="color: #374151;">{{ $estudio->observaciones }}</span>
-                            </p>
+                        @if(trim((string) $estudio->observaciones) !== '')
+                        <div class="observaciones-box">
+                            <p class="observaciones-title">Observaciones:</p>
+                            <p class="observaciones-texto">{!! nl2br(e(trim($estudio->observaciones))) !!}</p>
                         </div>
                         @endif
 

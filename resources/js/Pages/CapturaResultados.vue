@@ -459,25 +459,36 @@
                               <input 
                                 type="text" 
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                                v-model="examen.resultado" 
+                                v-model="examen.resultado"
                                 placeholder="Ingrese resultado"
+                                @blur="onFueraRangoChange(examen)"
                               />
                               <label class="flex items-center cursor-pointer group">
-                                <input 
-                                  type="checkbox" 
-                                  class="w-5 h-5 text-red-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-red-500" 
+                                <input
+                                  type="checkbox"
+                                  class="w-5 h-5 text-red-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-red-500"
                                   v-model="examen.fuera_rango"
                                   :true-value="true"
                                   :false-value="false"
-                                  @change="console.log('Checkbox cambiado:', examen.nombre_examen, 'Valor:', examen.fuera_rango, 'Tipo:', typeof examen.fuera_rango)"
+                                  @change="onFueraRangoChange(examen)"
                                 />
-                                <span 
+                                <span
                                   class="ml-2 text-xs font-medium transition-colors"
                                   :class="examen.fuera_rango ? 'text-red-600 font-bold' : 'text-gray-700'"
                                 >
                                   F.R. {{ examen.fuera_rango ? '✓' : '' }}
                                 </span>
                               </label>
+                              <select
+                                v-if="examen.fuera_rango"
+                                v-model="examen.direccion_rango"
+                                class="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                title="Flecha que se imprime en el reporte"
+                              >
+                                <option :value="null">Sin flecha</option>
+                                <option value="alto">↑ Alto</option>
+                                <option value="bajo">↓ Bajo</option>
+                              </select>
                             </div>
                           </td>
                         </tr>
@@ -578,6 +589,7 @@ import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
+import { direccionFueraRango } from '@/utils/rangoReferencia'
 
 // Props de Inertia (cotizacion precargada desde Cotizaciones)
 const props = defineProps({
@@ -728,6 +740,7 @@ function precargarDesdeCotizacion(cotizacion) {
           valor_referencia: e.valor_referencia,
           resultado: '',
           fuera_rango: false,
+          direccion_rango: null,
         })),
       })
     })
@@ -776,6 +789,19 @@ function limpiarPacienteSeleccionado() {
   pacientesFiltrados.value = []
 }
 
+// Al marcar F.R. se propone la flecha (alto / bajo) comparando el resultado
+// contra el valor de referencia; el laboratorio puede cambiarla manualmente.
+function onFueraRangoChange(examen) {
+  if (!examen.fuera_rango) {
+    examen.direccion_rango = null
+    return
+  }
+
+  if (!examen.direccion_rango) {
+    examen.direccion_rango = direccionFueraRango(examen.resultado, examen.valor_referencia)
+  }
+}
+
 watch(() => form.cliente.fecha_nacimiento, (nuevaFecha) => {
   if (nuevaFecha) {
     const hoy = new Date()
@@ -814,6 +840,7 @@ function agregarEstudio() {
       valor_referencia: e.valor_referencia,
       resultado: '',
       fuera_rango: false,
+      direccion_rango: null,
     })),
   })
 
@@ -1007,6 +1034,7 @@ function seleccionarEstudio(estudio) {
       valor_referencia: e.valor_referencia,
       resultado: '',
       fuera_rango: false,
+      direccion_rango: null,
     })),
   })
 

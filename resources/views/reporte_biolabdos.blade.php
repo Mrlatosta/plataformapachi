@@ -314,7 +314,7 @@
                 <p><strong>Q.F.B Ángel Augusto Pérez Arias</strong></p>
                 <p>Céd. Prof. 14083392</p>
                 <p>
-                    <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 923 235 1538
+                    <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 998 654 3958
                 </p>
             </td>
 
@@ -329,7 +329,7 @@
                 <p style="margin: 0">Cédula Prof. 14083392</p>
                 <p style="margin: 0">Avenida Revolución, Región 75, Calle 37 Norte</p>
                 <p style="margin: 0">C.P. 77527, Cancún, Quintana Roo</p>
-                <p style="margin: 0">Tel: 923 235 1538</p>
+                <p style="margin: 0">Tel: 998 654 3958</p>
                 <p style="margin: 0">Email: perezaugusto210@gmail.com</p>
             </td>
 

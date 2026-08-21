@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { direccionFueraRango } from '@/utils/rangoReferencia';
 
 const props = defineProps({
     reporte: Object,
@@ -88,8 +89,47 @@ const hydrateForm = () => {
             valor_referencia: resultado.valor_referencia || '',
             resultado: resultado.resultado || '',
             fuera_rango: Boolean(resultado.fuera_rango),
+            direccion_rango: resultado.direccion_rango || null,
         })),
     }));
+};
+
+// Edad calculada a la fecha de toma de muestra del reporte (o a hoy si no hay).
+const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return '';
+
+    const nacimiento = new Date(`${String(fechaNacimiento).slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(nacimiento.getTime())) return '';
+
+    const referencia = form.toma_muestra ? new Date(form.toma_muestra) : new Date();
+    const base = Number.isNaN(referencia.getTime()) ? new Date() : referencia;
+
+    let edad = base.getFullYear() - nacimiento.getFullYear();
+    const mes = base.getMonth() - nacimiento.getMonth();
+
+    if (mes < 0 || (mes === 0 && base.getDate() < nacimiento.getDate())) {
+        edad--;
+    }
+
+    return edad >= 0 ? edad : '';
+};
+
+// Al cambiar la fecha de nacimiento se recalcula la edad que se imprime.
+const onFechaNacimientoChange = () => {
+    form.cliente.edad = calcularEdad(form.cliente.fecha_nacimiento);
+};
+
+// Al marcar F.R. se propone la flecha (alto / bajo) comparando el resultado
+// contra el valor de referencia; el laboratorio puede cambiarla manualmente.
+const onFueraRangoChange = (resultado) => {
+    if (!resultado.fuera_rango) {
+        resultado.direccion_rango = null;
+        return;
+    }
+
+    if (!resultado.direccion_rango) {
+        resultado.direccion_rango = direccionFueraRango(resultado.resultado, resultado.valor_referencia);
+    }
 };
 
 watch(() => props.reporte, hydrateForm, { immediate: true });
@@ -166,6 +206,7 @@ const agregarEstudio = (estudio) => {
             valor_referencia: examen.valor_referencia,
             resultado: '',
             fuera_rango: false,
+            direccion_rango: null,
         })),
     });
 
@@ -223,6 +264,7 @@ const guardarCambios = async () => {
                     examen_id: resultado.examen_id,
                     resultado: resultado.resultado,
                     fuera_rango: Boolean(resultado.fuera_rango),
+                    direccion_rango: resultado.fuera_rango ? resultado.direccion_rango : null,
                 })),
             })),
         };
@@ -394,6 +436,7 @@ const descargarOrden = () => {
                                     v-model="form.cliente.fecha_nacimiento"
                                     type="date"
                                     class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                    @change="onFechaNacimientoChange"
                                 />
                             </div>
                             <div>
@@ -554,6 +597,7 @@ const descargarOrden = () => {
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Referencia</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Resultado</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">F.R.</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Flecha</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -566,6 +610,7 @@ const descargarOrden = () => {
                                                 v-model="resultado.resultado"
                                                 type="text"
                                                 class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                                @blur="onFueraRangoChange(resultado)"
                                             />
                                         </td>
                                         <td class="px-3 py-2 text-center">
@@ -573,7 +618,21 @@ const descargarOrden = () => {
                                                 v-model="resultado.fuera_rango"
                                                 type="checkbox"
                                                 class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                                @change="onFueraRangoChange(resultado)"
                                             />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <select
+                                                v-if="resultado.fuera_rango"
+                                                v-model="resultado.direccion_rango"
+                                                class="rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                                title="Flecha que se imprime en el reporte"
+                                            >
+                                                <option :value="null">Sin flecha</option>
+                                                <option value="alto">↑ Alto</option>
+                                                <option value="bajo">↓ Bajo</option>
+                                            </select>
+                                            <span v-else class="text-xs text-gray-400">—</span>
                                         </td>
                                     </tr>
                                 </tbody>

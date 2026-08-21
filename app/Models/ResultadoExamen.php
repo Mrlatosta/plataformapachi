@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ResultadoExamen extends Model {
     protected $table = 'resultado_examen'; // ← asegúrate de tener esto
-protected $fillable = ['reporte_estudio_id', 'examen_id', 'resultado', 'fuera_rango'];
+protected $fillable = ['reporte_estudio_id', 'examen_id', 'resultado', 'fuera_rango', 'direccion_rango'];
 
   protected $casts = [
         'fuera_rango' => 'boolean',

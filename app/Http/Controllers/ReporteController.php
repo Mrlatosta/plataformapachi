@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Examen;
 use App\Models\Reporte;
 use App\Models\ReporteEstudio;
 use App\Models\Resultado;
+use App\Support\RangoReferencia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Inertia\Inertia;
 
@@ -14,6 +16,32 @@ use Inertia\Inertia;
 
 class ReporteController extends Controller
 {
+
+/** Cache de valores de referencia para no consultar el mismo examen varias veces */
+private array $valoresReferencia = [];
+
+/**
+ * Direccion ('alto' / 'bajo' / null) de un resultado marcado como fuera de rango.
+ * Respeta la seleccion manual del laboratorio y, si no viene, la deduce
+ * comparando el resultado contra el valor de referencia del examen.
+ */
+private function resolverDireccionRango($examenId, $resultado, bool $fueraRango, $direccionManual = null): ?string
+{
+    if (! $fueraRango) {
+        return null;
+    }
+
+    $direccion = strtolower((string) $direccionManual);
+    if (in_array($direccion, [RangoReferencia::ALTO, RangoReferencia::BAJO], true)) {
+        return $direccion;
+    }
+
+    if (! array_key_exists($examenId, $this->valoresReferencia)) {
+        $this->valoresReferencia[$examenId] = Examen::whereKey($examenId)->value('valor_referencia');
+    }
+
+    return RangoReferencia::direccion($resultado, $this->valoresReferencia[$examenId]);
+}
 
 private function applyPageNumbers($pdf, float $x = 500, float $y = 820, int $size = 9): void
 {
@@ -51,6 +79,7 @@ public function store(Request $request)
         'estudios.*.examenes.*.id' => 'required|exists:examenes,id',
         'estudios.*.examenes.*.resultado' => 'nullable|string',
         'estudios.*.examenes.*.fuera_rango' => 'nullable|boolean',
+        'estudios.*.examenes.*.direccion_rango' => 'nullable|in:alto,bajo',
     ], [
         'cliente.nombre.required' => 'El nombre del paciente es obligatorio',
         'cliente.fecha_nacimiento.required' => 'La fecha de nacimiento es obligatoria',
@@ -100,18 +129,26 @@ public function store(Request $request)
         ]);
 
         foreach ($estudioData['examenes'] as $resultado) {
+            $fueraRango = filter_var($resultado['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
             // Debug: Log del valor de fuera_rango recibido
             \Log::info('Guardando resultado', [
                 'examen_id' => $resultado['id'],
                 'fuera_rango_raw' => $resultado['fuera_rango'] ?? 'NO DEFINIDO',
                 'fuera_rango_tipo' => gettype($resultado['fuera_rango'] ?? null),
-                'fuera_rango_filtered' => filter_var($resultado['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'fuera_rango_filtered' => $fueraRango,
             ]);
-            
+
             $reporteEstudio->resultados()->create([
                 'examen_id' => $resultado['id'],
                 'resultado' => $resultado['resultado'] ?? null,
-                'fuera_rango' => filter_var($resultado['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'fuera_rango' => $fueraRango,
+                'direccion_rango' => $this->resolverDireccionRango(
+                    $resultado['id'],
+                    $resultado['resultado'] ?? null,
+                    $fueraRango,
+                    $resultado['direccion_rango'] ?? null,
+                ),
             ]);
         }
     }
@@ -198,13 +235,27 @@ public function actualizarReporte(Request $request, $id)
         'toma_muestra', 'fecha_reporte', 'fecha_validacion', 'medico_solicitante', 'medico_id'
     ]));
 
-    $cliente = $request->input('cliente');
+    $cliente = $request->input('cliente', []);
+
+    // La fecha puede llegar como '2003-09-06' o '2003-09-06T00:00:00.000000Z'
+    $fechaNacimiento = !empty($cliente['fecha_nacimiento'])
+        ? substr((string) $cliente['fecha_nacimiento'], 0, 10)
+        : $reporte->fecha_nacimiento;
+
+    // Si cambio la fecha de nacimiento y no llego una edad, se recalcula
+    // a la fecha de toma de muestra del reporte.
+    $edad = $cliente['edad'] ?? null;
+    if (($edad === null || $edad === '') && $fechaNacimiento) {
+        $referencia = $reporte->toma_muestra ? \Carbon\Carbon::parse($reporte->toma_muestra) : now();
+        $edad = \Carbon\Carbon::parse($fechaNacimiento)->diffInYears($referencia);
+    }
+
     $reporte->update([
-        'nombre_cliente' => $cliente['nombre'],
-        'email' => $cliente['email'],
-        'fecha_nacimiento' => $cliente['fecha_nacimiento'],
-        'edad' => $cliente['edad'],
-        'sexo' => $cliente['sexo'],
+        'nombre_cliente' => $cliente['nombre'] ?? $reporte->nombre_cliente,
+        'email' => $cliente['email'] ?? null,
+        'fecha_nacimiento' => $fechaNacimiento,
+        'edad' => $edad !== null && $edad !== '' ? (int) $edad : null,
+        'sexo' => $cliente['sexo'] ?? null,
     ]);
 
     $idsNuevos = collect($request->input('estudios'))->pluck('id')->filter();
@@ -237,20 +288,36 @@ public function actualizarReporte(Request $request, $id)
         ]);
 
         foreach ($estudioData['resultados'] ?? [] as $resultadoData) {
+            $fueraRango = filter_var($resultadoData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
             if (!empty($resultadoData['id'])) {
                 $resultado = $reporteEstudio->resultados()->find($resultadoData['id']);
                 if ($resultado) {
                     $resultado->update([
                         'resultado' => $resultadoData['resultado'] ?? null,
-                        'fuera_rango' => filter_var($resultadoData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'fuera_rango' => $fueraRango,
+                        'direccion_rango' => $this->resolverDireccionRango(
+                            $resultado->examen_id,
+                            $resultadoData['resultado'] ?? null,
+                            $fueraRango,
+                            $resultadoData['direccion_rango'] ?? null,
+                        ),
                     ]);
                 }
             } else {
                 // Si no tiene id, es nuevo
+                $examenId = $resultadoData['examen_id'] ?? $resultadoData['id'];
+
                 $reporteEstudio->resultados()->create([
-                    'examen_id' => $resultadoData['examen_id'] ?? $resultadoData['id'],
+                    'examen_id' => $examenId,
                     'resultado' => $resultadoData['resultado'] ?? null,
-                    'fuera_rango' => filter_var($resultadoData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'fuera_rango' => $fueraRango,
+                    'direccion_rango' => $this->resolverDireccionRango(
+                        $examenId,
+                        $resultadoData['resultado'] ?? null,
+                        $fueraRango,
+                        $resultadoData['direccion_rango'] ?? null,
+                    ),
                 ]);
             }
         }
@@ -268,10 +335,19 @@ public function actualizarReporte(Request $request, $id)
         ]);
 
         foreach ($estudioData['resultados'] ?? [] as $r) {
+            $examenId = $r['examen_id'] ?? $r['id'];
+            $fueraRango = filter_var($r['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
             $nuevo->resultados()->create([
-                'examen_id' => $r['examen_id'] ?? $r['id'],
+                'examen_id' => $examenId,
                 'resultado' => $r['resultado'] ?? null,
-                'fuera_rango' => filter_var($r['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'fuera_rango' => $fueraRango,
+                'direccion_rango' => $this->resolverDireccionRango(
+                    $examenId,
+                    $r['resultado'] ?? null,
+                    $fueraRango,
+                    $r['direccion_rango'] ?? null,
+                ),
             ]);
         }
     }
@@ -375,6 +451,7 @@ public function index(Request $request)
                                 'unidad' => $resultado->examen->unidad,
                                 'valor_referencia' => $resultado->examen->valor_referencia,
                                 'fuera_rango' => $resultado->fuera_rango,
+                                'direccion_rango' => $resultado->direccion_rango,
                             ];
                         })
                     ];

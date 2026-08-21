@@ -209,6 +209,35 @@
             color: #555;
         }
 
+        /* Recomendaciones generales: van antes de las condiciones generales */
+        .recomendaciones-section {
+            clear: both;
+            background-color: #f4fbf7;
+            border-left: 4px solid #08cc71;
+            padding: 12px 15px;
+            margin-top: 25px;
+            page-break-inside: avoid;
+        }
+
+        .recomendaciones-title {
+            font-weight: bold;
+            color: #08cc71;
+            margin: 0 0 6px 0;
+            font-size: 11px;
+        }
+
+        .recomendaciones-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 9px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .recomendaciones-list li {
+            margin-bottom: 2px;
+        }
+
         .footer {
             border-top: 2px solid #08cc71;
             padding-top: 10px;
@@ -321,7 +350,7 @@
                 <div class="company-info">
                     Avenida Revolución, Región 75, Calle 37 Norte<br>
                     C.P. 77527, Cancún, Quintana Roo<br>
-                    Tel: 923 235 1538 | biolab348@gmail.com
+                    Tel: 998 654 3958 | biolab348@gmail.com
                 </div>
             </div>
             <div class="header-right">
@@ -431,8 +460,22 @@
     </div>
     @endif
 
+    <!-- Recomendaciones generales (siempre antes de las condiciones generales) -->
+    <div class="recomendaciones-section">
+        <p class="recomendaciones-title">Recomendaciones generales:</p>
+        <ul class="recomendaciones-list">
+            <li>Acudir con ayuno de 8 a 12 horas cuando el estudio lo requiera (química sanguínea, perfil lipídico, glucosa).</li>
+            <li>Presentarse preferentemente por la mañana, de 7:00 a 10:00 hrs.</li>
+            <li>Mantenerse bien hidratado; puede tomar agua natural durante el ayuno.</li>
+            <li>Evitar bebidas alcohólicas y ejercicio intenso 24 horas antes de la toma de muestra.</li>
+            <li>Informar al personal sobre los medicamentos que esté tomando; no suspenderlos sin indicación médica.</li>
+            <li>Para examen general de orina y urocultivo: primera orina de la mañana, previo aseo, chorro medio y en frasco estéril.</li>
+            <li>Para cultivos, la muestra debe tomarse antes de iniciar el tratamiento con antibióticos.</li>
+        </ul>
+    </div>
+
     <!-- Condiciones generales -->
-    <div style="clear: both; margin-top: 40px; font-size: 9px; color: #777; line-height: 1.6; page-break-inside: avoid;">
+    <div style="clear: both; margin-top: 15px; font-size: 9px; color: #777; line-height: 1.6; page-break-inside: avoid;">
         <p style="margin: 5px 0;"><strong>Condiciones generales:</strong></p>
         <ul style="margin: 5px 0; padding-left: 20px;">
             <li>Los precios están expresados en pesos mexicanos (MXN)</li>
@@ -448,7 +491,7 @@
         <div class="footer-content">
             <div class="footer-section">
                 <strong>Contacto</strong><br>
-                Tel: 923 235 1538<br>
+                Tel: 998 654 3958<br>
                 biolab348@gmail.com
             </div>
             <div class="footer-section footer-divider">

@@ -205,7 +205,7 @@
               <strong style="font-size: 7px;">Q.F.B Ángel Augusto Pérez Arias</strong><br>
               <span style="font-size: 6px;">Univ. Popular de la Chontalpa</span><br>
               <span style="font-size: 6px;">Céd. Prof. 14083392</span><br>
-              <img src="{{ public_path('img/whatsapp.png') }}" width="8px"> <span style="font-size: 6px;">923 235 1538</span>
+              <img src="{{ public_path('img/whatsapp.png') }}" width="8px"> <span style="font-size: 6px;">998 654 3958</span>
             </td>
             <td width="25%" align="center">
               <img src="{{ public_path('img/imgbiolabtrans.png') }}" width="50px">
@@ -213,7 +213,7 @@
             <td width="25%" style="font-size: 7px;">
               Av. Revolución, Región 75, Calle 37 Norte<br>
               C.P. 77527, Cancún, Quintana Roo<br>
-              Tel: 923 235 1538<br>
+              Tel: 998 654 3958<br>
               <strong>biolab348@gmail.com</strong>
             </td>
           </tr>
