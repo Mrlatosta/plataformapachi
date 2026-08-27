@@ -4,6 +4,7 @@ import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { direccionFueraRango } from '@/utils/rangoReferencia';
+import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva';
 
 const props = defineProps({
     reporte: Object,
@@ -34,6 +35,7 @@ const form = reactive({
     fecha_validacion: '',
     medico_solicitante: '',
     medico_id: null,
+    aplica_iva: false,
     cliente: {
         nombre: '',
         email: '',
@@ -54,6 +56,7 @@ const hydrateForm = () => {
     form.fecha_validacion = normalizeDatetime(data.fecha_validacion);
     form.medico_solicitante = data.medico_solicitante || '';
     form.medico_id = data.medico_id ?? null;
+    form.aplica_iva = Boolean(data.aplica_iva);
 
     if (data.medico_id) {
         modoMedico.value = 'registrado';
@@ -160,9 +163,14 @@ const formatCurrency = (value) => {
     }).format(value || 0);
 };
 
+// Subtotal: suma de los estudios, sin IVA
 const totalPrecio = computed(() => {
     return form.estudios.reduce((sum, estudio) => sum + (Number(estudio.precio) || 0), 0);
 });
+
+const montoIva = computed(() => calcularIva(totalPrecio.value, form.aplica_iva));
+
+const totalConIva = computed(() => totalPrecio.value + montoIva.value);
 
 const filtrarEstudios = () => {
     const termino = busquedaEstudio.value.toLowerCase().trim();
@@ -242,6 +250,7 @@ const guardarCambios = async () => {
             fecha_validacion: form.fecha_validacion,
             medico_solicitante: form.medico_solicitante,
             medico_id: form.medico_id,
+            aplica_iva: form.aplica_iva,
             cliente: {
                 nombre: form.cliente.nombre,
                 email: form.cliente.email,
@@ -646,9 +655,21 @@ const descargarOrden = () => {
                         <div>
                             <h3 class="text-lg font-semibold">Total del Reporte</h3>
                             <p class="text-sm opacity-90">{{ form.estudios.length }} estudios agregados</p>
+                            <label class="mt-3 inline-flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    class="w-4 h-4 rounded border-slate-400 text-emerald-500 focus:ring-emerald-400"
+                                    v-model="form.aplica_iva"
+                                />
+                                <span class="text-sm">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</span>
+                            </label>
                         </div>
-                        <div class="text-2xl font-bold">
-                            {{ formatCurrency(totalPrecio) }}
+                        <div class="text-right">
+                            <template v-if="form.aplica_iva">
+                                <p class="text-sm opacity-90">Subtotal: {{ formatCurrency(totalPrecio) }}</p>
+                                <p class="text-sm opacity-90">IVA ({{ IVA_PORCENTAJE }}%): {{ formatCurrency(montoIva) }}</p>
+                            </template>
+                            <p class="text-2xl font-bold">{{ formatCurrency(totalConIva) }}</p>
                         </div>
                     </div>
                 </div>

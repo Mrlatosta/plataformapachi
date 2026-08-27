@@ -65,6 +65,7 @@ class CotizacionController extends Controller
             'estudios.*.examenes' => 'nullable|array',
             'estudios.*.examenes.*.nombre_examen' => 'nullable|string',
             'descuento' => 'nullable|numeric|min:0|max:100',
+            'aplica_iva' => 'nullable|boolean',
             'notas' => 'nullable|string|max:1000',
         ], [
             'cliente.nombre.required' => 'El nombre del cliente es obligatorio',
@@ -87,7 +88,11 @@ class CotizacionController extends Controller
 
                 $descuento = $validated['descuento'] ?? 0;
                 $monto_descuento = $subtotal * ($descuento / 100);
-                $total = $subtotal - $monto_descuento;
+                $base_gravable = $subtotal - $monto_descuento;
+
+                $aplica_iva = filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $iva = $aplica_iva ? round($base_gravable * (config('facturacion.iva') / 100), 2) : 0;
+                $total = round($base_gravable + $iva, 2);
 
                 // Crear cotización
                 $cotizacion = Cotizacion::create([
@@ -100,7 +105,9 @@ class CotizacionController extends Controller
                     'fecha_cotizacion' => $validated['fecha_cotizacion'],
                     'vigencia' => $validated['vigencia'] ?? 30,
                     'descuento' => $descuento,
+                    'aplica_iva' => $aplica_iva,
                     'subtotal' => $subtotal,
+                    'iva' => $iva,
                     'total' => $total,
                     'notas' => $validated['notas'] ?? null,
                     'estado' => 'pendiente_pago',
@@ -184,6 +191,8 @@ class CotizacionController extends Controller
                 'precio' => $ce->precio,
                 'cantidad' => $ce->cantidad,
                 'descripcion' => $ce->descripcion,
+                'metodo' => $ce->estudio->metodo,
+                'tiempo_entrega' => $ce->estudio->tiempo_entrega,
                 'examenes' => $ce->estudio->examenes ? $ce->estudio->examenes->map(function ($ex) {
                     return ['nombre_examen' => $ex->nombre_examen];
                 })->toArray() : [],
@@ -205,6 +214,9 @@ class CotizacionController extends Controller
             'subtotal' => $cotizacion->subtotal,
             'descuento' => $cotizacion->descuento,
             'monto_descuento' => $monto_descuento,
+            'aplica_iva' => (bool) $cotizacion->aplica_iva,
+            'porcentaje_iva' => (float) config('facturacion.iva'),
+            'iva' => $cotizacion->iva,
             'total' => $cotizacion->total,
             'notas' => $cotizacion->notas ?? '',
             'folio' => $cotizacion->folio,

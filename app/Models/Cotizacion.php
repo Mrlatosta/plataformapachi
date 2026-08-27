@@ -18,7 +18,9 @@ class Cotizacion extends Model
         'fecha_cotizacion',
         'vigencia',
         'descuento',
+        'aplica_iva',
         'subtotal',
+        'iva',
         'total',
         'notas',
         'estado',
@@ -27,7 +29,9 @@ class Cotizacion extends Model
     protected $casts = [
         'fecha_cotizacion' => 'date',
         'descuento' => 'decimal:2',
+        'aplica_iva' => 'boolean',
         'subtotal' => 'decimal:2',
+        'iva' => 'decimal:2',
         'total' => 'decimal:2',
     ];
 

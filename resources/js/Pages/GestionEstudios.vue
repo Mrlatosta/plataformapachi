@@ -93,6 +93,20 @@
                                 </div>
                             </div>
 
+                            <!-- Tiempo de entrega -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    ⏱️ Tiempo de Entrega
+                                </label>
+                                <input 
+                                    v-model="nuevoEstudio.tiempo_entrega" 
+                                    type="text" 
+                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    placeholder="Ej: 24 horas, 3 días hábiles, mismo día"
+                                />
+                                <p class="mt-2 text-xs text-gray-500">Aparecerá en la cotización junto al método del estudio.</p>
+                            </div>
+
                             <!-- Precio -->
                             <div class="mb-4">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -329,6 +343,7 @@ const nuevoEstudio = ref({
     examenes: [],
     tipo_muestra: '',
     metodo: '',
+    tiempo_entrega: '',
     precio: 0,
     costo: 0
 })
@@ -351,6 +366,7 @@ const cargarEstudio = () => {
             examenes: [...estudio.examenes],
             tipo_muestra: estudio.tipo_muestra || '',
             metodo: estudio.metodo || '',
+            tiempo_entrega: estudio.tiempo_entrega || '',
             precio: estudio.precio || 0,
             costo: estudio.costo || 0
         }
@@ -365,6 +381,7 @@ const crearNuevoEstudio = () => {
         examenes: [],
         tipo_muestra: '',
         metodo: '',
+        tiempo_entrega: '',
         precio: 0,
         costo: 0
     }
@@ -444,6 +461,7 @@ const guardarEstudio = async () => {
             examenes: [], 
             tipo_muestra: '', 
             metodo: '', 
+            tiempo_entrega: '',
             precio: 0,
             costo: 0
         }
@@ -472,6 +490,7 @@ const eliminarEstudio = async () => {
             examenes: [], 
             tipo_muestra: '', 
             metodo: '', 
+            tiempo_entrega: '',
             precio: 0,
             costo: 0
         }

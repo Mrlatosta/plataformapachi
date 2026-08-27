@@ -381,6 +381,17 @@
                           </span>
                         </div>
                       </div>
+                      <div
+                        v-if="estudio.metodo || estudio.tiempo_entrega"
+                        class="mt-3 ml-11 space-y-1 text-xs text-gray-600"
+                      >
+                        <p v-if="estudio.metodo">
+                          <span class="font-semibold text-gray-700">Metodología:</span> {{ estudio.metodo }}
+                        </p>
+                        <p v-if="estudio.tiempo_entrega">
+                          <span class="font-semibold text-gray-700">Tiempo de entrega:</span> {{ estudio.tiempo_entrega }}
+                        </p>
+                      </div>
                     </div>
                     <button
                       class="flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium ml-4"
@@ -477,6 +488,21 @@
                     />
                   </div>
                   <div class="space-y-2">
+                    <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-amber-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        class="mt-0.5 w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                        v-model="form.aplica_iva"
+                      />
+                      <span>
+                        <span class="block text-sm font-medium text-gray-700">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</span>
+                        <span class="block text-xs text-gray-500">
+                          Se calcula sobre el subtotal con descuento y aparecera desglosado en la cotizacion y su PDF.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">
                       Notas adicionales <span class="text-gray-400 text-xs">(opcional)</span>
                     </label>
@@ -497,6 +523,10 @@
                     <div class="flex justify-between items-center text-gray-700">
                       <span>Descuento ({{ form.descuento }}%):</span>
                       <span class="font-semibold text-red-600">-${{ montoDescuento.toFixed(2) }}</span>
+                    </div>
+                    <div v-if="form.aplica_iva" class="flex justify-between items-center text-gray-700">
+                      <span>IVA ({{ IVA_PORCENTAJE }}%):</span>
+                      <span class="font-semibold">${{ montoIva.toFixed(2) }}</span>
                     </div>
                     <hr class="border-purple-300">
                     <div class="flex justify-between items-center text-2xl font-bold text-purple-700">
@@ -652,6 +682,14 @@
                       <p class="text-xs text-gray-500" v-if="parseFloat(cotizacion.descuento) > 0">
                         Descuento: {{ cotizacion.descuento }}%
                       </p>
+                      <template v-if="cotizacion.aplica_iva">
+                        <p class="text-xs text-gray-500">
+                          Subtotal: ${{ parseFloat(cotizacion.subtotal || 0).toFixed(2) }}
+                        </p>
+                        <p class="text-xs font-semibold text-emerald-600">
+                          IVA ({{ IVA_PORCENTAJE }}%): ${{ parseFloat(cotizacion.iva || 0).toFixed(2) }}
+                        </p>
+                      </template>
                     </div>
                     <div class="flex gap-2 flex-wrap justify-end">
                       <!-- Cambiar estado -->
@@ -730,6 +768,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
+import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva'
 
 // Vista activa
 const vistaActual = ref('lista')
@@ -777,6 +816,7 @@ const form = reactive({
   },
   estudios: [],
   descuento: 0,
+  aplica_iva: false,
   notas: '',
 })
 
@@ -794,8 +834,17 @@ const montoDescuento = computed(() => {
   return subtotal.value * (parseFloat(form.descuento) || 0) / 100
 })
 
-const total = computed(() => {
+// Base sobre la que se calcula el IVA (subtotal ya con el descuento aplicado)
+const baseGravable = computed(() => {
   return subtotal.value - montoDescuento.value
+})
+
+const montoIva = computed(() => {
+  return calcularIva(baseGravable.value, form.aplica_iva)
+})
+
+const total = computed(() => {
+  return baseGravable.value + montoIva.value
 })
 
 // Contador de pendientes para el badge del tab
@@ -919,6 +968,8 @@ function seleccionarEstudio(estudio) {
     precio: parseFloat(estudio.precio) || 0,
     cantidad: 1,
     descripcion: '',
+    metodo: estudio.metodo || '',
+    tiempo_entrega: estudio.tiempo_entrega || '',
     examenes: estudio.examenes || [],
   })
 
@@ -948,6 +999,7 @@ function limpiarFormulario() {
   form.cliente = { nombre: '', email: '', telefono: '', direccion: '' }
   form.estudios = []
   form.descuento = 0
+  form.aplica_iva = false
   form.notas = ''
   pacienteSeleccionado.value = null
   busquedaPaciente.value = ''
@@ -1004,6 +1056,7 @@ async function guardarCotizacion() {
     form.cliente = { nombre: '', email: '', telefono: '', direccion: '' }
     form.estudios = []
     form.descuento = 0
+    form.aplica_iva = false
     form.notas = ''
     pacienteSeleccionado.value = null
     busquedaPaciente.value = ''

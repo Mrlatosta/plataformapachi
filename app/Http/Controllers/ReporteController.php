@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Estudio;
 use App\Models\Examen;
 use App\Models\Reporte;
 use App\Models\ReporteEstudio;
 use App\Models\Resultado;
+use App\Models\ResultadoExamen;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use App\Support\RangoReferencia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Inertia\Inertia;
@@ -52,10 +55,13 @@ private function applyPageNumbers($pdf, float $x = 500, float $y = 820, int $siz
     $canvas->page_text($x, $y, 'Pagina {PAGE_NUM} de {PAGE_COUNT}', $font, $size, [0.4, 0.4, 0.4]);
 }
 
-public function store(Request $request)
+/**
+ * Reglas de validacion compartidas por el guardado y la previsualizacion,
+ * para que la vista previa refleje exactamente lo que se va a guardar.
+ */
+private function reglasReporte(): array
 {
-    // Validar datos antes de guardar
-    $validated = $request->validate([
+    return [
         'cliente.nombre' => 'required|string|max:255',
         'cliente.fecha_nacimiento' => 'required|date',
         'cliente.sexo' => 'required|in:Masculino,Femenino',
@@ -66,6 +72,7 @@ public function store(Request $request)
         'fecha_validacion' => 'required|date',
         'medico_solicitante' => 'nullable|string|max:255',
         'medico_id' => 'nullable|exists:medicos,id',
+        'aplica_iva' => 'nullable|boolean',
         'estudios' => 'required|array|min:1',
         'estudios.*.id' => 'required|exists:estudios,id',
         'estudios.*.orden' => 'nullable|integer',
@@ -80,7 +87,12 @@ public function store(Request $request)
         'estudios.*.examenes.*.resultado' => 'nullable|string',
         'estudios.*.examenes.*.fuera_rango' => 'nullable|boolean',
         'estudios.*.examenes.*.direccion_rango' => 'nullable|in:alto,bajo',
-    ], [
+    ];
+}
+
+private function mensajesReporte(): array
+{
+    return [
         'cliente.nombre.required' => 'El nombre del paciente es obligatorio',
         'cliente.fecha_nacimiento.required' => 'La fecha de nacimiento es obligatoria',
         'cliente.sexo.required' => 'El sexo del paciente es obligatorio',
@@ -91,12 +103,27 @@ public function store(Request $request)
         'estudios.min' => 'Debe agregar al menos un estudio',
         'estudios.*.precio.required' => 'Cada estudio debe tener un precio',
         'estudios.*.precio.min' => 'El precio debe ser mayor o igual a 0',
-    ]);
+    ];
+}
 
-    // Generar folio único
+/**
+ * Folio que le tocaria al siguiente reporte. En la vista previa es solo
+ * informativo: no se reserva nada hasta que el reporte se guarda.
+ */
+private function folioProyectado(): string
+{
     $ultimoFolio = Reporte::orderBy('id', 'desc')->value('folio');
     $numero = $ultimoFolio ? (int) preg_replace('/\D/', '', $ultimoFolio) + 1 : 1;
-    $folio = 'RPT-' . str_pad($numero, 4, '0', STR_PAD_LEFT);
+
+    return 'RPT-' . str_pad($numero, 4, '0', STR_PAD_LEFT);
+}
+
+public function store(Request $request)
+{
+    // Validar datos antes de guardar
+    $validated = $request->validate($this->reglasReporte(), $this->mensajesReporte());
+
+    $folio = $this->folioProyectado();
 
     $cliente = $validated['cliente'];
 
@@ -113,6 +140,7 @@ public function store(Request $request)
         'fecha_validacion' => $validated['fecha_validacion'],
         'medico_solicitante' => $validated['medico_solicitante'] ?? null,
         'medico_id' => $validated['medico_id'] ?? null,
+        'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
     ]);
 
     // Crear estudios y resultados
@@ -178,6 +206,118 @@ public function store(Request $request)
 
 
 
+    /**
+     * Arma un Reporte completo EN MEMORIA (sin tocar la base de datos) a partir
+     * del mismo payload que envia el formulario de captura. Se usa para la
+     * vista previa: las relaciones se inyectan a mano para que las plantillas
+     * PDF funcionen igual que con un reporte ya guardado.
+     */
+    private function construirReporteBorrador(array $validated): Reporte
+    {
+        $cliente = $validated['cliente'];
+
+        $reporte = new Reporte([
+            'folio' => $this->folioProyectado(),
+            'nombre_cliente' => $cliente['nombre'],
+            'email' => $cliente['email'] ?? null,
+            'fecha_nacimiento' => $cliente['fecha_nacimiento'],
+            'edad' => $cliente['edad'] ?? null,
+            'sexo' => $cliente['sexo'],
+            'toma_muestra' => $validated['toma_muestra'],
+            'fecha_reporte' => $validated['fecha_reporte'],
+            'fecha_validacion' => $validated['fecha_validacion'],
+            'medico_solicitante' => $validated['medico_solicitante'] ?? null,
+            'medico_id' => $validated['medico_id'] ?? null,
+            'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        ]);
+
+        // Catalogos precargados para no consultar dentro del bucle
+        $estudios = Estudio::whereIn('id', collect($validated['estudios'])->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $examenIds = collect($validated['estudios'])
+            ->flatMap(fn ($estudio) => collect($estudio['examenes'])->pluck('id'))
+            ->unique();
+        $examenes = Examen::whereIn('id', $examenIds)->get()->keyBy('id');
+
+        $reporteEstudios = collect($validated['estudios'])
+            ->values()
+            ->map(function ($estudioData, $indice) use ($estudios, $examenes) {
+                $reporteEstudio = new ReporteEstudio([
+                    'estudio_id' => $estudioData['id'],
+                    'orden' => $estudioData['orden'] ?? $indice,
+                    'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
+                    'metodo' => $estudioData['metodo'] ?? null,
+                    'elaboro' => $estudioData['elaboro'] ?? null,
+                    'valido' => $estudioData['valido'] ?? null,
+                    'precio' => $estudioData['precio'],
+                    'observaciones' => $estudioData['observaciones'] ?? null,
+                ]);
+
+                $reporteEstudio->setRelation('estudio', $estudios->get($estudioData['id']));
+
+                $resultados = collect($estudioData['examenes'])->map(function ($examenData) use ($examenes) {
+                    $fueraRango = filter_var($examenData['fuera_rango'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+                    $resultado = new ResultadoExamen([
+                        'examen_id' => $examenData['id'],
+                        'resultado' => $examenData['resultado'] ?? null,
+                        'fuera_rango' => $fueraRango,
+                        'direccion_rango' => $this->resolverDireccionRango(
+                            $examenData['id'],
+                            $examenData['resultado'] ?? null,
+                            $fueraRango,
+                            $examenData['direccion_rango'] ?? null,
+                        ),
+                    ]);
+
+                    $resultado->setRelation('examen', $examenes->get($examenData['id']));
+
+                    return $resultado;
+                });
+
+                $reporteEstudio->setRelation('resultados', new EloquentCollection($resultados->all()));
+
+                return $reporteEstudio;
+            })
+            ->sortBy('orden')
+            ->values();
+
+        $reporte->setRelation('estudios', new EloquentCollection($reporteEstudios->all()));
+
+        return $reporte;
+    }
+
+    /**
+     * Vista previa del reporte (o de la orden de trabajo) ANTES de guardarlo.
+     * No persiste nada: el usuario puede volver a editar o confirmar el guardado.
+     */
+    public function previsualizarBorrador(Request $request)
+    {
+        $validated = $request->validate($this->reglasReporte(), $this->mensajesReporte());
+
+        $reporte = $this->construirReporteBorrador($validated);
+
+        if ($request->input('documento') === 'orden') {
+            $subtotal = $reporte->subtotal;
+            $iva = $reporte->monto_iva;
+            $total = $reporte->total;
+
+            $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte', 'subtotal', 'iva', 'total'))
+                ->setPaper('A4', 'portrait');
+
+            $this->applyPageNumbers($pdf, 480, 815, 8);
+
+            return $pdf->stream("vista-previa-orden-{$reporte->folio}.pdf");
+        }
+
+        $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
+        $this->applyPageNumbers($pdf, 490, 815, 9);
+
+        return $pdf->stream("vista-previa-reporte-{$reporte->folio}.pdf");
+    }
+
     public function generarPDF($reporteId)
     {
         $reporte = Reporte::with([
@@ -208,9 +348,11 @@ public function generarOrdenTrabajo($reporteId)
 {
     $reporte = Reporte::with(['estudios.estudio'])->findOrFail($reporteId);
 
-    $total = $reporte->estudios->sum('precio'); // 💰 suma todos los precios
+    $subtotal = $reporte->subtotal;   // 💰 suma de los precios de los estudios
+    $iva = $reporte->monto_iva;       // 💰 0 si la orden no aplica IVA
+    $total = $reporte->total;         // 💰 subtotal + IVA
 
-    $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte', 'total'))
+    $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte', 'subtotal', 'iva', 'total'))
         ->setPaper('A4', 'portrait');
 
     $this->applyPageNumbers($pdf, 480, 815, 8);
@@ -234,6 +376,12 @@ public function actualizarReporte(Request $request, $id)
     $reporte->update($request->only([
         'toma_muestra', 'fecha_reporte', 'fecha_validacion', 'medico_solicitante', 'medico_id'
     ]));
+
+    if ($request->has('aplica_iva')) {
+        $reporte->update([
+            'aplica_iva' => filter_var($request->input('aplica_iva'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+    }
 
     $cliente = $request->input('cliente', []);
 
@@ -393,8 +541,11 @@ public function index(Request $request)
                 'fecha_validacion' => $reporte->fecha_validacion,
                 'medico_solicitante' => $reporte->medico_solicitante,
                 'created_at' => $reporte->created_at,
+                'aplica_iva' => (bool) $reporte->aplica_iva,
                 'total_estudios' => $reporte->estudios->count(),
-                'total_precio' => $reporte->estudios->sum('precio'),
+                'subtotal' => $reporte->subtotal,
+                'iva' => $reporte->monto_iva,
+                'total_precio' => $reporte->total,
             ];
         });
 
@@ -428,6 +579,8 @@ public function index(Request $request)
                 'fecha_validacion' => $reporte->fecha_validacion,
                 'medico_solicitante' => $reporte->medico_solicitante,
                 'medico_id' => $reporte->medico_id,
+                'aplica_iva' => (bool) $reporte->aplica_iva,
+                'porcentaje_iva' => (float) config('facturacion.iva'),
                 'created_at' => $reporte->created_at,
                 'estudios' => $reporte->estudios->map(function ($reporteEstudio) {
                     return [

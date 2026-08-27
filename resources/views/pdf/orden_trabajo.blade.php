@@ -70,11 +70,25 @@
         font-weight: bold;
       }
 
+      .totales {
+        margin-top: 8px;
+        text-align: right;
+      }
+
+      .totales-row {
+        font-size: 10px;
+        margin-bottom: 2px;
+      }
+
+      .totales-row .etiqueta {
+        color: #444;
+      }
+
       .total {
         text-align: right;
         font-size: 12px;
         font-weight: bold;
-        margin-top: 8px;
+        margin-top: 3px;
       }
 
       .footer-section {
@@ -180,8 +194,19 @@
           </tbody>
         </table>
 
-        <div class="total">
-          Total a Pagar: ${{ number_format($reporte->estudios->sum('precio'), 2) }}
+        <div class="totales">
+          @if ($reporte->aplica_iva)
+          <div class="totales-row">
+            <span class="etiqueta">Subtotal:</span> ${{ number_format($reporte->subtotal, 2) }}
+          </div>
+          <div class="totales-row">
+            <span class="etiqueta">IVA ({{ rtrim(rtrim(number_format($reporte->porcentaje_iva, 2, '.', ''), '0'), '.') }}%):</span>
+            ${{ number_format($reporte->monto_iva, 2) }}
+          </div>
+          @endif
+          <div class="total">
+            Total a Pagar: ${{ number_format($reporte->total, 2) }}
+          </div>
         </div>
 
         <p style="margin-top: 8px; font-size: 7px; text-align: justify;">

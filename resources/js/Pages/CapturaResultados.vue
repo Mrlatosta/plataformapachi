@@ -512,25 +512,161 @@
 
         <!-- Total y botones -->
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center">
-            <span class="text-gray-600 text-lg mr-3">Total de la orden:</span>
-            <span class="text-3xl font-bold text-green-600">${{ totalEstudios.toFixed(2) }}</span>
+          <div class="w-full sm:w-auto">
+            <label class="flex items-start gap-3 mb-4 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
+              <input
+                type="checkbox"
+                class="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                v-model="form.aplica_iva"
+              />
+              <span>
+                <span class="block text-sm font-medium text-gray-700">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</span>
+                <span class="block text-xs text-gray-500">
+                  Se desglosara en la orden de trabajo y en el reporte.
+                </span>
+              </span>
+            </label>
+            <div v-if="form.aplica_iva" class="space-y-1 mb-2">
+              <div class="flex items-center justify-between gap-6 text-gray-600">
+                <span>Subtotal:</span>
+                <span class="font-semibold">${{ totalEstudios.toFixed(2) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-6 text-gray-600">
+                <span>IVA ({{ IVA_PORCENTAJE }}%):</span>
+                <span class="font-semibold">${{ montoIva.toFixed(2) }}</span>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <span class="text-gray-600 text-lg mr-3">Total de la orden:</span>
+              <span class="text-3xl font-bold text-green-600">${{ totalConIva.toFixed(2) }}</span>
+            </div>
           </div>
-          <button
-            class="flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="guardarReporte"
-            :disabled="guardando"
-          >
-            <svg v-if="!guardando" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <svg v-else class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {{ guardando ? 'Guardando...' : 'Guardar Reporte' }}
-          </button>
+          <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              class="flex items-center justify-center px-6 py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-sm font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="previsualizarReporte"
+              :disabled="generandoPreview || guardando"
+            >
+              <svg v-if="!generandoPreview" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg v-else class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ generandoPreview ? 'Generando...' : 'Previsualizar' }}
+            </button>
+            <button
+              class="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="guardarReporte"
+              :disabled="guardando || generandoPreview"
+            >
+              <svg v-if="!guardando" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <svg v-else class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ guardando ? 'Guardando...' : 'Guardar Reporte' }}
+            </button>
+          </div>
         </div>
+
+        <!-- Modal de vista previa -->
+        <transition
+          enter-active-class="transition ease-out duration-200"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition ease-in duration-150"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="mostrarPreview"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            @click.self="cerrarPreview"
+          >
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+              <!-- Encabezado -->
+              <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-800">Vista previa del reporte</h3>
+                  <p class="text-xs text-gray-500">
+                    Todavía no se ha guardado nada. Revisa el documento y decide si continuar editando.
+                  </p>
+                </div>
+                <button
+                  @click="cerrarPreview"
+                  class="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Cerrar"
+                >
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Selector de documento -->
+              <div class="flex items-center gap-2 px-6 py-3 border-b border-gray-200 bg-gray-50">
+                <button
+                  @click="cambiarDocumentoPreview('reporte')"
+                  :disabled="generandoPreview"
+                  class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  :class="documentoPreview === 'reporte' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'"
+                >
+                  Reporte de resultados
+                </button>
+                <button
+                  @click="cambiarDocumentoPreview('orden')"
+                  :disabled="generandoPreview"
+                  class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  :class="documentoPreview === 'orden' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'"
+                >
+                  Orden de trabajo
+                </button>
+                <span v-if="generandoPreview" class="text-xs text-gray-500 ml-2">Generando...</span>
+              </div>
+
+              <!-- Documento -->
+              <div class="flex-1 bg-gray-100 relative">
+                <iframe
+                  v-if="previewUrl"
+                  :src="previewUrl"
+                  class="w-full h-full"
+                  title="Vista previa del documento"
+                ></iframe>
+                <div
+                  v-if="generandoPreview"
+                  class="absolute inset-0 flex items-center justify-center bg-white/70"
+                >
+                  <svg class="animate-spin w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="flex flex-col sm:flex-row justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-white">
+                <button
+                  @click="cerrarPreview"
+                  class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Seguir editando
+                </button>
+                <button
+                  @click="confirmarYGuardar"
+                  :disabled="guardando || generandoPreview"
+                  class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirmar y guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </transition>
 
         <!-- Toast de notificación -->
         <transition
@@ -584,12 +720,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import { direccionFueraRango } from '@/utils/rangoReferencia'
+import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva'
 
 // Props de Inertia (cotizacion precargada desde Cotizaciones)
 const props = defineProps({
@@ -626,10 +763,25 @@ function mostrarNotificacion(mensaje, tipo = 'success') {
   }, 4000)
 }
 
-// 💰 Cálculo automático del total
+// 💰 Cálculo automático del subtotal (suma de los estudios, sin IVA)
 const totalEstudios = computed(() => {
   return form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0)
 })
+
+// 💰 IVA opcional de la orden de trabajo
+const montoIva = computed(() => {
+  return calcularIva(totalEstudios.value, form.aplica_iva)
+})
+
+const totalConIva = computed(() => {
+  return totalEstudios.value + montoIva.value
+})
+
+// ===== Vista previa antes de guardar =====
+const mostrarPreview = ref(false)
+const generandoPreview = ref(false)
+const previewUrl = ref('')
+const documentoPreview = ref('reporte') // 'reporte' | 'orden'
 
 const estudiosDisponibles = ref([])
 const selectedEstudioId = ref('')
@@ -653,6 +805,7 @@ const form = reactive({
   fecha_validacion: '',
   medico_solicitante: '',
   medico_id: null,
+  aplica_iva: false,
   cliente: {
     nombre: '',
     email: '',
@@ -698,6 +851,9 @@ onMounted(async () => {
  * Precarga los datos del paciente y estudios desde una cotización guardada
  */
 function precargarDesdeCotizacion(cotizacion) {
+  // Heredar la casilla de IVA de la cotización
+  form.aplica_iva = Boolean(cotizacion.aplica_iva)
+
   // Precargar paciente
   if (cotizacion.paciente) {
     const paciente = cotizacion.paciente
@@ -847,43 +1003,45 @@ function agregarEstudio() {
   selectedEstudioId.value = ''
 }
 
-async function guardarReporte() {
-  if (guardando.value) return
-  
-  // Validaciones completas
+/**
+ * Validaciones compartidas por la vista previa y el guardado, para que lo que
+ * se previsualiza sea exactamente lo que se va a guardar.
+ * Devuelve true si el formulario esta completo.
+ */
+function validarFormulario() {
   if (!form.cliente.nombre || form.cliente.nombre.trim() === '') {
     mostrarNotificacion('Por favor ingresa el nombre del paciente', 'error')
-    return
+    return false
   }
 
   if (!form.cliente.fecha_nacimiento) {
     mostrarNotificacion('Por favor ingresa la fecha de nacimiento del paciente', 'error')
-    return
+    return false
   }
 
   if (!form.cliente.sexo) {
     mostrarNotificacion('Por favor selecciona el sexo del paciente', 'error')
-    return
+    return false
   }
 
   if (!form.toma_muestra) {
     mostrarNotificacion('Por favor ingresa la fecha de toma de muestra', 'error')
-    return
+    return false
   }
 
   if (!form.fecha_reporte) {
     mostrarNotificacion('Por favor ingresa la fecha de reporte', 'error')
-    return
+    return false
   }
 
   if (!form.fecha_validacion) {
     mostrarNotificacion('Por favor ingresa la fecha de validación', 'error')
-    return
+    return false
   }
   
   if (form.estudios.length === 0) {
     mostrarNotificacion('Debes agregar al menos un estudio', 'error')
-    return
+    return false
   }
 
   // Validar que todos los estudios tengan al menos un resultado
@@ -892,7 +1050,7 @@ async function guardarReporte() {
     
     if (!estudio.precio || estudio.precio <= 0) {
       mostrarNotificacion(`El estudio "${estudio.nombre}" debe tener un precio válido`, 'error')
-      return
+      return false
     }
 
     const tieneResultados = estudio.examenes.some(examen => 
@@ -901,9 +1059,97 @@ async function guardarReporte() {
     
     if (!tieneResultados) {
       mostrarNotificacion(`El estudio "${estudio.nombre}" debe tener al menos un resultado capturado`, 'error')
-      return
+      return false
     }
   }
+
+  return true
+}
+
+/**
+ * Pide al servidor el PDF del borrador (sin guardarlo) y lo muestra en el modal.
+ */
+async function cargarPreview(documento) {
+  generandoPreview.value = true
+
+  try {
+    const response = await axios.post(
+      '/api/reportes/preview',
+      { ...form, documento },
+      { responseType: 'blob' }
+    )
+
+    liberarPreview()
+    previewUrl.value = window.URL.createObjectURL(
+      new Blob([response.data], { type: 'application/pdf' })
+    )
+    documentoPreview.value = documento
+    return true
+  } catch (error) {
+    console.error('Error al generar la vista previa:', error)
+
+    // El error viene como blob porque pedimos responseType: 'blob'
+    let mensaje = 'No se pudo generar la vista previa'
+    if (error.response?.data instanceof Blob) {
+      try {
+        const texto = await error.response.data.text()
+        const datos = JSON.parse(texto)
+        mensaje = datos.errors
+          ? Object.values(datos.errors).flat()[0]
+          : (datos.message || mensaje)
+      } catch (e) {
+        // Si no es JSON se queda el mensaje genérico
+      }
+    }
+
+    mostrarNotificacion(mensaje, 'error')
+    return false
+  } finally {
+    generandoPreview.value = false
+  }
+}
+
+async function previsualizarReporte() {
+  if (generandoPreview.value || guardando.value) return
+
+  if (!validarFormulario()) return
+
+  if (await cargarPreview('reporte')) {
+    mostrarPreview.value = true
+  }
+}
+
+async function cambiarDocumentoPreview(documento) {
+  if (documento === documentoPreview.value || generandoPreview.value) return
+  await cargarPreview(documento)
+}
+
+function liberarPreview() {
+  if (previewUrl.value) {
+    window.URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = ''
+  }
+}
+
+// "Seguir editando": cierra el modal sin guardar nada
+function cerrarPreview() {
+  mostrarPreview.value = false
+  documentoPreview.value = 'reporte'
+  liberarPreview()
+}
+
+// "Confirmar y guardar": cierra la vista previa y ejecuta el guardado normal
+async function confirmarYGuardar() {
+  cerrarPreview()
+  await guardarReporte()
+}
+
+onBeforeUnmount(liberarPreview)
+
+async function guardarReporte() {
+  if (guardando.value) return
+
+  if (!validarFormulario()) return
 
   guardando.value = true
 

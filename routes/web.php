@@ -74,6 +74,7 @@ Route::put('/api/pacientes/{id}', [PacienteController::class, 'update']);
 Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy']);
 
 Route::post('/api/reportes', [ReporteController::class, 'store']);
+Route::post('/api/reportes/preview', [ReporteController::class, 'previsualizarBorrador']);
 
 Route::post('/guardar-reporte', [ReporteController::class, 'guardar'])->name('reporte.guardar');
 
@@ -157,6 +158,21 @@ Route::get('/prueba-pdf', function () {
 
 Route::get('/prueba-odt', function () {
     // Simular reporte de orden de trabajo para pruebas
+    $estudiosPrueba = collect(range(1, 5))->map(function ($i) {
+        return (object) [
+            'elaboro' => 'QFB Ángel Augusto Pérez Arias',
+            'valido' => 'QFB Ángel Augusto Pérez Arias',
+            'tipo_muestra' => 'Suero',
+            'metodo' => 'ELISA',
+            'precio' => rand(100, 350),
+            'estudio' => (object) ['nombre' => 'ESTUDIO CLÍNICO #' . $i],
+        ];
+    });
+
+    $subtotalPrueba = round((float) $estudiosPrueba->sum('precio'), 2);
+    $porcentajeIvaPrueba = (float) config('facturacion.iva');
+    $montoIvaPrueba = round($subtotalPrueba * ($porcentajeIvaPrueba / 100), 2);
+
     $reporte = (object) [
         'folio' => 'ODT-PRUEBA-001',
         'id' => 999,
@@ -169,16 +185,12 @@ Route::get('/prueba-odt', function () {
         'edad' => 37,
         'sexo' => 'masculino',
         'medico_solicitante' => 'Dr. José Luis García',
-        'estudios' => collect(range(1, 5))->map(function ($i) {
-            return (object) [
-                'elaboro' => 'QFB Ángel Augusto Pérez Arias',
-                'valido' => 'QFB Ángel Augusto Pérez Arias',
-                'tipo_muestra' => 'Suero',
-                'metodo' => 'ELISA',
-                'precio' => rand(100, 350),
-                'estudio' => (object) ['nombre' => 'ESTUDIO CLÍNICO #' . $i],
-            ];
-        }),
+        'estudios' => $estudiosPrueba,
+        'aplica_iva' => true,
+        'subtotal' => $subtotalPrueba,
+        'porcentaje_iva' => $porcentajeIvaPrueba,
+        'monto_iva' => $montoIvaPrueba,
+        'total' => round($subtotalPrueba + $montoIvaPrueba, 2),
     ];
 
     // Cargar vista de la orden de trabajo (ajusta el nombre si lo cambiaste)

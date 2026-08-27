@@ -143,7 +143,10 @@ const formatCurrency = (value) => {
                                     </div>
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-gray-600">{{ reporte.edad }} años - {{ reporte.sexo }}</span>
-                                        <span class="font-semibold text-gray-900">{{ formatCurrency(reporte.total_precio) }}</span>
+                                        <span class="text-right">
+                                            <span class="block font-semibold text-gray-900">{{ formatCurrency(reporte.total_precio) }}</span>
+                                            <span v-if="reporte.aplica_iva" class="block text-[10px] text-emerald-600">IVA incluido</span>
+                                        </span>
                                     </div>
                                     <p class="text-xs text-gray-500">{{ formatDate(reporte.created_at) }}</p>
                                 </div>
@@ -197,6 +200,9 @@ const formatCurrency = (value) => {
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ formatCurrency(reporte.total_precio) }}
+                                            <span v-if="reporte.aplica_iva" class="block text-xs font-normal text-emerald-600">
+                                                IVA incluido: {{ formatCurrency(reporte.iva) }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ formatDate(reporte.created_at) }}

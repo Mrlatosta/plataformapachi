@@ -200,7 +200,15 @@
         <!-- Total -->
         <div class="card">
           <div class="card-body text-end">
-            <h5 class="fw-bold">Total: ${{ totalEstudios.toFixed(2) }}</h5>
+            <div class="form-check d-inline-flex align-items-center gap-2 mb-2">
+              <input class="form-check-input" type="checkbox" id="aplicaIva" v-model="form.aplica_iva" />
+              <label class="form-check-label" for="aplicaIva">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</label>
+            </div>
+            <template v-if="form.aplica_iva">
+              <p class="mb-1 text-muted">Subtotal: ${{ totalEstudios.toFixed(2) }}</p>
+              <p class="mb-1 text-muted">IVA ({{ IVA_PORCENTAJE }}%): ${{ montoIva.toFixed(2) }}</p>
+            </template>
+            <h5 class="fw-bold">Total: ${{ totalConIva.toFixed(2) }}</h5>
           </div>
         </div>
 
@@ -219,6 +227,7 @@ import { ref, reactive, onMounted, computed } from "vue";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from "@inertiajs/vue3";
+import { IVA_PORCENTAJE, calcularIva } from "@/utils/iva";
 
 const folioBusqueda = ref("");
 const estudiosDisponibles = ref([]);
@@ -231,6 +240,7 @@ const form = reactive({
   fecha_reporte: "",
   fecha_validacion: "",
   medico_solicitante: "",
+  aplica_iva: false,
   cliente: {
     nombre: "",
     email: "",
@@ -250,6 +260,10 @@ onMounted(async () => {
 const totalEstudios = computed(() => {
   return form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0);
 });
+
+const montoIva = computed(() => calcularIva(totalEstudios.value, form.aplica_iva));
+
+const totalConIva = computed(() => totalEstudios.value + montoIva.value);
 
 // function eliminarEstudio(index) {
 //   if (confirm('¿Deseas eliminar este estudio del reporte?')) {
@@ -278,6 +292,7 @@ async function buscarReporte() {
     form.fecha_reporte = data.fecha_reporte;
     form.fecha_validacion = data.fecha_validacion;
     form.medico_solicitante = data.medico_solicitante;
+    form.aplica_iva = Boolean(data.aplica_iva);
 
     // 🔹 Datos del cliente
     form.cliente.nombre = data.nombre_cliente || "";

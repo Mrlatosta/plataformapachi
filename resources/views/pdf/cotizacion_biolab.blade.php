@@ -331,6 +331,21 @@
             margin-bottom: 3px;
         }
 
+        .estudio-meta {
+            margin-top: 5px;
+            font-size: 9px;
+            color: #555;
+        }
+
+        .estudio-meta div {
+            margin-bottom: 2px;
+        }
+
+        .estudio-meta .meta-label {
+            font-weight: bold;
+            color: #333;
+        }
+
     </style>
 </head>
 <body>
@@ -425,6 +440,16 @@
                         @endforeach
                     </ul>
                     @endif
+                    @if(!empty($estudio['metodo']) || !empty($estudio['tiempo_entrega']))
+                    <div class="estudio-meta">
+                        @if(!empty($estudio['metodo']))
+                        <div><span class="meta-label">Metodologia:</span> {{ $estudio['metodo'] }}</div>
+                        @endif
+                        @if(!empty($estudio['tiempo_entrega']))
+                        <div><span class="meta-label">Tiempo de entrega:</span> {{ $estudio['tiempo_entrega'] }}</div>
+                        @endif
+                    </div>
+                    @endif
                 </td>
                 <td class="text-center">{{ $estudio['cantidad'] }}</td>
                 <td class="text-right">${{ number_format($estudio['precio'], 2) }}</td>
@@ -444,6 +469,12 @@
         <div class="totals-row">
             <div class="totals-label">Descuento ({{ $descuento }}%):</div>
             <div class="totals-value" style="color: #dc3545;">-${{ number_format($monto_descuento, 2) }}</div>
+        </div>
+        @endif
+        @if(!empty($aplica_iva))
+        <div class="totals-row">
+            <div class="totals-label">IVA ({{ rtrim(rtrim(number_format($porcentaje_iva ?? 16, 2, '.', ''), '0'), '.') }}%):</div>
+            <div class="totals-value">${{ number_format($iva ?? 0, 2) }}</div>
         </div>
         @endif
         <div class="totals-row total-final">

@@ -16,7 +16,7 @@ class EstudioController extends Controller
                   ->orderBy('orden', 'asc');
         }])
         ->orderBy('nombre', 'asc')
-        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'precio', 'costo']);
+        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'tiempo_entrega', 'precio', 'costo']);
     }
 
     // Crear nuevo estudio con exámenes
@@ -27,6 +27,7 @@ class EstudioController extends Controller
             'leyenda' => $request->leyenda ?? null, // Agregar leyenda si se proporciona
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
+            'tiempo_entrega' => $request->tiempo_entrega ?? null,
             'precio' => $request->precio ?? 0,
             'costo' => $request->costo ?? 0,
         ]);
@@ -57,6 +58,7 @@ class EstudioController extends Controller
             'leyenda' => $request->leyenda ?? null,
             'tipo_muestra' => $request->tipo_muestra ?? null,
             'metodo' => $request->metodo ?? null,
+            'tiempo_entrega' => $request->tiempo_entrega ?? null,
             'precio' => $request->precio ?? 0,
             'costo' => $request->costo ?? 0,
         ]);
