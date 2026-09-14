@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BIOLAB · Análisis clínicos en Cancún, también a domicilio</title>
+    <meta name="description" content="Laboratorio de análisis clínicos en Cancún. Agenda por WhatsApp, toma de muestra a domicilio y resultados con código QR verificable. Respondemos en menos de 1 hora.">
+    <meta name="theme-color" content="#1f2a55">
+    <!-- Open Graph: og:image y og:url necesitan la URL absoluta del dominio en producción -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_MX">
+    <meta property="og:title" content="BIOLAB · Análisis clínicos en Cancún">
+    <meta property="og:description" content="Agenda por WhatsApp, en el laboratorio o a domicilio. Resultados con QR verificable.">
+    <link rel="icon" type="image/png" href="/landing/img/logo-80x96.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="/landing/css/landing.css">
+    <link rel="preload" href="/landing/data/ofertas.json" as="fetch" type="application/json" crossorigin>
+    <script>document.documentElement.classList.add('js');</script>
+    <script src="/landing/js/landing.js" defer></script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "DiagnosticLab",
+      "name": "BIOLAB Laboratorio de Análisis Clínicos",
+      "slogan": "Resultados que dan confianza",
+      "telephone": "+52 998 654 3958",
+      "email": "biolab348@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Av. Revolución, Región 75, Calle 37 Norte",
+        "addressLocality": "Cancún",
+        "addressRegion": "Quintana Roo",
+        "postalCode": "77527",
+        "addressCountry": "MX"
+      },
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "08:00", "closes": "18:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "14:00" }
+      ],
+      "paymentAccepted": "Efectivo, transferencia"
+    }
+    </script>
+</head>
+<body>
+    <!-- Iconos (se usan con <use href="#i-...">) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <symbol id="i-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></symbol>
+        <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+        <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-4"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="m9 15 2 2 4-4"/></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+        <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></symbol>
+        <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></symbol>
+    </svg>
+
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+    <header class="site-header">
+        <div class="container site-header__inner">
+            <a class="brand" href="#inicio">
+                <picture>
+                    <source type="image/webp" srcset="/landing/img/logo-80x96.webp">
+                    <img src="/landing/img/logo-80x96.png" width="40" height="48" alt="">
+                </picture>
+                BIOLAB
+            </a>
+
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu">
+                <svg class="icon icon--menu" aria-hidden="true"><use href="#i-menu"/></svg>
+                <svg class="icon icon--close" aria-hidden="true"><use href="#i-close"/></svg>
+                <span class="sr-only">Abrir menú</span>
+            </button>
+
+            <nav class="nav" id="menu" aria-label="Principal">
+                <ul class="nav__list" role="list">
+                    <li><a href="#ofertas">Promociones</a></li>
+                    <li><a href="#precios">Precios</a></li>
+                    <li><a href="#como-funciona">Cómo funciona</a></li>
+                    <li><a href="#preguntas">Preguntas</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                </ul>
+                <a class="btn btn--secondary" href="https://wa.me/529986543958" data-wa="Hola, tengo una duda sobre un estudio." data-cta="header" target="_blank" rel="noopener">
+                    <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                    Escríbenos<span class="sr-only"> por WhatsApp</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido">
+        <!-- 1. HERO: una sola idea + CTA primario + prueba de confianza -->
+        <section class="hero" id="inicio" aria-labelledby="hero-titulo">
+            <div class="container hero__grid">
+                <div>
+                    <p class="eyebrow">Laboratorio de análisis clínicos · Cancún</p>
+                    <h1 id="hero-titulo">Tus análisis clínicos, <span class="accent">en el laboratorio o en tu casa</span></h1>
+                    <p class="hero__lead">Escríbenos por WhatsApp: te decimos el precio y la preparación, y agendamos cuando te acomode. Cada resultado lleva un código QR para comprobar que es auténtico.</p>
+
+                    <div class="cta-block">
+                        <a class="btn btn--primary btn--lg" href="https://wa.me/529986543958" data-wa="Hola, quiero agendar un estudio. ¿Me pueden ayudar?" data-cta="hero" target="_blank" rel="noopener">
+                            <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                            Quiero agendar por WhatsApp
+                        </a>
+                        <p class="cta-micro">
+                            <span class="status-dot" data-horario-dot aria-hidden="true"></span>
+                            <span data-horario>Respondemos en menos de 1 hora en horario de atención</span>
+                            <span aria-hidden="true">·</span> Sin registro
+                        </p>
+                        <a class="link hero__secondary" href="#ofertas">Ver promociones del mes <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                    </div>
+
+                    <ul class="trust" role="list">
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> Responsable sanitario con cédula</li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-doc"/></svg> Procesos conforme a NOM</li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg> Resultados con QR verificable</li>
+                    </ul>
+                </div>
+
+                <figure class="hero__visual">
+                    <div class="chat" role="img" aria-label="Ejemplo de conversación: preguntas por WhatsApp cuánto cuesta un estudio y te respondemos con precio, preparación y horario.">
+                        <div class="chat__header" aria-hidden="true">
+                            <span class="chat__avatar">
+                                <picture>
+                                    <source type="image/webp" srcset="/landing/img/logo-80x96.webp">
+                                    <img src="/landing/img/logo-80x96.png" width="32" height="38" alt="">
+                                </picture>
+                            </span>
+                            <span>
+                                <span class="chat__name">BIOLAB Laboratorio</span><br>
+                                <span class="chat__meta">Responde en menos de 1 hora</span>
+                            </span>
+                        </div>
+                        <div class="chat__body" aria-hidden="true">
+                            <p class="bubble bubble--out">Hola 👋 ¿cuánto cuesta la química sanguínea?<span class="bubble__time">9:02</span></p>
+                            <p class="bubble bubble--in">¡Hola! La química sanguínea de 6 elementos cuesta $360. Necesitas 8 horas de ayuno.<span class="bubble__time">9:10</span></p>
+                            <p class="bubble bubble--in">¿Te agendamos mañana a las 8:00? Puede ser aquí o en tu casa.<span class="bubble__time">9:10</span></p>
+                            <p class="bubble bubble--out">¡En mi casa, porfa! 🙌<span class="bubble__time">9:11</span></p>
+                        </div>
+                    </div>
+                    <figcaption class="chat__caption">Ejemplo de conversación. Así de rápido es cotizar.</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <!-- 2. BENEFICIOS -->
+        <section class="section section--alt" id="beneficios" aria-labelledby="beneficios-titulo">
+            <div class="container">
+                <div class="section__head section__head--center">
+                    <p class="eyebrow">Por qué BIOLAB</p>
+                    <h2 class="h2" id="beneficios-titulo">Hacerte estudios no tiene por qué ser complicado</h2>
+                </div>
+
+                <ul class="benefits" role="list">
+                    <li class="benefit">
+                        <span class="icon-tile tone-green"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span>
+                        <h3>Te atendemos donde te acomode</h3>
+                        <p>Ven a nuestro laboratorio en la Región 75 o pide la toma de muestra a domicilio en Cancún.</p>
+                    </li>
+                    <li class="benefit">
+                        <span class="icon-tile tone-teal"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span>
+                        <h3>Sabes cuánto pagas antes de venir</h3>
+                        <p>Pregunta por WhatsApp y en menos de 1 hora te respondemos con precio, preparación y tiempo de entrega.</p>
+                    </li>
+                    <li class="benefit">
+                        <span class="icon-tile tone-navy"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg></span>
+                        <h3>Resultados que puedes comprobar</h3>
+                        <p>Tu reporte lleva un código QR. Escanéalo y confirma que es auténtico y que nadie lo modificó.</p>
+                    </li>
+                </ul>
+
+                <div class="section-cta">
+                    <a class="btn btn--primary btn--lg" href="https://wa.me/529986543958" data-wa="Hola, quiero agendar un estudio. ¿Me pueden ayudar?" data-cta="beneficios" target="_blank" rel="noopener">
+                        <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                        Quiero agendar por WhatsApp
+                    </a>
+                    <p class="cta-micro">Pago en efectivo o transferencia · Sin registro</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. OFERTAS (datos en /landing/data/ofertas.json) -->
+        <section class="section" id="ofertas" aria-labelledby="ofertas-titulo">
+            <div class="container">
+                <div class="section__head section__head--center">
+                    <p class="eyebrow">Promociones del mes</p>
+                    <h2 class="h2" id="ofertas-titulo">Paquetes para cuidarte pagando menos</h2>
+                    <p class="lead">Estudios agrupados para que resuelvas todo en una sola toma de muestra.</p>
+                </div>
+
+                <p class="sr-only" id="ofertas-anuncio" role="status" aria-live="polite">Cargando promociones…</p>
+
+                <div class="offers-grid" id="ofertas-lista" aria-busy="true" data-estado="cargando">
+                    <!-- Skeleton inicial (solo visible con JS) -->
+                    <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+                    <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+                    <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+                    <noscript>
+                        <div class="offers-empty">
+                            <h3>Pregunta por nuestras promociones</h3>
+                            <p>Para ver los paquetes del mes activa JavaScript o escríbenos directamente.</p>
+                            <a class="btn btn--primary" href="https://wa.me/529986543958" target="_blank" rel="noopener">Quiero conocer las promociones</a>
+                        </div>
+                    </noscript>
+                </div>
+
+                <p class="offers-note">Precios en pesos mexicanos. Los marcadores tumorales apoyan el diagnóstico; interpreta tus resultados con tu médico.</p>
+            </div>
+        </section>
+
+        <!-- 4. PRECIOS DE ESTUDIOS FRECUENTES (precio al público del catálogo) -->
+        <section class="section section--alt" id="precios" aria-labelledby="precios-titulo">
+            <div class="container">
+                <div class="section__head section__head--center">
+                    <p class="eyebrow">Precios claros</p>
+                    <h2 class="h2" id="precios-titulo">Lo que más nos piden, con su precio</h2>
+                    <p class="lead">¿No ves el tuyo? Tenemos más de 80 estudios. Toca cualquiera para preguntar.</p>
+                </div>
+
+                <ul class="price-list" role="list">
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información de la Biometría hemática completa." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Biometría hemática completa</span><span class="price-item__price">$150</span>
+                        <span class="price-item__desc">Revisa glóbulos rojos, blancos y plaquetas: anemia, infecciones y más.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información de la Química sanguínea de 6 elementos." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Química sanguínea de 6 elementos</span><span class="price-item__price">$360</span>
+                        <span class="price-item__desc">Glucosa, función del riñón, ácido úrico, colesterol y triglicéridos.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información del Examen general de orina." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Examen general de orina</span><span class="price-item__price">$100</span>
+                        <span class="price-item__desc">Detecta infecciones urinarias y señales de problemas en el riñón.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información del Perfil de lípidos." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Perfil de lípidos</span><span class="price-item__price">$310</span>
+                        <span class="price-item__desc">Colesterol bueno y malo, y triglicéridos. Clave para cuidar tu corazón.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información de la Hemoglobina glicosilada (HbA1c)." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Hemoglobina glicosilada (HbA1c)</span><span class="price-item__price">$450</span>
+                        <span class="price-item__desc">Tu promedio de azúcar en sangre de los últimos 3 meses.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información del estudio de TSH (tiroides)." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Hormona estimulante de la tiroides (TSH)</span><span class="price-item__price">$210</span>
+                        <span class="price-item__desc">El primer paso para revisar cómo funciona tu tiroides.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información del Antígeno prostático específico (PSA)." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Antígeno prostático específico (PSA)</span><span class="price-item__price">$300</span>
+                        <span class="price-item__desc">Chequeo de la salud de la próstata.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información de la prueba de embarazo en sangre." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Prueba de embarazo en sangre</span><span class="price-item__price">$150</span>
+                        <span class="price-item__desc">Detecta la hormona del embarazo (hCG) en una muestra de sangre.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                    <li><a class="price-item" href="https://wa.me/529986543958" data-wa="Hola, quiero información del estudio de Grupo sanguíneo y Rh." data-cta="precio" target="_blank" rel="noopener">
+                        <span class="price-item__name">Grupo sanguíneo y Rh</span><span class="price-item__price">$100</span>
+                        <span class="price-item__desc">Útil para trámites, cirugías, embarazo y donación.</span>
+                        <span class="price-item__ask">Preguntar por WhatsApp <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+                    </a></li>
+                </ul>
+                <p class="prices-note">Precios al público en pesos mexicanos, sujetos a cambio. Te confirmamos el total al agendar.</p>
+
+                <div class="section-cta">
+                    <a class="btn btn--primary btn--lg" href="https://wa.me/529986543958" data-wa="Hola, quiero cotizar un estudio." data-cta="precios" target="_blank" rel="noopener">
+                        <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                        Quiero cotizar mi estudio
+                    </a>
+                    <p class="cta-micro">¿Tienes orden médica? Mándanos la foto y te cotizamos todo.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. CÓMO FUNCIONA -->
+        <section class="section" id="como-funciona" aria-labelledby="pasos-titulo">
+            <div class="container">
+                <div class="section__head section__head--center">
+                    <p class="eyebrow">Cómo funciona</p>
+                    <h2 class="h2" id="pasos-titulo">Tus estudios en 3 pasos</h2>
+                </div>
+                <ol class="steps" role="list">
+                    <li class="step">
+                        <span class="step__num" aria-hidden="true">1</span>
+                        <h3><span class="sr-only">Paso 1: </span>Escríbenos por WhatsApp</h3>
+                        <p>Dinos qué estudio necesitas o mándanos la foto de tu orden. Te respondemos con precio y preparación.</p>
+                    </li>
+                    <li class="step">
+                        <span class="step__num" aria-hidden="true">2</span>
+                        <h3><span class="sr-only">Paso 2: </span>Tomamos tu muestra</h3>
+                        <p>En el laboratorio o en tu casa. De lunes a viernes de 8:00 a 18:00 y sábados de 8:00 a 14:00.</p>
+                    </li>
+                    <li class="step">
+                        <span class="step__num" aria-hidden="true">3</span>
+                        <h3><span class="sr-only">Paso 3: </span>Recibe tus resultados</h3>
+                        <p>Claros, firmados por nuestro responsable sanitario y con código QR para verificar su autenticidad.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 6. CONFIANZA (en lugar de testimonios: solo datos comprobables) -->
+        <section class="section section--dark" id="confianza" aria-labelledby="confianza-titulo">
+            <div class="container">
+                <div class="section__head">
+                    <p class="eyebrow">Respaldo</p>
+                    <h2 class="h2" id="confianza-titulo">Confianza que puedes comprobar</h2>
+                    <p class="lead">Nada de promesas vagas: estos son datos que tú mismo puedes verificar.</p>
+                </div>
+                <div class="trust-grid">
+                    <div class="person-card">
+                        <p class="person-card__role">Responsable sanitario</p>
+                        <p class="person-card__name">Q.F.B. Ángel Augusto Pérez Arias</p>
+                        <p class="person-card__id">Cédula profesional 14083392</p>
+                        <a class="link" href="https://www.cedulaprofesional.sep.gob.mx/" target="_blank" rel="noopener">Verificar en el Registro Nacional de Profesionistas<span class="sr-only"> (abre en otra pestaña)</span> <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                    </div>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span>
+                            <div><strong>Normas Oficiales Mexicanas</strong><p>Procesos conforme a las NOM para laboratorios clínicos y buenas prácticas.</p></div>
+                        </li>
+                        <li>
+                            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span>
+                            <div><strong>Control de calidad</strong><p>Controles internos y externos para que tus resultados sean confiables.</p></div>
+                        </li>
+                        <li>
+                            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg></span>
+                            <div><strong>Resultados verificables</strong><p>Cada reporte tiene un QR único que confirma que es original.</p></div>
+                        </li>
+                        <li>
+                            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span>
+                            <div><strong>Confidencialidad total</strong><p>Tus datos y resultados solo los compartimos contigo y con el médico que tú indiques.</p></div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. FAQ: objeciones reales -->
+        <section class="section section--alt" id="preguntas" aria-labelledby="faq-titulo">
+            <div class="container">
+                <div class="section__head section__head--center">
+                    <p class="eyebrow">Preguntas frecuentes</p>
+                    <h2 class="h2" id="faq-titulo">Resolvemos tus dudas antes de venir</h2>
+                </div>
+                <div class="faq">
+                    <details>
+                        <summary><h3 class="faq__q">¿Tengo que ir en ayunas?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Depende del estudio. La química sanguínea y el perfil de lípidos requieren de 8 a 12 horas de ayuno; la biometría hemática y el examen de orina normalmente no. Al agendar te enviamos las indicaciones exactas.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Necesito orden médica?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Para los estudios de rutina, no. Algunas pruebas especiales se realizan bajo indicación médica. Si tienes orden, mándanos una foto por WhatsApp y te cotizamos todo.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Cuánto tardan mis resultados?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Depende del estudio. Te decimos el tiempo exacto de entrega al cotizar, antes de que pagues nada.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Toman la muestra a domicilio?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Sí, en Cancún. Escríbenos tu colonia y te confirmamos disponibilidad y costo antes de agendar.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Cómo puedo pagar?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">En efectivo o por transferencia.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Cómo sé que mis resultados son auténticos?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Cada reporte trae un código QR único. Al escanearlo con tu celular abres la versión original guardada en nuestro sistema, así puedes comprobar que nadie la alteró.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Los marcadores tumorales detectan el cáncer?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Ayudan a tu médico a detectar y dar seguimiento a algunos tipos de cáncer, pero un resultado por sí solo no confirma ni descarta un diagnóstico. Lleva siempre tus resultados a consulta.</p>
+                    </details>
+                    <details>
+                        <summary><h3 class="faq__q">¿Atienden a empresas y consultorios?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+                        <p class="faq__answer">Sí. Ofrecemos control sanitario y asesoría para empresas e instituciones, y maquila para laboratorios y consultorios. Escríbenos y te enviamos nuestras tarifas.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. CIERRE: formulario que arma el mensaje de WhatsApp + contacto -->
+        <section class="section closing" id="contacto" aria-labelledby="cierre-titulo">
+            <div class="container closing__grid">
+                <div class="closing__head">
+                    <p class="eyebrow">Agenda hoy</p>
+                    <h2 class="h2" id="cierre-titulo">Tu salud no tiene que esperar</h2>
+                    <p class="lead">Déjanos tu nombre y abrimos WhatsApp con tu mensaje listo para enviar.</p>
+                </div>
+
+                <div class="form-card">
+                    <h3 class="form-card__title">Arma tu mensaje en 10 segundos</h3>
+                    <form id="form-wa" novalidate>
+                        <div class="field">
+                            <label for="f-nombre">Tu nombre</label>
+                            <input class="input" id="f-nombre" name="nombre" type="text" autocomplete="given-name" required maxlength="60" aria-describedby="f-nombre-ayuda f-nombre-error">
+                            <p class="field__hint" id="f-nombre-ayuda">Así sabremos cómo dirigirnos a ti.</p>
+                            <p class="field__error" id="f-nombre-error" hidden><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg><span></span></p>
+                        </div>
+
+                        <div class="field">
+                            <label for="f-estudio">¿Qué estudio necesitas? <span class="field__optional">(opcional)</span></label>
+                            <input class="input" id="f-estudio" name="estudio" type="text" list="lista-estudios" maxlength="120" autocomplete="off" aria-describedby="f-estudio-ayuda">
+                            <datalist id="lista-estudios">
+                                <option value="Check-up esencial"></option>
+                                <option value="Marcadores tumorales para mujer"></option>
+                                <option value="Marcadores tumorales para hombre"></option>
+                                <option value="Biometría hemática completa"></option>
+                                <option value="Química sanguínea"></option>
+                                <option value="Examen general de orina"></option>
+                                <option value="Perfil de lípidos"></option>
+                                <option value="Hemoglobina glicosilada (HbA1c)"></option>
+                                <option value="Perfil tiroideo"></option>
+                                <option value="Antígeno prostático (PSA)"></option>
+                                <option value="Prueba de embarazo en sangre"></option>
+                            </datalist>
+                            <p class="field__hint" id="f-estudio-ayuda">Si no lo sabes o tienes orden médica, déjalo vacío y mándanos la foto en el chat.</p>
+                        </div>
+
+                        <fieldset class="field">
+                            <legend>¿Dónde prefieres que te atendamos?</legend>
+                            <div class="choice-group">
+                                <label class="choice"><input type="radio" name="lugar" value="laboratorio" checked> En el laboratorio</label>
+                                <label class="choice"><input type="radio" name="lugar" value="domicilio"> En mi casa</label>
+                            </div>
+                        </fieldset>
+
+                        <button class="btn btn--primary btn--lg btn--block" type="submit">
+                            <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                            <span data-label>Quiero agendar por WhatsApp</span>
+                        </button>
+                        <p class="cta-micro">No guardamos tus datos: solo los usamos para escribir tu mensaje.</p>
+                        <p class="form__status" id="form-estado" role="status" aria-live="polite"></p>
+                    </form>
+                </div>
+
+                <ul class="contact-list" role="list" aria-label="Datos de contacto">
+                    <li>
+                        <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></span>
+                        <div>
+                            <p class="contact-list__label">Dirección</p>
+                            <p>Av. Revolución, Región 75, Calle 37 Norte, C.P. 77527, Cancún, Q. Roo</p>
+                            <a class="link" href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Revoluci%C3%B3n+Regi%C3%B3n+75+Calle+37+Norte+77527+Canc%C3%BAn" target="_blank" rel="noopener">Cómo llegar<span class="sr-only"> (abre Google Maps)</span></a>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span>
+                        <div>
+                            <p class="contact-list__label">Horario</p>
+                            <p>Lunes a viernes, 8:00 a 18:00<br>Sábados, 8:00 a 14:00</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span>
+                        <div>
+                            <p class="contact-list__label">Teléfono y WhatsApp</p>
+                            <p><a href="tel:+529986543958">998 654 3958</a></p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></span>
+                        <div>
+                            <p class="contact-list__label">Correo</p>
+                            <p><a href="mailto:biolab348@gmail.com">biolab348@gmail.com</a></p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container site-footer__grid">
+            <div>
+                <p class="site-footer__brand">BIOLAB</p>
+                <p>Laboratorio de Análisis Clínicos · Resultados que dan confianza</p>
+                <p>© <span data-anio>2026</span> BIOLAB. Responsable sanitario: Q.F.B. Ángel Augusto Pérez Arias, Céd. Prof. 14083392.</p>
+            </div>
+            <nav class="site-footer__links" aria-label="Enlaces secundarios">
+                <a href="/medico/login">Acceso para médicos</a>
+                <a href="#preguntas">Empresas y consultorios</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- CTA fijo en móvil -->
+    <div class="sticky-cta">
+        <a class="btn btn--primary btn--block" href="https://wa.me/529986543958" data-wa="Hola, quiero agendar un estudio. ¿Me pueden ayudar?" data-cta="sticky" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+            Quiero agendar por WhatsApp
+        </a>
+        <p class="cta-micro"><span class="status-dot" data-horario-dot aria-hidden="true"></span><span data-horario>Respondemos en menos de 1 hora en horario de atención</span></p>
+    </div>
+
+    <!-- ===== Plantillas de la sección de ofertas ===== -->
+    <template id="tpl-oferta">
+        <article class="offer">
+            <p class="offer__ribbon" data-slot="ribbon" hidden>Promoción destacada</p>
+            <div class="offer__media">
+                <img data-slot="img" src="" alt="" width="480" height="300" loading="lazy" decoding="async">
+                <div class="offer__badges">
+                    <span class="badge" data-slot="etiqueta" hidden></span>
+                    <span class="badge badge--descuento" data-slot="descuento" hidden><span aria-hidden="true" data-slot="descuento-v"></span><span class="sr-only" data-slot="descuento-sr"></span></span>
+                </div>
+            </div>
+            <div class="offer__body">
+                <h3 class="offer__title" data-slot="titulo"></h3>
+                <p class="offer__desc" data-slot="descripcion"></p>
+                <div data-slot="incluye-wrap">
+                    <p class="offer__includes-title">Incluye</p>
+                    <ul class="offer__includes" role="list" data-slot="incluye">
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span></span></li>
+                    </ul>
+                </div>
+                <div class="offer__pricing">
+                    <p class="offer__price">
+                        <span class="offer__old" data-slot="anterior-wrap" hidden><span class="sr-only">Precio normal: </span><del data-slot="anterior"></del></span>
+                        <span class="offer__now"><span class="sr-only">Precio de promoción: </span><span data-slot="actual"></span></span>
+                        <span class="offer__currency">MXN</span>
+                    </p>
+                    <p class="offer__save" data-slot="ahorro" hidden></p>
+                </div>
+                <p class="offer__urgency" data-slot="vigencia" hidden><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span data-slot="vigencia-texto"></span></p>
+                <p class="offer__urgency offer__urgency--pronto" data-slot="cupos" hidden><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span data-slot="cupos-texto"></span></p>
+                <a class="btn btn--primary btn--block" data-slot="cta" data-cta="oferta" href="https://wa.me/529986543958" target="_blank" rel="noopener">
+                    <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                    Quiero este paquete<span class="sr-only" data-slot="cta-sr"></span>
+                </a>
+            </div>
+        </article>
+    </template>
+
+    <template id="tpl-ofertas-skeleton">
+        <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+        <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+        <div class="offer" data-skeleton aria-hidden="true"><div class="sk sk--media"></div><div class="offer__body"><div class="sk sk--title"></div><div class="sk sk--line"></div><div class="sk sk--line sk--short"></div><div class="sk sk--price"></div><div class="sk sk--btn"></div></div></div>
+    </template>
+
+    <template id="tpl-ofertas-vacio">
+        <div class="offers-empty">
+            <span class="icon-tile tone-green"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span>
+            <h3>Por ahora no hay promociones activas</h3>
+            <p>Cada mes armamos paquetes nuevos. Escríbenos y te avisamos de la próxima, o pregunta el precio de tu estudio.</p>
+            <a class="btn btn--primary" href="https://wa.me/529986543958" data-wa="Hola, ¿me avisan cuando tengan una nueva promoción?" data-cta="ofertas-vacio" target="_blank" rel="noopener">
+                <svg class="icon" aria-hidden="true"><use href="#i-wa"/></svg>
+                Quiero que me avisen
+            </a>
+        </div>
+    </template>
+
+    <template id="tpl-ofertas-error">
+        <div class="offers-empty" role="alert">
+            <span class="icon-tile tone-navy"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg></span>
+            <h3>No pudimos cargar las promociones</h3>
+            <p>Revisa tu conexión e inténtalo de nuevo, o pregúntanos directamente por WhatsApp.</p>
+            <button class="btn btn--secondary" type="button" data-action="reintentar">Reintentar</button>
+            <a class="link" href="https://wa.me/529986543958" data-wa="Hola, ¿qué promociones tienen este mes?" data-cta="ofertas-error" target="_blank" rel="noopener">Preguntar por WhatsApp</a>
+        </div>
+    </template>
+</body>
+</html>

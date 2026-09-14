@@ -23,10 +23,11 @@ Route::get('/', function () {
     ]);
 });
 
-// Landing pública para pacientes (archivo estático en public/index.html).
+// Landing pública para pacientes (archivo estático en public/landing/index.html).
+// Ojo: /public/index.html está en .gitignore, por eso vive en public/landing/.
 // La raíz "/" sigue mostrando Home.vue.
 Route::get('/inicio', function () {
-    return response()->file(public_path('index.html'));
+    return response()->file(public_path('landing/index.html'));
 })->name('inicio');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
