@@ -24,3 +24,11 @@ Homestead.yaml
 Thumbs.db
 /app/Providers/AppServiceProvider.php
 
+
+# Herramientas y scripts locales de desarrollo
+/.claude
+/public/index.html
+/check_latest_report.php
+/set_test_fuera_rango.php
+/test_reporte_load.php
+/verify_fuera_rango.php

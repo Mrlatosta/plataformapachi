@@ -39,6 +39,13 @@ const formatDate = (date) => {
     });
 };
 
+// Laravel manda "« Previous" / "Next »" en ingles; se traducen aqui
+const etiquetaPagina = (link, index) => {
+    if (index === 0) return '&laquo; Anterior';
+    if (index === props.reportes.links.length - 1) return 'Siguiente &raquo;';
+    return link.label;
+};
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',
@@ -223,7 +230,12 @@ const formatCurrency = (value) => {
                             </table>
                         </div>
 
-                        <!-- Paginación CORREGIDA SIN WARNING -->
+                        <!-- Sin resultados -->
+                        <div v-if="reportes.data.length === 0" class="py-10 text-center text-sm text-gray-500">
+                            No se encontraron reportes con los filtros actuales.
+                        </div>
+
+                        <!-- Paginación -->
                         <div v-if="reportes.links.length > 3" class="mt-6 flex flex-col gap-4">
                             <div class="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                                 Mostrando {{ reportes.from }} a {{ reportes.to }} de {{ reportes.total }} resultados
@@ -233,6 +245,7 @@ const formatCurrency = (value) => {
                                     <Link
                                         v-if="link.url"
                                         :href="link.url"
+                                        preserve-state
                                         :class="[
                                             'px-2 sm:px-4 py-1 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm',
                                             link.active
@@ -240,7 +253,7 @@ const formatCurrency = (value) => {
                                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         ]"
                                     >
-                                        <span v-html="link.label"></span>
+                                        <span v-html="etiquetaPagina(link, index)"></span>
                                     </Link>
                                     <span
                                         v-else
@@ -248,7 +261,7 @@ const formatCurrency = (value) => {
                                             'px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm opacity-50 cursor-not-allowed',
                                             'bg-gray-200 text-gray-700'
                                         ]"
-                                        v-html="link.label"
+                                        v-html="etiquetaPagina(link, index)"
                                     />
                                 </template>
                             </div>

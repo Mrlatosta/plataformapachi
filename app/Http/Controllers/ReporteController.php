@@ -318,17 +318,22 @@ public function store(Request $request)
         return $pdf->stream("vista-previa-reporte-{$reporte->folio}.pdf");
     }
 
-    public function generarPDF($reporteId)
+    private function pdfReporte(Reporte $reporte)
     {
-        $reporte = Reporte::with([
-    'estudios.estudio',
-    'estudios.resultados.examen'
-])->findOrFail($reporteId);
-
         $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
         $this->applyPageNumbers($pdf, 490, 815, 9);
 
-        return $pdf->download("reporte-{$reporte->folio}.pdf");
+        return $pdf;
+    }
+
+    public function generarPDF($reporteId)
+    {
+        $reporte = Reporte::with([
+            'estudios.estudio',
+            'estudios.resultados.examen'
+        ])->findOrFail($reporteId);
+
+        return $this->pdfReporte($reporte)->download("reporte-{$reporte->folio}.pdf");
     }
 
     public function previsualizarPDF($reporteId)
@@ -338,10 +343,64 @@ public function store(Request $request)
             'estudios.resultados.examen'
         ])->findOrFail($reporteId);
 
-        $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
-        $this->applyPageNumbers($pdf, 490, 815, 9);
+        return $this->pdfReporte($reporte)->stream("reporte-{$reporte->folio}.pdf");
+    }
 
-        return $pdf->stream("reporte-{$reporte->folio}.pdf");
+    /**
+     * PDF para el portal de medicos: solo reportes asignados al medico en sesion.
+     */
+    public function pdfMedico($reporteId)
+    {
+        $reporte = Reporte::with([
+            'estudios.estudio',
+            'estudios.resultados.examen'
+        ])->where('medico_id', session('medico_id'))->findOrFail($reporteId);
+
+        return $this->pdfReporte($reporte)->stream("reporte-{$reporte->folio}.pdf");
+    }
+
+    /**
+     * Pagina publica a la que lleva el QR impreso en el reporte: confirma que
+     * el documento es autentico y permite abrir el PDF original.
+     */
+    public function verificar(string $token)
+    {
+        $reporte = Reporte::with('estudios.estudio')
+            ->where('token_verificacion', $token)
+            ->first();
+
+        return response()
+            ->view('verificacion.reporte', [
+                'reporte' => $reporte,
+                'token' => $token,
+                'paciente' => $reporte ? $this->enmascararNombre($reporte->nombre_cliente) : null,
+            ], $reporte ? 200 : 404)
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    public function descargarVerificado(string $token)
+    {
+        $reporte = Reporte::with([
+            'estudios.estudio',
+            'estudios.resultados.examen'
+        ])->where('token_verificacion', $token)->firstOrFail();
+
+        return $this->pdfReporte($reporte)
+            ->stream("reporte-{$reporte->folio}.pdf")
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    /**
+     * "Juan Perez Torres" -> "J*** P**** T*****": suficiente para que el
+     * paciente reconozca su reporte sin exponer el nombre completo.
+     */
+    private function enmascararNombre(?string $nombre): string
+    {
+        return collect(preg_split('/\s+/u', trim((string) $nombre), -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn ($parte) => mb_substr($parte, 0, 1) . str_repeat('*', max(mb_strlen($parte) - 1, 2)))
+            ->implode(' ');
     }
 
 public function generarOrdenTrabajo($reporteId)
@@ -506,8 +565,11 @@ public function actualizarReporte(Request $request, $id)
 
 public function index(Request $request)
     {
+        // El id desempata reportes con la misma fecha para que no se repitan ni
+        // se salten entre paginas
         $query = Reporte::with(['estudios.estudio'])
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
 
         // Filtros
         if ($request->has('search') && $request->search) {
@@ -527,7 +589,8 @@ public function index(Request $request)
             $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 
-        $reportes = $query->paginate(15)->through(function ($reporte) {
+        // withQueryString conserva los filtros al cambiar de pagina
+        $reportes = $query->paginate(15)->onEachSide(1)->withQueryString()->through(function ($reporte) {
             return [
                 'id' => $reporte->id,
                 'folio' => $reporte->folio,

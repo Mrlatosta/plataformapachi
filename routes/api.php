@@ -1,10 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EstudioController;
-
-Route::get('/estudios', [EstudioController::class, 'index']);
-Route::post('/estudios', [EstudioController::class, 'store']);
-Route::get('/estudios/{id}', [EstudioController::class, 'show']);
-Route::put('/estudios/{id}', [EstudioController::class, 'update']);
-Route::delete('/estudios/{id}', [EstudioController::class, 'destroy']);
+// Las rutas /api/* viven en routes/web.php dentro del grupo 'auth', porque
+// el frontend las consume con la sesion del usuario. Aqui no deben declararse
+// rutas publicas que expongan datos de pacientes.

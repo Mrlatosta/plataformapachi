@@ -31,7 +31,7 @@ const formatFecha = (fecha) => {
 };
 
 const verPDF = (id) => {
-    window.open(`/api/reportes/${id}/pdf-preview`, '_blank');
+    window.open(route('medico.reportes.pdf', id), '_blank');
 };
 </script>
 

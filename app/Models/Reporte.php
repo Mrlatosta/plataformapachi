@@ -7,11 +7,26 @@ use App\Models\ReporteEstudio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 
 class Reporte extends Model
 {
-    
+    /**
+     * Cada reporte nace con un token aleatorio para su QR de verificacion.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Reporte $reporte) {
+            $reporte->token_verificacion ??= Str::random(40);
+        });
+    }
+
+    // El token da acceso publico al PDF: no se expone en respuestas JSON
+    protected $hidden = [
+        'token_verificacion',
+    ];
+
     protected $fillable = [
     'folio',
     'nombre_cliente',

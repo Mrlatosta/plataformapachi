@@ -49,41 +49,46 @@ Route::get('/pacientes', [PacienteController::class, 'page'])
     ->middleware(['auth', 'verified'])->name('pacientes');
 
 
-Route::get('/api/estudios', [EstudioController::class, 'index']);
-Route::post('/api/estudios', [EstudioController::class, 'store']);
-Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
-Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
+// API interna del panel: requiere sesion de administrador.
+// Contiene datos de pacientes y resultados, nunca debe quedar publica.
+Route::middleware('auth')->group(function () {
+    Route::get('/api/estudios', [EstudioController::class, 'index']);
+    Route::post('/api/estudios', [EstudioController::class, 'store']);
+    Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
+    Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
+    Route::delete('/api/estudios/{id}', [EstudioController::class, 'destroy']);
 
+    Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'index']);
+    Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);
+    Route::get('/api/resultados/pdf', [CapturaResultadosController::class, 'generarPDF']);
 
-Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'index']);
-Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);
-Route::get('/api/resultados/pdf', [CapturaResultadosController::class, 'generarPDF']);
+    Route::post('/api/cotizaciones', [CotizacionController::class, 'store']);
+    Route::get('/api/cotizaciones', [CotizacionController::class, 'index']);
+    Route::get('/api/cotizaciones/{id}', [CotizacionController::class, 'show']);
+    Route::put('/api/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
+    Route::get('/api/cotizaciones/{id}/pdf', [CotizacionController::class, 'generarPDF']);
+    Route::delete('/api/cotizaciones/{id}', [CotizacionController::class, 'destroy']);
 
-Route::post('/api/cotizaciones', [CotizacionController::class, 'store']);
-Route::get('/api/cotizaciones', [CotizacionController::class, 'index']);
-Route::get('/api/cotizaciones/{id}', [CotizacionController::class, 'show']);
-Route::put('/api/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
-Route::get('/api/cotizaciones/{id}/pdf', [CotizacionController::class, 'generarPDF']);
-Route::delete('/api/cotizaciones/{id}', [CotizacionController::class, 'destroy']);
+    Route::get('/api/pacientes', [PacienteController::class, 'index']);
+    Route::post('/api/pacientes', [PacienteController::class, 'store']);
+    Route::get('/api/pacientes/buscar', [PacienteController::class, 'buscar']);
+    Route::get('/api/pacientes/{id}', [PacienteController::class, 'show']);
+    Route::put('/api/pacientes/{id}', [PacienteController::class, 'update']);
+    Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy']);
 
-Route::get('/api/pacientes', [PacienteController::class, 'index']);
-Route::post('/api/pacientes', [PacienteController::class, 'store']);
-Route::get('/api/pacientes/buscar', [PacienteController::class, 'buscar']);
-Route::get('/api/pacientes/{id}', [PacienteController::class, 'show']);
-Route::put('/api/pacientes/{id}', [PacienteController::class, 'update']);
-Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy']);
+    Route::post('/api/reportes', [ReporteController::class, 'store']);
+    Route::post('/api/reportes/preview', [ReporteController::class, 'previsualizarBorrador']);
+    Route::get('/api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
+    Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
+    Route::get('/api/reportes/{id}/pdf-preview', [ReporteController::class, 'previsualizarPDF']);
+    Route::get('/api/reportes/{id}/orden', [ReporteController::class, 'generarOrdenTrabajo']);
+    Route::put('/api/reportes/{id}', [ReporteController::class, 'actualizarReporte']);
 
-Route::post('/api/reportes', [ReporteController::class, 'store']);
-Route::post('/api/reportes/preview', [ReporteController::class, 'previsualizarBorrador']);
-
-Route::post('/guardar-reporte', [ReporteController::class, 'guardar'])->name('reporte.guardar');
-
-Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
-Route::get('/api/reportes/{id}/pdf-preview', [ReporteController::class, 'previsualizarPDF']);
-
-Route::get('api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
-
-Route::put('api/reportes/{id}', [ReporteController::class, 'actualizarReporte']);
+    Route::get('/api/medicos', [MedicoController::class, 'index']);
+    Route::post('/api/medicos', [MedicoController::class, 'store']);
+    Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
+    Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
@@ -91,28 +96,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/gestion-medicos', [MedicoController::class, 'page'])->name('gestion.medicos');
 });
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/api/medicos', [MedicoController::class, 'index']);
-    Route::post('/api/medicos', [MedicoController::class, 'store']);
-    Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
-    Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
-});
-
 // Portal médicos (sin autenticación de admin)
 Route::get('/medico/login', [MedicoPortalController::class, 'showLogin'])->name('medico.login');
-Route::post('/medico/login', [MedicoPortalController::class, 'login'])->name('medico.login.post');
+Route::post('/medico/login', [MedicoPortalController::class, 'login'])
+    ->middleware('throttle:5,1')
+    ->name('medico.login.post');
 Route::post('/medico/logout', [MedicoPortalController::class, 'logout'])->name('medico.logout');
 Route::middleware(['medico.auth'])->group(function () {
     Route::get('/medico/reportes', [MedicoPortalController::class, 'reportes'])->name('medico.reportes');
+    Route::get('/medico/reportes/{id}/pdf', [ReporteController::class, 'pdfMedico'])->name('medico.reportes.pdf');
+});
+
+// Verificación pública por QR: el token aleatorio de cada reporte es la única llave.
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/r/{token}', [ReporteController::class, 'verificar'])
+        ->where('token', '[A-Za-z0-9]{40}')
+        ->name('reportes.verificar');
+    Route::get('/r/{token}/pdf', [ReporteController::class, 'descargarVerificado'])
+        ->where('token', '[A-Za-z0-9]{40}')
+        ->name('reportes.verificar.pdf');
 });
 
 
-Route::get('api/reportes/{id}/orden', [ReporteController::class, 'generarOrdenTrabajo']);
-
-
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\Reporte;
-
+// PDFs de prueba con datos simulados: solo disponibles en desarrollo local
+if (app()->environment('local')) {
 
 Route::get('/prueba-pdf', function () {
     // Simular reporte para pruebas sin consultar BD
@@ -150,7 +157,7 @@ Route::get('/prueba-pdf', function () {
         })->toArray(),
     ];
 
-    $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'))
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.reporte_biolab', compact('reporte'))
         ->setPaper('letter', 'portrait'); // puedes cambiar a 'a4' si prefieres
 
     return $pdf->stream('reporte_prueba.pdf');
@@ -194,11 +201,13 @@ Route::get('/prueba-odt', function () {
     ];
 
     // Cargar vista de la orden de trabajo (ajusta el nombre si lo cambiaste)
-    $pdf = Pdf::loadView('pdf.orden_trabajo', compact('reporte'))
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.orden_trabajo', compact('reporte'))
         ->setPaper('a4', 'portrait');
 
     return $pdf->stream('orden-trabajo-prueba.pdf');
 });
+
+}
 
 
 

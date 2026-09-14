@@ -296,7 +296,15 @@
                         <tr>
                             {{-- QR --}}
                             <td style="width: 20%; text-align: center;">
-                                <img src="{{ public_path('img/codigoqr.png') }}" width="80px" alt="QR">
+                                @php
+                                    $qrVerificacion = \App\Support\QrVerificacion::dataUri($reporte->token_verificacion ?? null);
+                                @endphp
+                                @if ($qrVerificacion)
+                                    <img src="{{ $qrVerificacion }}" width="80px" alt="QR de verificación">
+                                @else
+                                    {{-- Vista previa: el token se asigna hasta guardar el reporte --}}
+                                    <div style="width: 80px; height: 80px; margin: 0 auto; border: 1px dashed #999; font-size: 7px; color: #999; text-align: center; line-height: 1.4; padding-top: 28px; box-sizing: border-box;">QR disponible<br>al guardar</div>
+                                @endif
                             </td>
 
                             {{-- Datos QR --}}
