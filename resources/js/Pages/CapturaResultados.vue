@@ -526,12 +526,27 @@
                 </span>
               </span>
             </label>
-            <div v-if="form.aplica_iva" class="space-y-1 mb-2">
+            <label class="flex items-center justify-between gap-3 mb-4 p-3 border border-gray-300 rounded-lg">
+              <span class="text-sm font-medium text-gray-700">Descuento (%)</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                v-model.number="form.descuento"
+                class="w-24 text-sm text-right rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              />
+            </label>
+            <div v-if="form.aplica_iva || montoDescuento > 0" class="space-y-1 mb-2">
               <div class="flex items-center justify-between gap-6 text-gray-600">
                 <span>Subtotal:</span>
                 <span class="font-semibold">${{ totalEstudios.toFixed(2) }}</span>
               </div>
-              <div class="flex items-center justify-between gap-6 text-gray-600">
+              <div v-if="montoDescuento > 0" class="flex items-center justify-between gap-6 text-gray-600">
+                <span>Descuento ({{ form.descuento }}%):</span>
+                <span class="font-semibold text-red-600">-${{ montoDescuento.toFixed(2) }}</span>
+              </div>
+              <div v-if="form.aplica_iva" class="flex items-center justify-between gap-6 text-gray-600">
                 <span>IVA ({{ IVA_PORCENTAJE }}%):</span>
                 <span class="font-semibold">${{ montoIva.toFixed(2) }}</span>
               </div>
@@ -726,7 +741,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import { direccionFueraRango } from '@/utils/rangoReferencia'
-import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva'
+import { IVA_PORCENTAJE, calcularTotales } from '@/utils/iva'
 
 // Props de Inertia (cotizacion precargada desde Cotizaciones)
 const props = defineProps({
@@ -768,14 +783,11 @@ const totalEstudios = computed(() => {
   return form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0)
 })
 
-// 💰 IVA opcional de la orden de trabajo
-const montoIva = computed(() => {
-  return calcularIva(totalEstudios.value, form.aplica_iva)
-})
-
-const totalConIva = computed(() => {
-  return totalEstudios.value + montoIva.value
-})
+// 💰 Descuento (heredado de la cotización) e IVA opcional de la orden de trabajo
+const totales = computed(() => calcularTotales(totalEstudios.value, form.descuento, form.aplica_iva))
+const montoDescuento = computed(() => totales.value.montoDescuento)
+const montoIva = computed(() => totales.value.iva)
+const totalConIva = computed(() => totales.value.total)
 
 // ===== Vista previa antes de guardar =====
 const mostrarPreview = ref(false)
@@ -806,6 +818,7 @@ const form = reactive({
   medico_solicitante: '',
   medico_id: null,
   aplica_iva: false,
+  descuento: 0,
   cliente: {
     nombre: '',
     email: '',
@@ -851,8 +864,9 @@ onMounted(async () => {
  * Precarga los datos del paciente y estudios desde una cotización guardada
  */
 function precargarDesdeCotizacion(cotizacion) {
-  // Heredar la casilla de IVA de la cotización
+  // Heredar la casilla de IVA y el descuento de la cotización
   form.aplica_iva = Boolean(cotizacion.aplica_iva)
+  form.descuento = parseFloat(cotizacion.descuento) || 0
 
   // Precargar paciente
   if (cotizacion.paciente) {
@@ -1165,34 +1179,10 @@ async function guardarReporte() {
       })
     })
 
+    // Solo se guarda en la BD; el PDF y la orden se descargan desde Lista de reportes
     const response = await axios.post('/api/reportes', form)
-    mostrarNotificacion('¡Reporte guardado con éxito!', 'success')
-
-    const { id, folio } = response.data
-
-    // Descargar el PDF
-    const pdfResponse = await axios.get(`/api/reportes/${id}/pdf`, {
-      responseType: 'blob'
-    })
-    const url = window.URL.createObjectURL(new Blob([pdfResponse.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `reporte-${folio}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    // Descarga también la Orden de Trabajo
-    const ordenResponse = await axios.get(`/api/reportes/${id}/orden`, {
-      responseType: 'blob'
-    })
-    const urlOrden = window.URL.createObjectURL(new Blob([ordenResponse.data]))
-    const linkOrden = document.createElement('a')
-    linkOrden.href = urlOrden
-    linkOrden.setAttribute('download', `orden-trabajo-${folio}.pdf`)
-    document.body.appendChild(linkOrden)
-    linkOrden.click()
-    document.body.removeChild(linkOrden)
+    const { folio } = response.data
+    mostrarNotificacion(`Reporte ${folio} guardado. Descárgalo desde Lista de reportes.`, 'success')
 
     // Limpiar formulario después de guardar exitosamente
     setTimeout(() => {
@@ -1203,6 +1193,8 @@ async function guardarReporte() {
       form.fecha_validacion = ''
       form.medico_solicitante = ''
       form.medico_id = null
+      form.aplica_iva = false
+      form.descuento = 0
       modoMedico.value = 'registrado'
       pacienteSeleccionado.value = null
       busquedaPaciente.value = ''

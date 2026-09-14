@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
@@ -52,6 +52,50 @@ const formatCurrency = (value) => {
         currency: 'MXN'
     }).format(value);
 };
+
+// Menu de acciones: uno solo para toda la lista, teletransportado a <body> con
+// posicion fija para que el contenedor con scroll de la tabla no lo recorte
+const ANCHO_MENU = 224; // w-56
+const ALTO_MENU_ESTIMADO = 170;
+const menu = ref(null); // { reporte, left, top | bottom }
+
+const abrirMenu = (reporte, evento) => {
+    const rect = evento.currentTarget.getBoundingClientRect();
+    const left = Math.min(Math.max(rect.right - ANCHO_MENU, 8), window.innerWidth - ANCHO_MENU - 8);
+
+    // Si no cabe debajo del boton, se abre hacia arriba
+    menu.value = window.innerHeight - rect.bottom < ALTO_MENU_ESTIMADO
+        ? { reporte, left, bottom: window.innerHeight - rect.top + 4 }
+        : { reporte, left, top: rect.bottom + 4 };
+};
+
+const cerrarMenu = () => {
+    menu.value = null;
+};
+
+const estiloMenu = computed(() => {
+    if (!menu.value) return {};
+    const { left, top, bottom } = menu.value;
+    return top !== undefined
+        ? { left: `${left}px`, top: `${top}px` }
+        : { left: `${left}px`, bottom: `${bottom}px` };
+});
+
+const cerrarConEscape = (evento) => {
+    if (evento.key === 'Escape') cerrarMenu();
+};
+
+onMounted(() => {
+    window.addEventListener('scroll', cerrarMenu, true);
+    window.addEventListener('resize', cerrarMenu);
+    window.addEventListener('keydown', cerrarConEscape);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', cerrarMenu, true);
+    window.removeEventListener('resize', cerrarMenu);
+    window.removeEventListener('keydown', cerrarConEscape);
+});
 </script>
 
 <template>
@@ -152,22 +196,25 @@ const formatCurrency = (value) => {
                                         <span class="text-gray-600">{{ reporte.edad }} años - {{ reporte.sexo }}</span>
                                         <span class="text-right">
                                             <span class="block font-semibold text-gray-900">{{ formatCurrency(reporte.total_precio) }}</span>
+                                            <span v-if="reporte.descuento > 0" class="block text-[10px] text-red-600">Descuento {{ reporte.descuento }}%</span>
                                             <span v-if="reporte.aplica_iva" class="block text-[10px] text-emerald-600">IVA incluido</span>
                                         </span>
                                     </div>
                                     <p class="text-xs text-gray-500">{{ formatDate(reporte.created_at) }}</p>
                                 </div>
 
-                                <Link
-                                    :href="route('reportes.show', reporte.id)"
-                                    class="w-full inline-flex items-center justify-center px-3 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors"
+                                <button
+                                    type="button"
+                                    @click="abrirMenu(reporte, $event)"
+                                    :aria-expanded="menu?.reporte.id === reporte.id"
+                                    aria-haspopup="menu"
+                                    class="w-full inline-flex items-center justify-center gap-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                                 >
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2.121 1.879l1.414 1.414M17 11v2m-.879 2.121l-1.414 1.414M13 17h-2m-2.121-.879l-1.414-1.414M7 13v-2m.879-2.121l1.414-1.414"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 9.879a3 3 0 10-4.242 4.242L15.5 19.742l4.242-4.242-5.621-5.621z"/>
+                                    Acciones
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
-                                    Editar Reporte
-                                </Link>
+                                </button>
                             </div>
                         </div>
 
@@ -182,7 +229,7 @@ const formatCurrency = (value) => {
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudios</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -207,6 +254,9 @@ const formatCurrency = (value) => {
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ formatCurrency(reporte.total_precio) }}
+                                            <span v-if="reporte.descuento > 0" class="block text-xs font-normal text-red-600">
+                                                Descuento {{ reporte.descuento }}%: -{{ formatCurrency(reporte.monto_descuento) }}
+                                            </span>
                                             <span v-if="reporte.aplica_iva" class="block text-xs font-normal text-emerald-600">
                                                 IVA incluido: {{ formatCurrency(reporte.iva) }}
                                             </span>
@@ -214,16 +264,19 @@ const formatCurrency = (value) => {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ formatDate(reporte.created_at) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <Link
-                                                :href="route('reportes.show', reporte.id)"
-                                                class="inline-flex items-center px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                type="button"
+                                                @click="abrirMenu(reporte, $event)"
+                                                :aria-expanded="menu?.reporte.id === reporte.id"
+                                                aria-haspopup="menu"
+                                                class="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                                             >
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 011.4 0l1.6 1.6a1 1 0 010 1.4L9.5 17.5 6 18l.5-3.5 8.2-8.2z"/>
+                                                Acciones
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                                 </svg>
-                                                Editar
-                                            </Link>
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -270,5 +323,62 @@ const formatCurrency = (value) => {
                 </div>
             </div>
         </div>
+
+        <!-- Menú de acciones del reporte (compartido por todas las filas) -->
+        <Teleport to="body">
+            <div v-if="menu" class="fixed inset-0 z-40" @click="cerrarMenu"></div>
+            <transition
+                enter-active-class="transition ease-out duration-100"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-75"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+            >
+                <div
+                    v-if="menu"
+                    role="menu"
+                    :style="estiloMenu"
+                    class="fixed z-50 w-56 rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+                >
+                    <p class="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                        {{ menu.reporte.folio }}
+                    </p>
+                    <a
+                        role="menuitem"
+                        :href="`/api/reportes/${menu.reporte.id}/pdf`"
+                        @click="cerrarMenu"
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8l-6-6H6a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Descargar reporte (PDF)
+                    </a>
+                    <a
+                        role="menuitem"
+                        :href="`/api/reportes/${menu.reporte.id}/orden`"
+                        @click="cerrarMenu"
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Descargar orden de trabajo
+                    </a>
+                    <Link
+                        role="menuitem"
+                        :href="route('reportes.show', menu.reporte.id)"
+                        @click="cerrarMenu"
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100"
+                    >
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 011.4 0l1.6 1.6a1 1 0 010 1.4L9.5 17.5 6 18l.5-3.5 8.2-8.2z"/>
+                        </svg>
+                        Editar reporte
+                    </Link>
+                </div>
+            </transition>
+        </Teleport>
     </AuthenticatedLayout>
 </template>

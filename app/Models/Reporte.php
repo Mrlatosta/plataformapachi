@@ -40,10 +40,12 @@ class Reporte extends Model
     'medico_solicitante',
     'medico_id',
     'aplica_iva',
+    'descuento',
 ];
 
     protected $casts = [
         'aplica_iva' => 'boolean',
+        'descuento' => 'float',
     ];
 
     public function estudios()
@@ -73,18 +75,35 @@ class Reporte extends Model
     }
 
     /**
-     * Monto de IVA calculado sobre el subtotal.
+     * Monto del descuento (porcentaje sobre el subtotal).
      */
-    public function getMontoIvaAttribute(): float
+    public function getMontoDescuentoAttribute(): float
     {
-        return round($this->subtotal * ($this->porcentaje_iva / 100), 2);
+        return round($this->subtotal * ((float) $this->descuento / 100), 2);
     }
 
     /**
-     * Total a pagar (subtotal + IVA).
+     * Subtotal con el descuento aplicado: base sobre la que se calcula el IVA.
+     * Mismo calculo que CotizacionController::store.
+     */
+    public function getBaseGravableAttribute(): float
+    {
+        return $this->subtotal - $this->subtotal * ((float) $this->descuento / 100);
+    }
+
+    /**
+     * Monto de IVA calculado sobre el subtotal con descuento.
+     */
+    public function getMontoIvaAttribute(): float
+    {
+        return round($this->base_gravable * ($this->porcentaje_iva / 100), 2);
+    }
+
+    /**
+     * Total a pagar (subtotal - descuento + IVA).
      */
     public function getTotalAttribute(): float
     {
-        return round($this->subtotal + $this->monto_iva, 2);
+        return round($this->base_gravable + $this->monto_iva, 2);
     }
 }

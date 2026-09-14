@@ -4,7 +4,7 @@ import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { direccionFueraRango } from '@/utils/rangoReferencia';
-import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva';
+import { IVA_PORCENTAJE, calcularTotales } from '@/utils/iva';
 
 const props = defineProps({
     reporte: Object,
@@ -36,6 +36,7 @@ const form = reactive({
     medico_solicitante: '',
     medico_id: null,
     aplica_iva: false,
+    descuento: 0,
     cliente: {
         nombre: '',
         email: '',
@@ -57,6 +58,7 @@ const hydrateForm = () => {
     form.medico_solicitante = data.medico_solicitante || '';
     form.medico_id = data.medico_id ?? null;
     form.aplica_iva = Boolean(data.aplica_iva);
+    form.descuento = Number(data.descuento) || 0;
 
     if (data.medico_id) {
         modoMedico.value = 'registrado';
@@ -168,9 +170,11 @@ const totalPrecio = computed(() => {
     return form.estudios.reduce((sum, estudio) => sum + (Number(estudio.precio) || 0), 0);
 });
 
-const montoIva = computed(() => calcularIva(totalPrecio.value, form.aplica_iva));
-
-const totalConIva = computed(() => totalPrecio.value + montoIva.value);
+// Descuento (%) sobre el subtotal e IVA sobre el subtotal con descuento
+const totales = computed(() => calcularTotales(totalPrecio.value, form.descuento, form.aplica_iva));
+const montoDescuento = computed(() => totales.value.montoDescuento);
+const montoIva = computed(() => totales.value.iva);
+const totalConIva = computed(() => totales.value.total);
 
 const filtrarEstudios = () => {
     const termino = busquedaEstudio.value.toLowerCase().trim();
@@ -251,6 +255,7 @@ const guardarCambios = async () => {
             medico_solicitante: form.medico_solicitante,
             medico_id: form.medico_id,
             aplica_iva: form.aplica_iva,
+            descuento: Number(form.descuento) || 0,
             cliente: {
                 nombre: form.cliente.nombre,
                 email: form.cliente.email,
@@ -663,11 +668,23 @@ const descargarOrden = () => {
                                 />
                                 <span class="text-sm">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</span>
                             </label>
+                            <label class="mt-2 flex items-center gap-2">
+                                <span class="text-sm">Descuento (%)</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    v-model.number="form.descuento"
+                                    class="w-20 px-2 py-1 text-sm text-right text-gray-900 rounded border-slate-400 focus:ring-emerald-400"
+                                />
+                            </label>
                         </div>
                         <div class="text-right">
-                            <template v-if="form.aplica_iva">
+                            <template v-if="form.aplica_iva || montoDescuento > 0">
                                 <p class="text-sm opacity-90">Subtotal: {{ formatCurrency(totalPrecio) }}</p>
-                                <p class="text-sm opacity-90">IVA ({{ IVA_PORCENTAJE }}%): {{ formatCurrency(montoIva) }}</p>
+                                <p v-if="montoDescuento > 0" class="text-sm opacity-90">Descuento ({{ form.descuento }}%): -{{ formatCurrency(montoDescuento) }}</p>
+                                <p v-if="form.aplica_iva" class="text-sm opacity-90">IVA ({{ IVA_PORCENTAJE }}%): {{ formatCurrency(montoIva) }}</p>
                             </template>
                             <p class="text-2xl font-bold">{{ formatCurrency(totalConIva) }}</p>
                         </div>

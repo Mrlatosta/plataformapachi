@@ -194,11 +194,22 @@
           </tbody>
         </table>
 
+        @php
+          $descuentoOrden = (float) ($reporte->descuento ?? 0);
+        @endphp
         <div class="totales">
-          @if ($reporte->aplica_iva)
+          @if ($reporte->aplica_iva || $descuentoOrden > 0)
           <div class="totales-row">
             <span class="etiqueta">Subtotal:</span> ${{ number_format($reporte->subtotal, 2) }}
           </div>
+          @endif
+          @if ($descuentoOrden > 0)
+          <div class="totales-row">
+            <span class="etiqueta">Descuento ({{ rtrim(rtrim(number_format($descuentoOrden, 2, '.', ''), '0'), '.') }}%):</span>
+            -${{ number_format($reporte->monto_descuento ?? 0, 2) }}
+          </div>
+          @endif
+          @if ($reporte->aplica_iva)
           <div class="totales-row">
             <span class="etiqueta">IVA ({{ rtrim(rtrim(number_format($reporte->porcentaje_iva, 2, '.', ''), '0'), '.') }}%):</span>
             ${{ number_format($reporte->monto_iva, 2) }}

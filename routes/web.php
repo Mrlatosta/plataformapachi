@@ -23,6 +23,12 @@ Route::get('/', function () {
     ]);
 });
 
+// Landing pública para pacientes (archivo estático en public/index.html).
+// La raíz "/" sigue mostrando Home.vue.
+Route::get('/inicio', function () {
+    return response()->file(public_path('index.html'));
+})->name('inicio');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');

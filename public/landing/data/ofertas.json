@@ -1,0 +1,84 @@
+{
+  "_nota": "Datos de ejemplo. Los precios de promoción deben confirmarse antes de publicar. precioAnterior del Check-up = suma de precios al público del catálogo (BHC $150 + QS6 $360 + EGO $100). Este archivo puede reemplazarse por un endpoint con la misma forma.",
+  "actualizado": "2026-09-13",
+  "moneda": "MXN",
+  "ofertas": [
+    {
+      "id": "checkup-esencial",
+      "activa": true,
+      "titulo": "Check-up esencial",
+      "descripcion": "Lo básico para saber cómo estás: sangre, azúcar, riñones, colesterol y orina en una sola visita.",
+      "incluye": [
+        "Biometría hemática completa",
+        "Química sanguínea de 6 elementos",
+        "Examen general de orina"
+      ],
+      "precioAnterior": 610,
+      "precioActual": 449,
+      "etiqueta": { "texto": "Ideal para empezar", "tono": "verde" },
+      "destacada": false,
+      "imagen": {
+        "src": "/landing/img/ofertas/checkup.svg",
+        "alt": "Ilustración de tres tubos de ensayo con muestras de laboratorio",
+        "ancho": 480,
+        "alto": 300
+      },
+      "vigenteDesde": null,
+      "vigenteHasta": "2026-09-30T23:59:59-05:00",
+      "cuposRestantes": null,
+      "mensajeWhatsApp": "Hola, me interesa el paquete Check-up esencial de $449. ¿Qué preparación necesito?"
+    },
+    {
+      "id": "marcadores-mujer",
+      "activa": true,
+      "titulo": "Marcadores tumorales para mujer",
+      "descripcion": "Octubre es el mes de la prevención del cáncer de mama. Este panel ayuda a tu médico a detectar y dar seguimiento a cáncer de mama, ovario y colon.",
+      "incluye": [
+        "CA 15-3 (mama)",
+        "CA 125 (ovario)",
+        "CEA, antígeno carcinoembrionario",
+        "AFP, alfafetoproteína"
+      ],
+      "precioAnterior": 1680,
+      "precioActual": 1190,
+      "etiqueta": { "texto": "Octubre Rosa", "tono": "rosa" },
+      "destacada": true,
+      "imagen": {
+        "src": "/landing/img/ofertas/marcadores-mujer.svg",
+        "alt": "Ilustración de un listón rosa, símbolo de la prevención del cáncer de mama",
+        "ancho": 480,
+        "alto": 300
+      },
+      "vigenteDesde": null,
+      "vigenteHasta": "2026-10-31T23:59:59-05:00",
+      "cuposRestantes": null,
+      "mensajeWhatsApp": "Hola, me interesa el panel de Marcadores tumorales para mujer de $1,190 (Octubre Rosa). ¿Cuándo puedo ir?"
+    },
+    {
+      "id": "marcadores-hombre",
+      "activa": true,
+      "titulo": "Marcadores tumorales para hombre",
+      "descripcion": "Chequeo preventivo de próstata, testículo, hígado y colon con una sola toma de sangre.",
+      "incluye": [
+        "PSA total y libre (próstata)",
+        "β-HCG (testículo)",
+        "AFP, alfafetoproteína",
+        "CEA, antígeno carcinoembrionario"
+      ],
+      "precioAnterior": 1800,
+      "precioActual": 1290,
+      "etiqueta": { "texto": "Prevención", "tono": "marino" },
+      "destacada": false,
+      "imagen": {
+        "src": "/landing/img/ofertas/marcadores-hombre.svg",
+        "alt": "Ilustración de un listón azul, símbolo de la prevención del cáncer de próstata",
+        "ancho": 480,
+        "alto": 300
+      },
+      "vigenteDesde": null,
+      "vigenteHasta": null,
+      "cuposRestantes": null,
+      "mensajeWhatsApp": "Hola, me interesa el panel de Marcadores tumorales para hombre de $1,290. ¿Cuándo puedo ir?"
+    }
+  ]
+}

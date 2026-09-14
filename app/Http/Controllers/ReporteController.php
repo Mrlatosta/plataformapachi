@@ -73,6 +73,7 @@ private function reglasReporte(): array
         'medico_solicitante' => 'nullable|string|max:255',
         'medico_id' => 'nullable|exists:medicos,id',
         'aplica_iva' => 'nullable|boolean',
+        'descuento' => 'nullable|numeric|min:0|max:100',
         'estudios' => 'required|array|min:1',
         'estudios.*.id' => 'required|exists:estudios,id',
         'estudios.*.orden' => 'nullable|integer',
@@ -141,6 +142,7 @@ public function store(Request $request)
         'medico_solicitante' => $validated['medico_solicitante'] ?? null,
         'medico_id' => $validated['medico_id'] ?? null,
         'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        'descuento' => $validated['descuento'] ?? 0,
     ]);
 
     // Crear estudios y resultados
@@ -229,6 +231,7 @@ public function store(Request $request)
             'medico_solicitante' => $validated['medico_solicitante'] ?? null,
             'medico_id' => $validated['medico_id'] ?? null,
             'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'descuento' => $validated['descuento'] ?? 0,
         ]);
 
         // Catalogos precargados para no consultar dentro del bucle
@@ -431,6 +434,8 @@ public function generarOrdenTrabajo($reporteId)
 
 public function actualizarReporte(Request $request, $id)
 {
+    $request->validate(['descuento' => 'nullable|numeric|min:0|max:100']);
+
     $reporte = Reporte::findOrFail($id);
     $reporte->update($request->only([
         'toma_muestra', 'fecha_reporte', 'fecha_validacion', 'medico_solicitante', 'medico_id'
@@ -440,6 +445,10 @@ public function actualizarReporte(Request $request, $id)
         $reporte->update([
             'aplica_iva' => filter_var($request->input('aplica_iva'), FILTER_VALIDATE_BOOLEAN),
         ]);
+    }
+
+    if ($request->has('descuento')) {
+        $reporte->update(['descuento' => (float) ($request->input('descuento') ?? 0)]);
     }
 
     $cliente = $request->input('cliente', []);
@@ -607,6 +616,8 @@ public function index(Request $request)
                 'aplica_iva' => (bool) $reporte->aplica_iva,
                 'total_estudios' => $reporte->estudios->count(),
                 'subtotal' => $reporte->subtotal,
+                'descuento' => (float) $reporte->descuento,
+                'monto_descuento' => $reporte->monto_descuento,
                 'iva' => $reporte->monto_iva,
                 'total_precio' => $reporte->total,
             ];
@@ -643,6 +654,7 @@ public function index(Request $request)
                 'medico_solicitante' => $reporte->medico_solicitante,
                 'medico_id' => $reporte->medico_id,
                 'aplica_iva' => (bool) $reporte->aplica_iva,
+                'descuento' => (float) $reporte->descuento,
                 'porcentaje_iva' => (float) config('facturacion.iva'),
                 'created_at' => $reporte->created_at,
                 'estudios' => $reporte->estudios->map(function ($reporteEstudio) {
