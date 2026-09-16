@@ -255,8 +255,8 @@
               <img src="{{ public_path('img/imgbiolabtrans.png') }}" width="50px">
             </td>
             <td width="25%" style="font-size: 7px;">
-              Av. Revolución, Región 75, Calle 37 Norte<br>
-              C.P. 77527, Cancún, Quintana Roo<br>
+              Av. 103, Mz. 116, Lt. 29<br>
+              Cancún, Quintana Roo<br>
               Tel: 998 654 3958<br>
               <strong>biolab348@gmail.com</strong>
             </td>

@@ -312,13 +312,13 @@ public function store(Request $request)
 
             $this->applyPageNumbers($pdf, 480, 815, 8);
 
-            return $pdf->stream("vista-previa-orden-{$reporte->folio}.pdf");
+            return $pdf->stream($reporte->nombreArchivo('Orden de trabajo (vista previa)'));
         }
 
         $pdf = Pdf::loadView('pdf.reporte_biolab', compact('reporte'));
         $this->applyPageNumbers($pdf, 490, 815, 9);
 
-        return $pdf->stream("vista-previa-reporte-{$reporte->folio}.pdf");
+        return $pdf->stream($reporte->nombreArchivo('Vista previa'));
     }
 
     private function pdfReporte(Reporte $reporte)
@@ -336,7 +336,7 @@ public function store(Request $request)
             'estudios.resultados.examen'
         ])->findOrFail($reporteId);
 
-        return $this->pdfReporte($reporte)->download("reporte-{$reporte->folio}.pdf");
+        return $this->pdfReporte($reporte)->download($reporte->nombreArchivo());
     }
 
     public function previsualizarPDF($reporteId)
@@ -346,7 +346,7 @@ public function store(Request $request)
             'estudios.resultados.examen'
         ])->findOrFail($reporteId);
 
-        return $this->pdfReporte($reporte)->stream("reporte-{$reporte->folio}.pdf");
+        return $this->pdfReporte($reporte)->stream($reporte->nombreArchivo());
     }
 
     /**
@@ -359,7 +359,7 @@ public function store(Request $request)
             'estudios.resultados.examen'
         ])->where('medico_id', session('medico_id'))->findOrFail($reporteId);
 
-        return $this->pdfReporte($reporte)->stream("reporte-{$reporte->folio}.pdf");
+        return $this->pdfReporte($reporte)->stream($reporte->nombreArchivo());
     }
 
     /**
@@ -390,7 +390,7 @@ public function store(Request $request)
         ])->where('token_verificacion', $token)->firstOrFail();
 
         return $this->pdfReporte($reporte)
-            ->stream("reporte-{$reporte->folio}.pdf")
+            ->stream($reporte->nombreArchivo())
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header('Cache-Control', 'no-store, private');
     }
@@ -419,7 +419,7 @@ public function generarOrdenTrabajo($reporteId)
 
     $this->applyPageNumbers($pdf, 480, 815, 8);
 
-    return $pdf->download("orden-trabajo-{$reporte->folio}.pdf");
+    return $pdf->download($reporte->nombreArchivo('Orden de trabajo'));
 }
 
 

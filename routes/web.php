@@ -12,6 +12,8 @@ use App\Http\Controllers\CotizacionController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\MedicoPortalController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\GestionLandingController;
 
 
 Route::get('/', function () {
@@ -23,12 +25,16 @@ Route::get('/', function () {
     ]);
 });
 
-// Landing pública para pacientes (archivo estático en public/landing/index.html).
-// Ojo: /public/index.html está en .gitignore, por eso vive en public/landing/.
+// Landing pública para pacientes (vistas en resources/views/landing, assets en public/landing).
 // La raíz "/" sigue mostrando Home.vue.
-Route::get('/inicio', function () {
-    return response()->file(public_path('landing/index.html'));
-})->name('inicio');
+Route::get('/inicio', [LandingController::class, 'inicio'])->name('inicio');
+Route::get('/novedades', [LandingController::class, 'novedades'])->name('novedades.index');
+Route::get('/novedades/{slug}', [LandingController::class, 'articulo'])
+    ->where('slug', '[a-z0-9-]+')
+    ->name('novedades.show');
+
+Route::get('/gestion-landing', [GestionLandingController::class, 'page'])
+    ->middleware(['auth', 'verified'])->name('gestion.landing');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -63,7 +69,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/estudios', [EstudioController::class, 'store']);
     Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
     Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
+    Route::patch('/api/estudios/{id}/visibilidad', [EstudioController::class, 'cambiarVisibilidad']);
     Route::delete('/api/estudios/{id}', [EstudioController::class, 'destroy']);
+
+    // Gestión Landing. Se usa POST también para editar porque PHP no lee archivos en PUT.
+    Route::get('/api/landing/promociones', [GestionLandingController::class, 'promociones']);
+    Route::post('/api/landing/promociones', [GestionLandingController::class, 'guardarPromocion']);
+    Route::post('/api/landing/promociones/{id}', [GestionLandingController::class, 'guardarPromocion'])->whereNumber('id');
+    Route::patch('/api/landing/promociones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPromocion'])->whereNumber('id');
+    Route::delete('/api/landing/promociones/{id}', [GestionLandingController::class, 'eliminarPromocion'])->whereNumber('id');
+
+    Route::get('/api/landing/publicaciones', [GestionLandingController::class, 'publicaciones']);
+    Route::post('/api/landing/publicaciones', [GestionLandingController::class, 'guardarPublicacion']);
+    Route::post('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'guardarPublicacion'])->whereNumber('id');
+    Route::patch('/api/landing/publicaciones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPublicacion'])->whereNumber('id');
+    Route::delete('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'eliminarPublicacion'])->whereNumber('id');
 
     Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'index']);
     Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);

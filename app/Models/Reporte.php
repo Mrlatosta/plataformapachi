@@ -59,6 +59,22 @@ class Reporte extends Model
     }
 
     /**
+     * Nombre del PDF descargado: "Raymundo Lara Sandoval - RPT-0155.pdf".
+     * Con sufijo: "Raymundo Lara Sandoval - RPT-0155 - Orden de trabajo.pdf".
+     */
+    public function nombreArchivo(?string $sufijo = null): string
+    {
+        // Quita caracteres que Windows/macOS no aceptan en nombres de archivo
+        $nombre = preg_replace('/[\\\\\/:*?"<>|\x00-\x1F]+/u', ' ', (string) $this->nombre_cliente);
+        $nombre = trim(preg_replace('/\s+/u', ' ', $nombre));
+        $nombre = mb_substr(mb_convert_case(mb_strtolower($nombre), MB_CASE_TITLE), 0, 80);
+
+        $partes = array_filter([$nombre ?: 'Reporte', $this->folio, $sufijo]);
+
+        return implode(' - ', $partes) . '.pdf';
+    }
+
+    /**
      * Suma de los precios de los estudios del reporte (sin IVA).
      */
     public function getSubtotalAttribute(): float

@@ -8,6 +8,35 @@ use Illuminate\Http\Request;
 
 class EstudioController extends Controller
 {
+    private function reglasEstudio(): array
+    {
+        return [
+            'nombre' => 'required|string|max:255',
+            'leyenda' => 'nullable|string',
+            'tipo_muestra' => 'nullable|string|max:255',
+            'metodo' => 'nullable|string|max:255',
+            'tiempo_entrega' => 'nullable|string|max:255',
+            'precio' => 'nullable|numeric|min:0',
+            'costo' => 'nullable|numeric|min:0',
+            'visible_publico' => 'nullable|boolean',
+            'examenes' => 'nullable|array',
+        ];
+    }
+
+    private function datosEstudio(Request $request): array
+    {
+        return [
+            'nombre' => $request->nombre,
+            'leyenda' => $request->leyenda ?? null,
+            'tipo_muestra' => $request->tipo_muestra ?? null,
+            'metodo' => $request->metodo ?? null,
+            'tiempo_entrega' => $request->tiempo_entrega ?? null,
+            'precio' => $request->precio ?? 0,
+            'costo' => $request->costo ?? 0,
+            'visible_publico' => $request->boolean('visible_publico'),
+        ];
+    }
+
     // Obtener todos los estudios con sus exámenes
     public function index()
     {
@@ -16,23 +45,17 @@ class EstudioController extends Controller
                   ->orderBy('orden', 'asc');
         }])
         ->orderBy('nombre', 'asc')
-        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'tiempo_entrega', 'precio', 'costo']);
+        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'tiempo_entrega', 'precio', 'costo', 'visible_publico']);
     }
 
     // Crear nuevo estudio con exámenes
     public function store(Request $request)
     {
-        $estudio = Estudio::create([
-            'nombre' => $request->nombre,
-            'leyenda' => $request->leyenda ?? null, // Agregar leyenda si se proporciona
-            'tipo_muestra' => $request->tipo_muestra ?? null,
-            'metodo' => $request->metodo ?? null,
-            'tiempo_entrega' => $request->tiempo_entrega ?? null,
-            'precio' => $request->precio ?? 0,
-            'costo' => $request->costo ?? 0,
-        ]);
+        $request->validate($this->reglasEstudio());
 
-        foreach ($request->examenes as $examen) {
+        $estudio = Estudio::create($this->datosEstudio($request));
+
+        foreach ($request->examenes ?? [] as $examen) {
             // Ignorar filas vacías (sin nombre de examen)
             if (empty($examen['nombre_examen'])) {
                 continue;
@@ -52,26 +75,20 @@ class EstudioController extends Controller
     // Actualizar un estudio y sus exámenes
     public function update(Request $request, $id)
     {
+        $request->validate($this->reglasEstudio());
+
         $estudio = Estudio::findOrFail($id);
-        $estudio->update([
-            'nombre' => $request->nombre,
-            'leyenda' => $request->leyenda ?? null,
-            'tipo_muestra' => $request->tipo_muestra ?? null,
-            'metodo' => $request->metodo ?? null,
-            'tiempo_entrega' => $request->tiempo_entrega ?? null,
-            'precio' => $request->precio ?? 0,
-            'costo' => $request->costo ?? 0,
-        ]);
+        $estudio->update($this->datosEstudio($request));
 
         // Obtener IDs de los exámenes que vienen en la petición
-        $examenesActualizados = collect($request->examenes);
+        $examenesActualizados = collect($request->examenes ?? []);
         $idsExamenesNuevos = $examenesActualizados->pluck('id')->filter();
 
         // Eliminar solo los exámenes que ya no están en la lista
         $estudio->examenes()->whereNotIn('id', $idsExamenesNuevos)->delete();
 
         // Actualizar o crear exámenes
-        foreach ($request->examenes as $examenData) {
+        foreach ($examenesActualizados as $examenData) {
             // Ignorar filas vacías (sin nombre de examen)
             if (empty($examenData['nombre_examen'])) {
                 continue;
@@ -103,6 +120,20 @@ class EstudioController extends Controller
         return response()->json(['message' => 'Estudio actualizado con éxito']);
     }
 
+    // Cambia solo la casilla "visible en /inicio" desde el catálogo
+    public function cambiarVisibilidad(Request $request, $id)
+    {
+        $validated = $request->validate(['visible_publico' => 'required|boolean']);
+
+        $estudio = Estudio::findOrFail($id);
+        $estudio->update(['visible_publico' => $validated['visible_publico']]);
+
+        return response()->json([
+            'message' => 'Visibilidad actualizada',
+            'visible_publico' => $estudio->visible_publico,
+        ]);
+    }
+
     // Obtener un estudio específico
     public function show($id)
     {
@@ -113,11 +144,11 @@ class EstudioController extends Controller
     public function destroy($id)
     {
         $estudio = Estudio::findOrFail($id);
-        
+
         // Los exámenes se eliminarán automáticamente si tienes cascada en la BD
         // O puedes eliminarlos explícitamente:
         $estudio->examenes()->delete();
-        
+
         // Eliminar el estudio
         $estudio->delete();
 

@@ -1,4 +1,6 @@
-/* BIOLAB · Landing pública. JS vanilla, sin dependencias. */
+/* BIOLAB · Landing pública. JS vanilla, sin dependencias.
+   Cada bloque revisa que su sección exista: el mismo archivo sirve para
+   /inicio, /novedades y los artículos. */
 (() => {
   'use strict';
 
@@ -8,7 +10,6 @@
   // Día de la semana (0 = domingo) -> [abre, cierra] en horas. Domingo cerrado.
   const HORARIO = { 1: [8, 18], 2: [8, 18], 3: [8, 18], 4: [8, 18], 5: [8, 18], 6: [8, 14] };
   const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const OFERTAS_URL = '/landing/data/ofertas.json';
   const DIAS_CUENTA_REGRESIVA = 7; // antes de esto solo se muestra la fecha límite
 
   const MS_HORA = 36e5;
@@ -17,6 +18,8 @@
   const fechaLarga = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', timeZone: TZ });
 
   const waUrl = (mensaje) => `https://wa.me/${WA_NUMERO}` + (mensaje ? `?text=${encodeURIComponent(mensaje)}` : '');
+  const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
   // ---------- Enlaces de WhatsApp con mensaje prellenado ----------
   const prepararEnlaces = (raiz = document) => {
@@ -70,7 +73,7 @@
   const header = document.querySelector('.site-header');
   let pendiente = false;
   const alHacerScroll = () => {
-    if (pendiente) return;
+    if (!header || pendiente) return;
     pendiente = true;
     requestAnimationFrame(() => {
       header.classList.toggle('is-scrolled', window.scrollY > 8);
@@ -81,38 +84,42 @@
   // ---------- Menú móvil ----------
   const toggle = document.querySelector('.nav-toggle');
   const menu = document.getElementById('menu');
-  const abrirMenu = (abrir) => {
-    toggle.setAttribute('aria-expanded', String(abrir));
-    toggle.querySelector('.sr-only').textContent = abrir ? 'Cerrar menú' : 'Abrir menú';
-    menu.classList.toggle('is-open', abrir);
-  };
-  toggle.addEventListener('click', () => abrirMenu(toggle.getAttribute('aria-expanded') !== 'true'));
-  menu.addEventListener('click', (e) => { if (e.target.closest('a')) abrirMenu(false); });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-      abrirMenu(false);
-      toggle.focus();
-    }
-  });
+  if (toggle && menu) {
+    const abrirMenu = (abrir) => {
+      toggle.setAttribute('aria-expanded', String(abrir));
+      toggle.querySelector('.sr-only').textContent = abrir ? 'Cerrar menú' : 'Abrir menú';
+      menu.classList.toggle('is-open', abrir);
+    };
+    toggle.addEventListener('click', () => abrirMenu(toggle.getAttribute('aria-expanded') !== 'true'));
+    menu.addEventListener('click', (e) => { if (e.target.closest('a')) abrirMenu(false); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        abrirMenu(false);
+        toggle.focus();
+      }
+    });
+  }
 
   // ---------- CTA sticky en móvil ----------
   // Aparece cuando ya pasaste el botón del hero y se oculta al llegar al formulario de cierre.
   const sticky = document.querySelector('.sticky-cta');
   const ctaHero = document.querySelector('[data-cta="hero"]');
   const cierre = document.getElementById('contacto');
-  let heroPasado = false;
-  let cierreVisible = false;
-  const observadorSticky = new IntersectionObserver((entradas) => {
-    entradas.forEach((en) => {
-      if (en.target === ctaHero) heroPasado = !en.isIntersecting && en.boundingClientRect.top < 0;
-      if (en.target === cierre) cierreVisible = en.isIntersecting;
+  if (sticky && ctaHero && cierre) {
+    let heroPasado = false;
+    let cierreVisible = false;
+    const observadorSticky = new IntersectionObserver((entradas) => {
+      entradas.forEach((en) => {
+        if (en.target === ctaHero) heroPasado = !en.isIntersecting && en.boundingClientRect.top < 0;
+        if (en.target === cierre) cierreVisible = en.isIntersecting;
+      });
+      sticky.classList.toggle('is-visible', heroPasado && !cierreVisible);
     });
-    sticky.classList.toggle('is-visible', heroPasado && !cierreVisible);
-  });
-  observadorSticky.observe(ctaHero);
-  observadorSticky.observe(cierre);
+    observadorSticky.observe(ctaHero);
+    observadorSticky.observe(cierre);
+  }
 
-  // ---------- Ofertas ----------
+  // ---------- Promociones (Gestión Landing) ----------
   const lista = document.getElementById('ofertas-lista');
   const anuncio = document.getElementById('ofertas-anuncio');
   const tplOferta = document.getElementById('tpl-oferta');
@@ -195,7 +202,9 @@
     const titulo = slot(t, 'titulo');
     titulo.id = idTitulo;
     titulo.textContent = o.titulo;
-    slot(t, 'descripcion').textContent = o.descripcion || '';
+    const descripcion = slot(t, 'descripcion');
+    if (o.descripcion) descripcion.textContent = o.descripcion;
+    else descripcion.remove();
 
     const ul = slot(t, 'incluye');
     const tplItem = ul.firstElementChild;
@@ -257,18 +266,27 @@
     anuncio.textContent = activas.length === 1 ? '1 promoción activa.' : `${activas.length} promociones activas.`;
   };
 
-  const cargarOfertas = async () => {
+  // Los datos vienen incrustados en la página; la API solo se usa para reintentar
+  const obtenerOfertas = async (desdeApi) => {
+    const incrustadas = document.getElementById('datos-promociones');
+    if (incrustadas && !desdeApi) return JSON.parse(incrustadas.textContent);
+
+    const res = await fetch(lista.dataset.fuente, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const datos = await res.json();
+    return Array.isArray(datos) ? datos : datos.ofertas;
+  };
+
+  const cargarOfertas = async (desdeApi = false) => {
     lista.setAttribute('aria-busy', 'true');
     lista.dataset.estado = 'cargando';
     idsPintados = '';
     try {
-      const res = await fetch(OFERTAS_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const datos = await res.json();
-      ofertas = Array.isArray(datos.ofertas) ? datos.ofertas : [];
+      const datos = await obtenerOfertas(desdeApi);
+      ofertas = Array.isArray(datos) ? datos : [];
       pintarOfertas();
     } catch (err) {
-      console.error('No se pudieron cargar las ofertas:', err);
+      console.error('No se pudieron cargar las promociones:', err);
       lista.dataset.estado = 'error';
       lista.setAttribute('aria-busy', 'false');
       pintarDesdePlantilla('tpl-ofertas-error');
@@ -276,72 +294,152 @@
     }
   };
 
-  lista.addEventListener('click', (e) => {
-    if (e.target.closest('[data-action="reintentar"]')) {
-      pintarDesdePlantilla('tpl-ofertas-skeleton');
-      cargarOfertas();
-    }
-  });
+  const hayOfertas = lista && tplOferta && lista.dataset.estado !== 'vacio';
+  if (hayOfertas) {
+    lista.addEventListener('click', (e) => {
+      if (e.target.closest('[data-action="reintentar"]')) {
+        pintarDesdePlantilla('tpl-ofertas-skeleton');
+        cargarOfertas(true);
+      }
+    });
+  }
+
+  // ---------- Buscador de estudios ----------
+  const listaEstudios = document.getElementById('lista-estudios');
+  if (listaEstudios) {
+    const items = [...listaEstudios.children];
+    const iniciales = Number(listaEstudios.dataset.iniciales) || items.length;
+    const buscador = document.getElementById('buscar-estudio');
+    const estado = document.getElementById('buscar-estudio-estado');
+    const sinResultados = document.getElementById('estudios-sin-resultados');
+    const botonTodos = document.getElementById('ver-todos-estudios');
+    let expandido = false;
+    let temporizadorEstado;
+
+    const aplicarFiltro = () => {
+      const consulta = buscador ? buscador.value.trim() : '';
+      const terminos = normalizar(consulta).split(/\s+/).filter(Boolean);
+      let coincidencias = 0;
+
+      items.forEach((li, i) => {
+        const coincide = terminos.every((t) => li.dataset.buscar.includes(t));
+        if (coincide) coincidencias++;
+        const dentroDelLimite = terminos.length > 0 || expandido || i < iniciales;
+        li.hidden = !(coincide && dentroDelLimite);
+      });
+
+      if (botonTodos) botonTodos.parentElement.hidden = terminos.length > 0 || expandido;
+
+      if (sinResultados) {
+        sinResultados.hidden = coincidencias > 0;
+        if (!coincidencias) {
+          sinResultados.querySelector('[data-busqueda]').textContent = consulta;
+          sinResultados.querySelector('[data-wa-busqueda]').href =
+            waUrl(`Hola, ¿tienen el estudio "${consulta}"? ¿Cuál es su precio?`);
+        }
+      }
+
+      // El anuncio para lectores de pantalla espera a que dejes de escribir
+      clearTimeout(temporizadorEstado);
+      temporizadorEstado = setTimeout(() => {
+        if (!estado) return;
+        estado.textContent = !terminos.length
+          ? plural(items.length, 'estudio disponible', 'estudios disponibles')
+          : coincidencias
+            ? `${plural(coincidencias, 'estudio coincide', 'estudios coinciden')} con tu búsqueda`
+            : 'Sin coincidencias';
+      }, 400);
+    };
+
+    buscador?.addEventListener('input', aplicarFiltro);
+    botonTodos?.addEventListener('click', () => {
+      expandido = true;
+      botonTodos.setAttribute('aria-expanded', 'true');
+      aplicarFiltro();
+      items[iniciales]?.querySelector('a')?.focus();
+    });
+    aplicarFiltro();
+  }
+
+  // ---------- Visor de imágenes (galería) ----------
+  const visor = document.getElementById('lightbox');
+  if (visor && typeof visor.showModal === 'function') {
+    const imagen = visor.querySelector('.lightbox__img');
+    const titulo = visor.querySelector('.lightbox__title');
+    document.addEventListener('click', (e) => {
+      const enlace = e.target.closest('a[data-lightbox]');
+      if (!enlace) return;
+      e.preventDefault();
+      imagen.src = enlace.href;
+      imagen.alt = enlace.dataset.lightboxAlt || '';
+      titulo.textContent = enlace.dataset.lightboxTitulo || '';
+      visor.showModal();
+    });
+    // Clic fuera de la imagen cierra el visor
+    visor.addEventListener('click', (e) => { if (e.target === visor) visor.close(); });
+  }
 
   // ---------- Formulario → WhatsApp ----------
   const form = document.getElementById('form-wa');
-  const nombre = document.getElementById('f-nombre');
-  const errorNombre = document.getElementById('f-nombre-error');
-  const estudio = document.getElementById('f-estudio');
-  const estadoForm = document.getElementById('form-estado');
-  const botonForm = form.querySelector('button[type="submit"]');
-  const textoBoton = botonForm.querySelector('[data-label]');
-  let nombreTocado = false;
+  if (form) {
+    const nombre = document.getElementById('f-nombre');
+    const errorNombre = document.getElementById('f-nombre-error');
+    const estudio = document.getElementById('f-estudio');
+    const estadoForm = document.getElementById('form-estado');
+    const botonForm = form.querySelector('button[type="submit"]');
+    const textoBoton = botonForm.querySelector('[data-label]');
+    let nombreTocado = false;
 
-  const validarNombre = () => {
-    const v = nombre.value.trim();
-    let msg = '';
-    if (!v) msg = 'Escribe tu nombre para saber cómo dirigirnos a ti.';
-    else if (v.length < 2) msg = 'Tu nombre necesita al menos 2 letras.';
-    else if (!/^[\p{L}][\p{L}\s.'-]*$/u.test(v)) msg = 'Usa solo letras y espacios, sin números ni símbolos.';
+    const validarNombre = () => {
+      const v = nombre.value.trim();
+      let msg = '';
+      if (!v) msg = 'Escribe tu nombre para saber cómo dirigirnos a ti.';
+      else if (v.length < 2) msg = 'Tu nombre necesita al menos 2 letras.';
+      else if (!/^[\p{L}][\p{L}\s.'-]*$/u.test(v)) msg = 'Usa solo letras y espacios, sin números ni símbolos.';
 
-    nombre.setAttribute('aria-invalid', String(Boolean(msg)));
-    nombre.classList.toggle('is-valid', !msg);
-    errorNombre.hidden = !msg;
-    errorNombre.querySelector('span').textContent = msg;
-    return !msg;
-  };
+      nombre.setAttribute('aria-invalid', String(Boolean(msg)));
+      nombre.classList.toggle('is-valid', !msg);
+      errorNombre.hidden = !msg;
+      errorNombre.querySelector('span').textContent = msg;
+      return !msg;
+    };
 
-  nombre.addEventListener('blur', () => { if (nombre.value.trim()) nombreTocado = true; if (nombreTocado) validarNombre(); });
-  nombre.addEventListener('input', () => { if (nombreTocado) validarNombre(); });
+    nombre.addEventListener('blur', () => { if (nombre.value.trim()) nombreTocado = true; if (nombreTocado) validarNombre(); });
+    nombre.addEventListener('input', () => { if (nombreTocado) validarNombre(); });
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    nombreTocado = true;
-    if (!validarNombre()) {
-      nombre.focus();
-      return;
-    }
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      nombreTocado = true;
+      if (!validarNombre()) {
+        nombre.focus();
+        return;
+      }
 
-    const lugar = form.elements.lugar.value;
-    const que = estudio.value.trim();
-    const mensaje =
-      `Hola, soy ${nombre.value.trim()}. Me gustaría agendar ${que ? `el estudio: ${que}` : 'un estudio'}` +
-      ` ${lugar === 'domicilio' ? 'con toma de muestra a domicilio' : 'en el laboratorio'}. ¿Me dan precio y disponibilidad?`;
-    const url = waUrl(mensaje);
+      const lugar = form.elements.lugar.value;
+      const que = estudio.value.trim();
+      const mensaje =
+        `Hola, soy ${nombre.value.trim()}. Me gustaría agendar ${que ? `el estudio: ${que}` : 'un estudio'}` +
+        ` ${lugar === 'domicilio' ? 'con toma de muestra a domicilio' : 'en el laboratorio'}. ¿Me dan precio y disponibilidad?`;
+      const url = waUrl(mensaje);
 
-    botonForm.setAttribute('aria-busy', 'true');
-    textoBoton.textContent = 'Abriendo WhatsApp…';
-    medir('cta_whatsapp', { cta_ubicacion: 'formulario', lugar });
+      botonForm.setAttribute('aria-busy', 'true');
+      textoBoton.textContent = 'Abriendo WhatsApp…';
+      medir('cta_whatsapp', { cta_ubicacion: 'formulario', lugar });
 
-    const ventana = window.open(url, '_blank');
-    if (ventana) ventana.opener = null;
-    else window.location.href = url;
+      const ventana = window.open(url, '_blank');
+      if (ventana) ventana.opener = null;
+      else window.location.href = url;
 
-    estadoForm.replaceChildren(
-      'Listo, abrimos WhatsApp con tu mensaje. ¿No se abrió? ',
-      Object.assign(document.createElement('a'), { href: url, target: '_blank', rel: 'noopener', textContent: 'Ábrelo aquí' })
-    );
-    setTimeout(() => {
-      botonForm.removeAttribute('aria-busy');
-      textoBoton.textContent = 'Quiero agendar por WhatsApp';
-    }, 1500);
-  });
+      estadoForm.replaceChildren(
+        'Listo, abrimos WhatsApp con tu mensaje. ¿No se abrió? ',
+        Object.assign(document.createElement('a'), { href: url, target: '_blank', rel: 'noopener', textContent: 'Ábrelo aquí' })
+      );
+      setTimeout(() => {
+        botonForm.removeAttribute('aria-busy');
+        textoBoton.textContent = 'Quiero agendar por WhatsApp';
+      }, 1500);
+    });
+  }
 
   // ---------- Arranque ----------
   prepararEnlaces();
@@ -349,11 +447,11 @@
   alHacerScroll();
   window.addEventListener('scroll', alHacerScroll, { passive: true });
   document.querySelectorAll('[data-anio]').forEach((el) => { el.textContent = new Date().getFullYear(); });
-  cargarOfertas();
+  if (hayOfertas) cargarOfertas();
 
   // Refresca horario y vigencias cada minuto (sin reiniciar contadores: todo sale de fechas fijas)
   setInterval(() => {
     pintarHorario();
-    if (lista.dataset.estado === 'listo') pintarOfertas();
+    if (hayOfertas && lista.dataset.estado === 'listo') pintarOfertas();
   }, 60_000);
 })();

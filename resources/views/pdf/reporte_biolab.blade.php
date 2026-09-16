@@ -326,8 +326,8 @@
 
                             {{-- Datos Biolab --}}
                             <td style="width: 30%;">
-                                <p style="margin: 0">Avenida Revolución, Región 75, Calle 37 Norte</p>
-                                <p style="margin: 0">C.P. 77527, Cancún, Quintana Roo</p>
+                                <p style="margin: 0">Av. 103, Mz. 116, Lt. 29</p>
+                                <p style="margin: 0">Cancún, Quintana Roo</p>
                                 <p style="margin: 0">Tel: 998 654 3958</p>
                                 <p style="margin: 0"><strong>biolab348@gmail.com</strong></p>
                             </td>

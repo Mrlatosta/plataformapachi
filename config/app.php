@@ -67,6 +67,10 @@ return [
 
     'timezone' => 'UTC',
 
+    // Zona horaria del laboratorio. Las fechas se guardan en UTC; el dashboard
+    // agrupa por dia/hora local con esta zona.
+    'local_timezone' => env('APP_LOCAL_TIMEZONE', 'America/Cancun'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

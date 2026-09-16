@@ -228,6 +228,7 @@ import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from "@inertiajs/vue3";
 import { IVA_PORCENTAJE, calcularIva } from "@/utils/iva";
+import { descargarRespuesta } from "@/utils/descargas";
 
 const folioBusqueda = ref("");
 const estudiosDisponibles = ref([]);
@@ -346,23 +347,12 @@ async function reimprimirReporte() {
   if (!form.id) return alert("Primero busca un reporte válido");
 
   try {
+    // El servidor manda el nombre: "Paciente - RPT-0155.pdf"
     const pdfResponse = await axios.get(`/api/reportes/${form.id}/pdf`, { responseType: "blob" });
-    const url = window.URL.createObjectURL(new Blob([pdfResponse.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `reporte-${form.folio}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    descargarRespuesta(pdfResponse, `${form.folio}.pdf`);
 
     const ordenResponse = await axios.get(`/api/reportes/${form.id}/orden`, { responseType: "blob" });
-    const urlOrden = window.URL.createObjectURL(new Blob([ordenResponse.data]));
-    const linkOrden = document.createElement("a");
-    linkOrden.href = urlOrden;
-    linkOrden.setAttribute("download", `orden-trabajo-${form.folio}.pdf`);
-    document.body.appendChild(linkOrden);
-    linkOrden.click();
-    document.body.removeChild(linkOrden);
+    descargarRespuesta(ordenResponse, `${form.folio} - Orden de trabajo.pdf`);
 
   } catch (error) {
     console.error(error);

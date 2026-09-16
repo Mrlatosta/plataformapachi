@@ -363,8 +363,8 @@
                     Laboratorio de Análisis Clínicos "BIOLAB"
                 </div>
                 <div class="company-info">
-                    Avenida Revolución, Región 75, Calle 37 Norte<br>
-                    C.P. 77527, Cancún, Quintana Roo<br>
+                    Av. 103, Mz. 116, Lt. 29<br>
+                    Cancún, Quintana Roo<br>
                     Tel: 998 654 3958 | biolab348@gmail.com
                 </div>
             </div>
@@ -532,8 +532,8 @@
             </div>
             <div class="footer-section footer-divider">
                 <strong>Dirección</strong><br>
-                Av. Revolución, Región 75<br>
-                Cancún, Q. Roo, C.P. 77527
+                Av. 103, Mz. 116, Lt. 29<br>
+                Cancún, Q. Roo
             </div>
         </div>
         <div style="margin-top: 10px; font-size: 8px; color: #999; font-style: italic;">
