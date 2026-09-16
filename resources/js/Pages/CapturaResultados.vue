@@ -915,7 +915,9 @@ function precargarDesdeCotizacion(cotizacion) {
       })
     })
 
-    mostrarNotificacion(`Cotización ${cotizacion.folio} cargada: ${form.estudios.length} estudio(s) y datos del paciente`, 'success')
+    // "origen" viene cuando la precarga es desde una cita de la agenda
+    const origen = cotizacion.origen || `Cotización ${cotizacion.folio}`
+    mostrarNotificacion(`${origen} cargada: ${form.estudios.length} estudio(s) y datos del paciente`, 'success')
   }
 }
 

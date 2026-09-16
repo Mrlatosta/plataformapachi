@@ -14,6 +14,7 @@ use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\MedicoPortalController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\GestionLandingController;
+use App\Http\Controllers\CitaController;
 
 
 Route::get('/', function () {
@@ -35,6 +36,9 @@ Route::get('/novedades/{slug}', [LandingController::class, 'articulo'])
 
 Route::get('/gestion-landing', [GestionLandingController::class, 'page'])
     ->middleware(['auth', 'verified'])->name('gestion.landing');
+
+Route::get('/agenda', [CitaController::class, 'page'])
+    ->middleware(['auth', 'verified'])->name('agenda');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -71,6 +75,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
     Route::patch('/api/estudios/{id}/visibilidad', [EstudioController::class, 'cambiarVisibilidad']);
     Route::delete('/api/estudios/{id}', [EstudioController::class, 'destroy']);
+
+    // Agenda de citas
+    Route::get('/api/citas', [CitaController::class, 'index']);
+    Route::post('/api/citas', [CitaController::class, 'store']);
+    Route::put('/api/citas/{id}', [CitaController::class, 'update'])->whereNumber('id');
+    Route::patch('/api/citas/{id}/estado', [CitaController::class, 'cambiarEstado'])->whereNumber('id');
+    Route::delete('/api/citas/{id}', [CitaController::class, 'destroy'])->whereNumber('id');
 
     // Gestión Landing. Se usa POST también para editar porque PHP no lee archivos en PUT.
     Route::get('/api/landing/promociones', [GestionLandingController::class, 'promociones']);

@@ -8,6 +8,8 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './resources/js/**/*.vue',
+        // Utilidades JS que devuelven clases (p. ej. colores de estado de la agenda)
+        './resources/js/**/*.js',
     ],
 
     theme: {
