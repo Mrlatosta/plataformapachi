@@ -48,6 +48,17 @@ class Reporte extends Model
         'descuento' => 'float',
     ];
 
+    /**
+     * Folio que le toca al siguiente reporte: RPT-0001, RPT-0002...
+     */
+    public static function siguienteFolio(): string
+    {
+        $ultimoFolio = static::orderBy('id', 'desc')->value('folio');
+        $numero = $ultimoFolio ? (int) preg_replace('/\D/', '', $ultimoFolio) + 1 : 1;
+
+        return 'RPT-' . str_pad($numero, 4, '0', STR_PAD_LEFT);
+    }
+
     public function estudios()
     {
         return $this->hasMany(ReporteEstudio::class)->orderBy('orden')->orderBy('id');

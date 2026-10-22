@@ -275,7 +275,7 @@
                         <td><strong>Sexo:</strong> {{ ucfirst($reporte->sexo) }}</td>
                     </tr>
                     <tr>
-                        <td><strong>F. Nacimiento:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}</td>
+                        <td><strong>F. Nacimiento:</strong> {{ $reporte->fecha_nacimiento ? \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') : 'NO ESPECIFICADA' }}</td>
                         <td colspan="2"><strong>E-Mail:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</td>
                     </tr>
                 </table>

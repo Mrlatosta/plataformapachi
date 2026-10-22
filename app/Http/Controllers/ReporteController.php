@@ -113,10 +113,7 @@ private function mensajesReporte(): array
  */
 private function folioProyectado(): string
 {
-    $ultimoFolio = Reporte::orderBy('id', 'desc')->value('folio');
-    $numero = $ultimoFolio ? (int) preg_replace('/\D/', '', $ultimoFolio) + 1 : 1;
-
-    return 'RPT-' . str_pad($numero, 4, '0', STR_PAD_LEFT);
+    return Reporte::siguienteFolio();
 }
 
 public function store(Request $request)
@@ -171,7 +168,7 @@ public function store(Request $request)
 
             $reporteEstudio->resultados()->create([
                 'examen_id' => $resultado['id'],
-                'resultado' => $resultado['resultado'] ?? null,
+                'resultado' => $resultado['resultado'] ?? '', // la columna no acepta null
                 'fuera_rango' => $fueraRango,
                 'direccion_rango' => $this->resolverDireccionRango(
                     $resultado['id'],
@@ -265,7 +262,7 @@ public function store(Request $request)
 
                     $resultado = new ResultadoExamen([
                         'examen_id' => $examenData['id'],
-                        'resultado' => $examenData['resultado'] ?? null,
+                        'resultado' => $examenData['resultado'] ?? '', // la columna no acepta null
                         'fuera_rango' => $fueraRango,
                         'direccion_rango' => $this->resolverDireccionRango(
                             $examenData['id'],
@@ -510,7 +507,7 @@ public function actualizarReporte(Request $request, $id)
                 $resultado = $reporteEstudio->resultados()->find($resultadoData['id']);
                 if ($resultado) {
                     $resultado->update([
-                        'resultado' => $resultadoData['resultado'] ?? null,
+                        'resultado' => $resultadoData['resultado'] ?? '', // la columna no acepta null
                         'fuera_rango' => $fueraRango,
                         'direccion_rango' => $this->resolverDireccionRango(
                             $resultado->examen_id,
@@ -526,7 +523,7 @@ public function actualizarReporte(Request $request, $id)
 
                 $reporteEstudio->resultados()->create([
                     'examen_id' => $examenId,
-                    'resultado' => $resultadoData['resultado'] ?? null,
+                    'resultado' => $resultadoData['resultado'] ?? '', // la columna no acepta null
                     'fuera_rango' => $fueraRango,
                     'direccion_rango' => $this->resolverDireccionRango(
                         $examenId,
@@ -556,7 +553,7 @@ public function actualizarReporte(Request $request, $id)
 
             $nuevo->resultados()->create([
                 'examen_id' => $examenId,
-                'resultado' => $r['resultado'] ?? null,
+                'resultado' => $r['resultado'] ?? '', // la columna no acepta null
                 'fuera_rango' => $fueraRango,
                 'direccion_rango' => $this->resolverDireccionRango(
                     $examenId,

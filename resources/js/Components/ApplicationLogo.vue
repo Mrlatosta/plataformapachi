@@ -1,3 +1,3 @@
 <template>
-   <img src="img/imgbiolabtrans.png"  alt="">
+   <img src="/img/imgbiolabtrans.png"  alt="">
 </template>

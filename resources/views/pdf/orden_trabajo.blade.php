@@ -155,7 +155,7 @@
                   <strong>Paciente:</strong> {{ strtoupper($reporte->nombre_cliente) }}
                 </div>
                 <div style="margin-bottom: 3px;">
-                  <strong>F. Nacimiento:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') }}
+                  <strong>F. Nacimiento:</strong> {{ $reporte->fecha_nacimiento ? \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') : 'NO ESPECIFICADA' }}
                 </div>
                 <div><strong>Sexo:</strong> {{ ucfirst($reporte->sexo) }}</div>
               </td>
