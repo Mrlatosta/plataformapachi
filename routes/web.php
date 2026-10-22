@@ -15,6 +15,7 @@ use App\Http\Controllers\MedicoPortalController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\GestionLandingController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\JornadaController;
 
 
 Route::get('/', function () {
@@ -57,6 +58,12 @@ Route::get('/gestion-estudios', function () {
 Route::get('/captura-resultados', [CapturaResultadosController::class, 'page'])
     ->middleware(['auth', 'verified'])->name('captura.resultados');
 
+// Captura rápida por jornadas (antidoping en empresas, campañas)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/captura-rapida', [JornadaController::class, 'page'])->name('captura.rapida');
+    Route::get('/captura-rapida/{id}', [JornadaController::class, 'show'])->whereNumber('id')->name('captura.rapida.jornada');
+});
+
 
 Route::get('/cotizaciones', function () {
     return Inertia::render('Cotizaciones');
@@ -95,6 +102,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'guardarPublicacion'])->whereNumber('id');
     Route::patch('/api/landing/publicaciones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPublicacion'])->whereNumber('id');
     Route::delete('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'eliminarPublicacion'])->whereNumber('id');
+
+    // Captura rápida por jornadas
+    Route::post('/api/jornadas', [JornadaController::class, 'store']);
+    Route::put('/api/jornadas/{id}', [JornadaController::class, 'update'])->whereNumber('id');
+    Route::delete('/api/jornadas/{id}', [JornadaController::class, 'destroy'])->whereNumber('id');
+    Route::post('/api/jornadas/{id}/participantes', [JornadaController::class, 'agregarParticipantes'])->whereNumber('id');
+    Route::patch('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'actualizarParticipante'])->whereNumber(['id', 'participante']);
+    Route::delete('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'eliminarParticipante'])->whereNumber(['id', 'participante']);
+    Route::post('/api/jornadas/{id}/reportes', [JornadaController::class, 'generarReportes'])->whereNumber('id');
+    Route::get('/api/jornadas/{id}/csv', [JornadaController::class, 'exportarCsv'])->whereNumber('id');
 
     Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'index']);
     Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);

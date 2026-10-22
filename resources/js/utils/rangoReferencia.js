@@ -77,6 +77,39 @@ export const direccionFueraRango = (resultado, valorReferencia) => {
     return null;
 };
 
+// Pares normal -> anormal de las referencias cualitativas (antidoping, serologías)
+const CUALITATIVOS = {
+    negativo: 'positivo',
+    'no reactivo': 'reactivo',
+    ausente: 'presente',
+};
+
+/**
+ * Para referencias como "Negativo" devuelve [normal, anormal] con la misma
+ * capitalización que la referencia: ['NEGATIVO', 'POSITIVO']. Null si no aplica.
+ */
+export const opcionesCualitativas = (valorReferencia) => {
+    const anormal = CUALITATIVOS[normalizar(valorReferencia)];
+    if (!anormal) return null;
+
+    const original = String(valorReferencia).trim();
+    if (original === original.toUpperCase()) return [original, anormal.toUpperCase()];
+    if (original[0] === original[0].toUpperCase()) return [original, anormal[0].toUpperCase() + anormal.slice(1)];
+    return [original, anormal];
+};
+
+// Mismo criterio que RangoReferencia::fueraDeRango en PHP
+export const esFueraDeRango = (resultado, valorReferencia) => {
+    const valor = normalizar(resultado);
+    if (!valor) return false;
+
+    if (opcionesCualitativas(valorReferencia)) {
+        return valor !== normalizar(valorReferencia);
+    }
+
+    return direccionFueraRango(resultado, valorReferencia) !== null;
+};
+
 export const flechaRango = (direccion) => {
     if (direccion === 'alto') return '↑';
     if (direccion === 'bajo') return '↓';

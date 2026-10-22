@@ -61,6 +61,57 @@ class RangoReferencia
     }
 
     /**
+     * Pares normal => anormal de las referencias cualitativas (antidoping, serologias).
+     */
+    private const CUALITATIVOS = [
+        'negativo' => 'positivo',
+        'no reactivo' => 'reactivo',
+        'ausente' => 'presente',
+    ];
+
+    /**
+     * Para referencias como "Negativo" devuelve [normal, anormal] con la misma
+     * capitalizacion que la referencia: ['NEGATIVO', 'POSITIVO']. Null si no aplica.
+     */
+    public static function opcionesCualitativas($valorReferencia): ?array
+    {
+        $normal = self::normalizar($valorReferencia);
+        if (! isset(self::CUALITATIVOS[$normal])) {
+            return null;
+        }
+
+        $original = trim((string) $valorReferencia);
+        $anormal = self::CUALITATIVOS[$normal];
+
+        if ($original === mb_strtoupper($original)) {
+            return [$original, mb_strtoupper($anormal)];
+        }
+        if (mb_substr($original, 0, 1) === mb_strtoupper(mb_substr($original, 0, 1))) {
+            return [$original, ucfirst($anormal)];
+        }
+
+        return [$original, $anormal];
+    }
+
+    /**
+     * Fuera de rango: un cualitativo distinto del valor normal, o un numero
+     * por arriba / debajo del rango. Textos libres nunca se marcan.
+     */
+    public static function fueraDeRango($resultado, $valorReferencia): bool
+    {
+        $valor = self::normalizar($resultado);
+        if ($valor === '') {
+            return false;
+        }
+
+        if (self::opcionesCualitativas($valorReferencia)) {
+            return $valor !== self::normalizar($valorReferencia);
+        }
+
+        return self::direccion($resultado, $valorReferencia) !== null;
+    }
+
+    /**
      * Flecha que corresponde a la direccion recibida ('' si no aplica).
      */
     public static function flecha(?string $direccion): string
