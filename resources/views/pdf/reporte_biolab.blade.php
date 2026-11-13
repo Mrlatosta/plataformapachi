@@ -68,21 +68,24 @@
                 width: 250px;
             }
             
-            .study-section {
-                margin: 0 0 5px 0;
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }
-
+            /*
+             * T3: antes cada estudio completo llevaba page-break-inside: avoid. Cuando un
+             * estudio era mas alto que la hoja, DomPDF lo mandaba entero a la pagina 2 y
+             * dejaba la 1 en blanco. Ahora solo los estudios cortos (que caben en una hoja)
+             * se mantienen juntos; los largos fluyen y repiten su encabezado (thead).
+             */
             .study-block {
-                page-break-inside: avoid;
-                break-inside: avoid;
                 margin-bottom: 10px;
             }
-            
-            .study-title {
-                padding: 0px;
-                margin: 0 0 8px 0;
+
+            .study-block.sin-corte {
+                page-break-inside: avoid;
+            }
+
+            .tablaExamenes th.study-title {
+                background-color: transparent;
+                color: #000000;
+                padding: 0 0 6px 0;
                 font-weight: bold;
                 font-size: 13px;
                 text-align: left;
@@ -151,19 +154,17 @@
                 padding: 5px 2px !important;
             }
 
-            /* Flechas de resultado fuera de rango */
+            /* T4: resultado fuera de rango en rojo con flecha (numerico) o * (texto) */
+            .fuera-rango {
+                color: #c0392b;
+                font-weight: bold;
+            }
+
             .flecha-rango {
                 font-weight: bold;
                 font-size: 14px;
                 padding-left: 3px;
-            }
-
-            .flecha-alto {
                 color: #c0392b;
-            }
-
-            .flecha-bajo {
-                color: #1d4ed8;
             }
 
             .leyenda-flechas {
@@ -174,30 +175,84 @@
                 margin-bottom: -6px;
             }
 
-            /* Observaciones del estudio (se usan sobre todo en urocultivos) */
+            /* T7: notas a todo el ancho, alineadas a la izquierda y con ajuste de linea */
+            .fila-nota td {
+                text-align: left;
+                font-size: 11px;
+                line-height: 1.35;
+                padding: 4px 2px;
+            }
+
             .observaciones-box {
-                margin-top: 8px;
-                padding: 6px 8px;
+                margin-top: 6px;
+                padding: 5px 8px;
                 background-color: #fffbeb;
                 border-left: 3px solid #f59e0b;
-                border-radius: 4px;
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }
-
-            .observaciones-title {
-                font-weight: bold;
-                color: #b45309;
-                font-size: 11px;
-                margin: 0 0 2px 0;
-            }
-
-            .observaciones-texto {
-                color: #374151;
+                text-align: left;
                 font-size: 10px;
                 line-height: 1.35;
-                text-align: justify;
-                margin: 0;
+                color: #374151;
+                page-break-inside: avoid;
+            }
+
+            .leyenda-estudio {
+                margin: 5px 0 0 0;
+                text-align: left;
+                font-size: 10px;
+                font-style: italic;
+                line-height: 1.35;
+                color: #374151;
+            }
+
+            /* T5: tabla de niveles de referencia debajo del resultado */
+            .fila-niveles td {
+                padding: 0 2px 4px 2px;
+            }
+
+            .tabla-niveles {
+                border-collapse: collapse;
+                font-size: 9px;
+                margin-left: 12px;
+            }
+
+            .tabla-niveles th {
+                background-color: #f3f4f6;
+                color: #374151;
+                font-size: 9px;
+                font-weight: bold;
+                padding: 2px 8px;
+                border: 0.5px solid #d1d5db;
+            }
+
+            .tabla-niveles td {
+                padding: 2px 8px;
+                border: 0.5px solid #d1d5db;
+            }
+
+            .tabla-niveles tr.nivel-actual td {
+                background-color: #fef3c7;
+                font-weight: bold;
+            }
+
+            .aviso-documento {
+                margin-top: 3px;
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: bold;
+                text-align: center;
+                border-radius: 3px;
+            }
+
+            .aviso-preliminar {
+                background-color: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fca5a5;
+            }
+
+            .aviso-complementario {
+                background-color: #e0f2fe;
+                color: #075985;
+                border: 1px solid #7dd3fc;
             }
 
             .seccion-header td {
@@ -226,7 +281,7 @@
     <body>
         <!-- Watermark de fondo -->
         <div class="watermark">
-            <img src="{{ public_path('img/imgbiolabfoot.png') }}" alt="">
+            <img src="{{ public_path('img/pdf/imgbiolabfoot.png') }}" alt="">
         </div>
 
         <!-- Define header and footer blocks before your content -->
@@ -238,7 +293,7 @@
                         <table>
                             <tr>
                                 <td valign="top" style="width: 70px;">
-                                    <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 65px;">
+                                    <img src="{{ public_path('img/pdf/imgbiolabtrans.png') }}" style="width: 65px;">
                                 </td>
                                 <td valign="top" style="padding-left: 6px;">
                                     <div style="font-weight: bold; font-size: 13px;">
@@ -246,10 +301,10 @@
                                     </div>
                                     <div style="font-size: 9px; margin-top: 2px;">Folio: <strong>{{ $reporte->folio }}</strong></div>
                                     <div style="margin-top: 1px;">
-                                        <img src="{{public_path('img/codbarras.png') }}" style="width: 70px; height: 16px;" alt="">
+                                        <img src="{{public_path('img/pdf/codbarras.png') }}" style="width: 70px; height: 16px;" alt="">
                                     </div>
                                     <div style="font-size: 9px; margin-top: 2px;">
-                                        Médico: <strong>{{ strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
+                                        Médico: <strong>{{ mb_strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
                                     </div>
                                 </td>
                             </tr>
@@ -261,7 +316,7 @@
                         <div style="background-color: #e9f0fe; padding: 4px 6px; font-size: 9px; border: 1px solid #cbd5e0; border-radius: 4px;">
                             <div><strong>Toma de muestra:</strong> {{ \Carbon\Carbon::parse($reporte->toma_muestra)->format('d/m/Y g:i a') }}</div>
                             <div style="margin-top: 2px;"><strong>Fecha de Reporte:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_reporte)->format('d/m/Y g:i a') }}</div>
-                            <div style="margin-top: 2px;"><strong>Fecha de Validación:</strong> {{ \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') }}</div>
+                            <div style="margin-top: 2px;"><strong>Fecha de Validación:</strong> {{ $reporte->fecha_validacion ? \Carbon\Carbon::parse($reporte->fecha_validacion)->format('d/m/Y g:i a') : 'Pendiente' }}</div>
                         </div>
                     </td>
                 </tr>
@@ -270,13 +325,13 @@
             <div class="patient-row">
                 <table width="100%">
                     <tr>
-                        <td><strong>Paciente:</strong> {{ strtoupper($reporte->nombre_cliente) }}</td>
+                        <td><strong>Paciente:</strong> {{ mb_strtoupper($reporte->nombre_cliente) }}</td>
                         <td><strong>Edad:</strong> {{ $reporte->edad }} años</td>
                         <td><strong>Sexo:</strong> {{ ucfirst($reporte->sexo) }}</td>
                     </tr>
                     <tr>
                         <td><strong>F. Nacimiento:</strong> {{ $reporte->fecha_nacimiento ? \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') : 'NO ESPECIFICADA' }}</td>
-                        <td colspan="2"><strong>E-Mail:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</td>
+                        <td colspan="2"><strong>E-Mail:</strong> {{ mb_strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}</td>
                     </tr>
                 </table>
             </div>
@@ -286,9 +341,9 @@
         <footer>
                 <div>
                     <p class="leyenda-flechas">
-                        <span class="flecha-rango flecha-alto">↑</span> Resultado alto (por arriba del valor de referencia)
+                        <span class="flecha-rango">↑ ↓</span> Fuera del intervalo de referencia
                         &nbsp;&nbsp;
-                        <span class="flecha-rango flecha-bajo">↓</span> Resultado bajo (por debajo del valor de referencia)
+                        <span class="flecha-rango">*</span> Resultado distinto al valor normal
                     </p>
 
                     <p style="margin-left: 45px; font-size: 0.6rem; color: gray; font-style: italic; text-align: left; margin-bottom: 5px;"> "Ciencia y compromiso al servicio de tu salud ".</p>
@@ -309,19 +364,19 @@
 
                             {{-- Datos QR --}}
                             <td style="width: 30%;">
-                                <img src="{{ public_path('img/firmados.png') }}" width="100px" alt="error firma">
+                                <img src="{{ public_path('img/pdf/firmados.png') }}" width="100px" alt="error firma">
                                 <hr style="width: 100% ; border: 0.3px solid #000; margin: 0; padding: 0;">
                                 <p style="margin: 0px"><strong>Q.F.B Ángel Augusto Pérez Arias</strong></p>
                                 <p style="margin:0px"> Universidad popular de la chontalpa</p>
                                 <p style="margin: 0px">Céd. Prof. 14083392</p>
                                 <p style="margin: 0px">
-                                    <img src="{{ public_path('img/whatsapp.png') }}" width="12px" alt=""> 998 654 3958
+                                    <img src="{{ public_path('img/pdf/whatsapp.png') }}" width="12px" alt=""> 998 654 3958
                                 </p>
                             </td>
 
                             {{-- Logo transparente --}}
                             <td style="width: 20%; text-align: center;">
-                                <img src="{{ public_path('img/imgbiolabtrans.png') }}" width="80px" alt="Biolab">
+                                <img src="{{ public_path('img/pdf/imgbiolabtrans.png') }}" width="80px" alt="Biolab">
                             </td>
 
                             {{-- Datos Biolab --}}
@@ -338,142 +393,164 @@
                 </div>
         </footer>
 
-        <!-- Wrap the content of your PDF inside a main tag -->
+        @if(!empty($preliminar))
+            {{-- Marca en cada hoja: hay estudios que el Q.F.B. aun no valida --}}
+            <div style="position: fixed; top: 35%; left: 0; right: 0; text-align: center; font-size: 90px; font-weight: bold; color: #dc2626; opacity: 0.08; z-index: 1000;">
+                PRELIMINAR
+            </div>
+        @endif
+
         <main style="margin: 0; padding: 0;">
-                <div>
-                    @foreach ($reporte->estudios as $estudio)
-                        <div class="study-block" @if(!$loop->first) style="margin-top: 8px;" @endif>
+            @if(!empty($complementario))
+                <div class="aviso-documento aviso-complementario">
+                    REPORTE COMPLEMENTARIO · Mismo folio {{ $reporte->folio }}
+                </div>
+            @endif
+            @if(!empty($preliminar))
+                <div class="aviso-documento aviso-preliminar">
+                    RESULTADO PRELIMINAR · Contiene estudios pendientes de validación. No entregar al paciente.
+                </div>
+            @endif
 
-                        <div class="study-section">
-                            <div class="study-title">{{ strtoupper($estudio->estudio->nombre) }}</div>
-                            
-                        
+            @foreach ($reporte->estudios as $estudio)
+                @php
+                    // Un '*' capturado como resultado significa que ese examen no se imprime
+                    $visibles = collect($estudio->resultados)
+                        ->filter(fn ($r) => strpos((string) $r->resultado, '*') === false)
+                        ->values();
 
-                            <table class="tablaExamenes">
+                    // Estudios cortos se mantienen en una hoja; los largos pueden partirse
+                    // entre renglones (nunca a la mitad de uno) y repiten su encabezado.
+                    $renglones = $visibles->count() + $visibles->sum(fn ($r) => count($r->examen->niveles ?? []));
+                    $cabeEnUnaHoja = $renglones <= 22;
 
-                                <thead>
-                                    <tr>
-                                        <th style="width: 45%;">Examen</th>
-                                        <th style="width: 15%;">Resultado</th>
-                                        <th style="width: 15%;">Unidad</th>
-                                        <th style="width: 25%;">Valor de referencia</th>
+                    $porSeccion = $visibles->groupBy(fn ($r) => ($r->examen->seccion ?? null) ?: 'Sin Sección');
+                    $sexo = $reporte->sexo;
+                    $edad = $reporte->edad;
+
+                    // Un estudio sin ningun resultado escrito no imprime una tabla vacia
+                    $sinResultados = $visibles->every(fn ($r) => trim((string) $r->resultado) === '');
+                @endphp
+
+                @continue($sinResultados)
+
+                <div class="study-block {{ $cabeEnUnaHoja ? 'sin-corte' : '' }}" @if(!$loop->first) style="margin-top: 8px;" @endif>
+                    <table class="tablaExamenes">
+                        <thead>
+                            <tr>
+                                <th colspan="4" class="study-title">{{ mb_strtoupper($estudio->estudio->nombre) }}</th>
+                            </tr>
+                            <tr>
+                                <th style="width: 45%;">Examen</th>
+                                <th style="width: 15%;">Resultado</th>
+                                <th style="width: 15%;">Unidad</th>
+                                <th style="width: 25%;">Valor de referencia</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach ($porSeccion as $nombreSeccion => $resultados)
+                                @if($nombreSeccion !== 'Sin Sección' && $porSeccion->count() > 1)
+                                    <tr class="seccion-header">
+                                        <td colspan="4">{{ mb_strtoupper($nombreSeccion) }}</td>
                                     </tr>
-                                </thead>
+                                @endif
 
-                                <tbody>
+                                @foreach ($resultados as $resultado)
                                     @php
-                                        // Agrupar resultados por sección
-                                        $resultadosPorSeccion = [];
-                                        foreach ($estudio->resultados as $resultado) {
-                                            $examen = $resultado->examen;
-                                            $seccion = $examen->seccion ?? 'Sin Sección';
-                                            
-                                            if (!isset($resultadosPorSeccion[$seccion])) {
-                                                $resultadosPorSeccion[$seccion] = [];
-                                            }
-                                            $resultadosPorSeccion[$seccion][] = $resultado;
-                                        }
+                                        $examen = $resultado->examen;
+                                        $valorResultado = (string) $resultado->resultado;
+                                        $niveles = $examen->niveles ?? collect();
+                                        $fueraRango = (bool) $resultado->fuera_rango;
+
+                                        // Flecha: la guardada o, si no hay, la deducida contra la referencia
+                                        // del sexo/edad del paciente. Sin flecha (texto) se marca con *.
+                                        $direccionRango = $fueraRango
+                                            ? (($resultado->direccion_rango ?? null) ?: \App\Support\RangoReferencia::direccion($valorResultado, $examen->valor_referencia, $sexo, $edad, $niveles))
+                                            : null;
+                                        $marca = $fueraRango ? (\App\Support\RangoReferencia::flecha($direccionRango) ?: '*') : '';
+
+                                        // T7: observaciones y textos largos sin unidad ni referencia van a todo el ancho
+                                        $esNota = trim($valorResultado) !== ''
+                                            && (preg_match('/^\s*observaci/iu', $examen->nombre_examen)
+                                                || (trim((string) $examen->unidad) === '' && trim((string) $examen->valor_referencia) === '' && mb_strlen($valorResultado) > 30));
+
+                                        $normal = $niveles->firstWhere('es_normal', true);
+                                        $referencia = $niveles->isNotEmpty()
+                                            ? ($normal ? $normal->intervaloTexto() : 'Ver tabla')
+                                            : $examen->valor_referencia;
                                     @endphp
 
-                                    @foreach ($resultadosPorSeccion as $nombreSeccion => $resultados)
-                                        {{-- Mostrar encabezado de sección si hay una sección definida --}}
-                                        @if($nombreSeccion !== 'Sin Sección' && count($resultadosPorSeccion) > 1)
-                                            <tr class="seccion-header">
-                                                <td colspan="4">{{ strtoupper($nombreSeccion) }}</td>
+                                    @if($esNota)
+                                        <tr class="fila-nota">
+                                            <td colspan="4">
+                                                <strong>{{ rtrim(trim($examen->nombre_examen), ':.') }}:</strong>
+                                                {!! nl2br(e(trim($valorResultado))) !!}
+                                            </td>
+                                        </tr>
+                                    @else
+                                        <tr>
+                                            <td class="exam-name {{ $fueraRango ? 'fuera-rango' : '' }}">{{ $examen->nombre_examen }}</td>
+                                            <td class="result-value {{ $fueraRango ? 'fuera-rango' : '' }}">
+                                                {{ $valorResultado }}@if($marca !== '')<span class="flecha-rango">{{ $marca }}</span>@endif
+                                            </td>
+                                            <td class="unit">{{ $examen->unidad }}</td>
+                                            <td class="reference">{{ $referencia }}</td>
+                                        </tr>
+
+                                        @if($niveles->isNotEmpty())
+                                            <tr class="fila-niveles">
+                                                <td colspan="4">
+                                                    <table class="tabla-niveles">
+                                                        <tr>
+                                                            <th>Intervalo</th>
+                                                            <th>Interpretación</th>
+                                                        </tr>
+                                                        @php $valorNumerico = is_numeric(str_replace(',', '.', trim($valorResultado))) ? (float) str_replace(',', '.', trim($valorResultado)) : null; @endphp
+                                                        @foreach($niveles as $nivel)
+                                                            @php $esActual = $nivel->contiene($valorNumerico); @endphp
+                                                            <tr class="{{ $esActual ? 'nivel-actual' : '' }}">
+                                                                <td>{{ $nivel->intervaloTexto() }}</td>
+                                                                <td>{{ $nivel->interpretacion }}@if($esActual) &nbsp;◄ Resultado @endif</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </table>
+                                                </td>
                                             </tr>
                                         @endif
+                                    @endif
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
 
-                                        {{-- Mostrar los exámenes de la sección --}}
-                                        @foreach ($resultados as $resultado)
-                                            @php
-                                                $examen = $resultado->examen;
-                                                // Convertir explícitamente a booleano para asegurar la evaluación correcta
-                                                $isOutOfRange = (bool) $resultado->fuera_rango;
+                    <table width="100%" style="margin-top: 8px; font-size: 8px;">
+                        <tr>
+                            <td style="vertical-align: top; width: 50%;">
+                                @if(! method_exists($estudio, 'estaValidado') || $estudio->estaValidado())
+                                    <span style="font-weight: bold;">Validó: {{ $estudio->valido }}</span>
+                                @else
+                                    <span style="font-weight: bold; color: #991b1b;">Pendiente de validación</span>
+                                @endif
+                            </td>
+                            <td style="vertical-align: top; width: 50%; padding-left: 10px;">
+                                <div style="margin-bottom: 3px;">Tipo de muestra: {{ mb_strtoupper($estudio->tipo_muestra) }}</div>
+                                <div>Método: {{ mb_strtoupper($estudio->metodo) }}</div>
+                            </td>
+                        </tr>
+                    </table>
 
-                                                // Un '*' capturado como resultado significa que ese examen no se imprime
-                                                $examenOculto = strpos((string) $resultado->resultado, '*') !== false;
-                                                $valorResultado = (string) $resultado->resultado;
-
-                                                // Flecha: la guardada por el laboratorio o, si no hay, la deducida
-                                                // comparando el resultado contra el valor de referencia.
-                                                $direccionRango = $isOutOfRange
-                                                    ? (($resultado->direccion_rango ?? null)
-                                                        ?: \App\Support\RangoReferencia::direccion($valorResultado, $examen->valor_referencia))
-                                                    : null;
-                                                $flecha = \App\Support\RangoReferencia::flecha($direccionRango);
-                                            @endphp
-
-                                            @if($examenOculto)
-                                                @php
-                                                    continue;
-                                                @endphp
-                                            @endif
-
-                                            <tr style="{{ $isOutOfRange ? 'font-weight: bold; color: #000000;' : '' }}">
-                                                <td class="exam-name">
-                                                    {{ $examen->nombre_examen }}
-                                                </td>
-                                                <td class="result-value">
-                                                    {{ $valorResultado }}
-                                                    @if($flecha !== '')
-                                                        <span class="flecha-rango {{ $direccionRango === 'alto' ? 'flecha-alto' : 'flecha-bajo' }}">{{ $flecha }}</span>
-                                                    @endif
-                                                </td>
-                                                <td class="unit">{{ $examen->unidad }}</td>
-                                                <td class="reference">{{ $examen->valor_referencia }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endforeach
-                                </tbody>
-
-                            </table>
-
-                            <div class="study-details">
-                                
-                                <table width="100%" style="margin-top: 10px; font-size: 8px;">
-                                    <tr>
-                                        <!-- Columna 1: Elaboró y Validó -->
-                                        <td style="vertical-align: top; width: 50%; padding-right: -20px;">
-                                            <div>
-                                                <span style="font-weight: 600">Validó: {{ $estudio->valido }}</span>
-                                            </div>
-                                        </td>
-
-                                        <!-- Columna 2: Tipo de muestra y Método -->
-                                        <td style="vertical-align: top; width: 50%; padding-left: 10px;">
-                                            <div style="margin-bottom: 5px; margin-top: 2px;">
-                                                <span>Tipo de muestra:</span> {{ strtoupper($estudio->tipo_muestra) }}
-                                            </div>
-                                            <div>
-                                                <span>Método:</span> {{ strtoupper($estudio->metodo) }}
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                </table>
-                                
-                                
-                            </div>
-                        </div>
-
-                        @if(trim((string) $estudio->observaciones) !== '')
+                    @if(trim((string) $estudio->observaciones) !== '')
                         <div class="observaciones-box">
-                            <p class="observaciones-title">Observaciones:</p>
-                            <p class="observaciones-texto">{!! nl2br(e(trim($estudio->observaciones))) !!}</p>
+                            <strong>Observaciones:</strong> {!! nl2br(e(trim($estudio->observaciones))) !!}
                         </div>
-                        @endif
+                    @endif
 
-                        @if(!empty($estudio->estudio->leyenda))
-                        <p style="text-align: center; font-size: 12px; font-style: italic; margin-top: 5px;">
-                            {{ $estudio->estudio->leyenda }}
-                        </p>
-                        
-                        @endif
-                        </div>
-                    @endforeach
-
-                    
+                    @if(!empty($estudio->estudio->leyenda))
+                        <p class="leyenda-estudio">{{ $estudio->estudio->leyenda }}</p>
+                    @endif
                 </div>
+            @endforeach
         </main>
     </body>
 </html>

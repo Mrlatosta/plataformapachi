@@ -52,18 +52,46 @@
             </h3>
           </div>
           <div class="p-6">
+            <div v-if="duplicado" role="alert" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <p class="text-sm font-semibold text-amber-900">Ya existe un paciente con el mismo nombre y fecha de nacimiento</p>
+              <p class="mt-1 text-sm text-amber-900">
+                {{ duplicado.nombre }}
+                <span v-if="duplicado.telefono"> · Tel. {{ duplicado.telefono }}</span>
+                <span v-if="duplicado.email"> · {{ duplicado.email }}</span>
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button type="button" @click="usarExistente(duplicado)"
+                  class="px-3 py-1.5 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+                  Usar el existente
+                </button>
+                <button type="button" @click="guardarPaciente(true)"
+                  class="px-3 py-1.5 text-sm font-medium text-amber-900 bg-white border border-amber-300 rounded-lg hover:bg-amber-100">
+                  Es otra persona, registrar de todos modos
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Nombre -->
               <div class="space-y-2 md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">
+                <label for="paciente-alta-nombre" class="block text-sm font-medium text-gray-700">
                   Nombre completo <span class="text-red-500">*</span>
                 </label>
+                <PacienteBuscador
+                  v-if="!editando"
+                  id="paciente-alta-nombre"
+                  v-model="form.nombre"
+                  placeholder="Nombre completo del paciente"
+                  @seleccionar="usarExistente"
+                />
                 <input
+                  v-else
+                  id="paciente-alta-nombre"
                   type="text"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   v-model="form.nombre"
-                  placeholder="Nombre completo del paciente"
                 />
+                <p v-if="!editando" class="text-xs text-gray-500">Si el paciente ya existe aparecerá al escribir; elígelo para editarlo en vez de duplicarlo.</p>
               </div>
 
               <!-- Sexo -->
@@ -252,6 +280,7 @@
                       </div>
                       <div>
                         <p class="font-medium text-gray-800">{{ paciente.nombre }}</p>
+                        <p class="text-xs text-gray-500">{{ paciente.reportes_count || 0 }} {{ paciente.reportes_count === 1 ? 'orden' : 'órdenes' }}</p>
                         <p v-if="paciente.direccion" class="text-xs text-gray-500">{{ paciente.direccion }}</p>
                       </div>
                     </div>
@@ -279,6 +308,12 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center justify-center gap-2">
+                      <Link
+                        :href="route('pacientes.historial', paciente.id)"
+                        class="px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg"
+                      >
+                        Historial
+                      </Link>
                       <button
                         @click="editarPaciente(paciente)"
                         class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -289,6 +324,7 @@
                         </svg>
                       </button>
                       <button
+                        v-if="permisos.eliminar"
                         @click="eliminarPaciente(paciente)"
                         class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Eliminar"
@@ -326,7 +362,12 @@
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
+import PacienteBuscador from '@/Components/Captura/PacienteBuscador.vue'
+import { usePermisos } from '@/utils/captura'
+
+const permisos = usePermisos()
+const duplicado = ref(null)
 
 const guardando = ref(false)
 const editando = ref(false)
@@ -406,7 +447,7 @@ async function cargarPacientes() {
   }
 }
 
-async function guardarPaciente() {
+async function guardarPaciente(confirmarDuplicado = false) {
   if (guardando.value) return
 
   // Validación básica
@@ -419,16 +460,22 @@ async function guardarPaciente() {
 
   try {
     if (editando.value) {
-      await axios.put(`/api/pacientes/${pacienteEditandoId.value}`, form)
+      await axios.put(`/api/pacientes/${pacienteEditandoId.value}`, { ...form, confirmar_duplicado: confirmarDuplicado === true })
       mostrarNotificacion('Paciente actualizado correctamente', 'success')
     } else {
-      await axios.post('/api/pacientes', form)
+      await axios.post('/api/pacientes', { ...form, confirmar_duplicado: confirmarDuplicado === true })
       mostrarNotificacion('Paciente registrado correctamente', 'success')
     }
 
+    duplicado.value = null
     limpiarFormulario()
     await cargarPacientes()
   } catch (error) {
+    // T1: mismo nombre y fecha de nacimiento que otro paciente -> pedir confirmación
+    if (error.response?.status === 409) {
+      duplicado.value = error.response.data.duplicado
+      return
+    }
     console.error('Error al guardar paciente:', error)
     if (error.response?.data?.errors) {
       const errores = Object.values(error.response.data.errors).flat()
@@ -439,6 +486,13 @@ async function guardarPaciente() {
   } finally {
     guardando.value = false
   }
+}
+
+function usarExistente(paciente) {
+  duplicado.value = null
+  const completo = pacientes.value.find(p => p.id === paciente.id) || paciente
+  editarPaciente(completo)
+  mostrarNotificacion(`"${completo.nombre}" ya estaba registrado: puedes revisar o completar sus datos.`, 'success')
 }
 
 function editarPaciente(paciente) {
@@ -476,6 +530,7 @@ async function eliminarPaciente(paciente) {
 }
 
 function cancelarEdicion() {
+  duplicado.value = null
   editando.value = false
   pacienteEditandoId.value = null
   limpiarFormulario()

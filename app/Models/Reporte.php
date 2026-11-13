@@ -4,9 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ReporteEstudio;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 
@@ -29,6 +26,8 @@ class Reporte extends Model
 
     protected $fillable = [
     'folio',
+    'paciente_id',
+    'creado_por',
     'nombre_cliente',
     'email',
     'fecha_nacimiento',
@@ -67,6 +66,11 @@ class Reporte extends Model
     public function medico()
     {
         return $this->belongsTo(Medico::class);
+    }
+
+    public function paciente()
+    {
+        return $this->belongsTo(Paciente::class);
     }
 
     /**

@@ -70,9 +70,14 @@
                 @endif
 
                 <div class="acciones">
-                    <a class="boton" href="{{ route('reportes.verificar.pdf', $token) }}" target="_blank" rel="noopener">
-                        Ver reporte completo (PDF)
-                    </a>
+                    @if ($reporte->estudios->isNotEmpty())
+                        <a class="boton" href="{{ route('reportes.verificar.pdf', $token) }}" target="_blank" rel="noopener">
+                            Ver reporte completo (PDF)
+                        </a>
+                    @else
+                        {{-- Solo se publican estudios validados por el Q.F.B. --}}
+                        <p style="margin: 0; font-size: 14px; color: #6b7280;">Tus resultados aún están en proceso. Te avisaremos cuando estén listos.</p>
+                    @endif
                 </div>
             @else
                 <div class="estado invalido">

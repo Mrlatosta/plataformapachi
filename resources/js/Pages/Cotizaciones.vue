@@ -412,6 +412,9 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm font-semibold" 
                         step="0.01" 
                         v-model="estudio.precio"
+                        :readonly="!permisos.editar_precios"
+                        :class="{ 'bg-gray-50 text-gray-600': !permisos.editar_precios }"
+                        :title="permisos.editar_precios ? '' : 'Precio del catálogo; solo el administrador lo cambia'"
                       />
                     </div>
                     <div class="space-y-2">
@@ -485,7 +488,10 @@
                       step="0.01"
                       v-model="form.descuento"
                       placeholder="0.00"
+                      :readonly="!permisos.editar_precios"
+                      :class="{ 'bg-gray-50': !permisos.editar_precios }"
                     />
+                    <p v-if="!permisos.editar_precios" class="text-xs text-gray-500">Solo el administrador aplica descuentos.</p>
                   </div>
                   <div class="space-y-2">
                     <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-amber-50 transition-colors">
@@ -769,6 +775,10 @@ import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
 import { IVA_PORCENTAJE, calcularIva } from '@/utils/iva'
+import { usePermisos } from '@/utils/captura'
+
+// T6: Recepción cotiza con precios del catálogo y sin descuento (el servidor también lo aplica)
+const permisos = usePermisos()
 
 // Vista activa
 const vistaActual = ref('lista')

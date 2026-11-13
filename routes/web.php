@@ -16,6 +16,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\GestionLandingController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\JornadaController;
+use App\Http\Controllers\UsuarioController;
 
 
 Route::get('/', function () {
@@ -35,15 +36,36 @@ Route::get('/novedades/{slug}', [LandingController::class, 'articulo'])
     ->where('slug', '[a-z0-9-]+')
     ->name('novedades.show');
 
-Route::get('/gestion-landing', [GestionLandingController::class, 'page'])
-    ->middleware(['auth', 'verified'])->name('gestion.landing');
+// ===== Panel interno =====
+// T6: Administrador ve todo. Recepción solo: agenda, cotizaciones, pacientes,
+// captura de resultados y lista de reportes (descarga/envío de validados).
+// Lo marcado con rol:admin devuelve 403 aunque se llame la URL directo.
 
-Route::get('/agenda', [CitaController::class, 'page'])
-    ->middleware(['auth', 'verified'])->name('agenda');
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Recepción no ve ventas: DashboardController la manda a Captura
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    Route::get('/agenda', [CitaController::class, 'page'])->name('agenda');
+    Route::get('/captura-resultados', [CapturaResultadosController::class, 'page'])->name('captura.resultados');
+    Route::get('/cotizaciones', fn () => Inertia::render('Cotizaciones'))->name('cotizaciones');
+    Route::get('/pacientes', [PacienteController::class, 'page'])->name('pacientes');
+    Route::get('/pacientes/{id}/historial', [PacienteController::class, 'historial'])->whereNumber('id')->name('pacientes.historial');
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/{id}', [ReporteController::class, 'show'])->name('reportes.show');
+
+    Route::middleware('rol:admin')->group(function () {
+        Route::get('/gestion-landing', [GestionLandingController::class, 'page'])->name('gestion.landing');
+        Route::get('/gestion-estudios', fn () => Inertia::render('GestionEstudios'))->name('gestion.estudios');
+        Route::get('/gestion-medicos', [MedicoController::class, 'page'])->name('gestion.medicos');
+        Route::get('/usuarios', [UsuarioController::class, 'page'])->name('usuarios.index');
+        Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+        Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
+
+        // Captura rápida por jornadas (antidoping en empresas, campañas)
+        Route::get('/captura-rapida', [JornadaController::class, 'page'])->name('captura.rapida');
+        Route::get('/captura-rapida/{id}', [JornadaController::class, 'show'])->whereNumber('id')->name('captura.rapida.jornada');
+    });
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -51,71 +73,19 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/gestion-estudios', function () {
-    return Inertia::render('GestionEstudios');
-})->middleware(['auth', 'verified'])->name('gestion.estudios');
-
-Route::get('/captura-resultados', [CapturaResultadosController::class, 'page'])
-    ->middleware(['auth', 'verified'])->name('captura.resultados');
-
-// Captura rápida por jornadas (antidoping en empresas, campañas)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/captura-rapida', [JornadaController::class, 'page'])->name('captura.rapida');
-    Route::get('/captura-rapida/{id}', [JornadaController::class, 'show'])->whereNumber('id')->name('captura.rapida.jornada');
-});
-
-
-Route::get('/cotizaciones', function () {
-    return Inertia::render('Cotizaciones');
-})->middleware(['auth', 'verified'])->name('cotizaciones');
-
-Route::get('/pacientes', [PacienteController::class, 'page'])
-    ->middleware(['auth', 'verified'])->name('pacientes');
-
-
-// API interna del panel: requiere sesion de administrador.
-// Contiene datos de pacientes y resultados, nunca debe quedar publica.
+// API interna del panel: requiere sesion. Contiene datos de pacientes y
+// resultados, nunca debe quedar publica.
 Route::middleware('auth')->group(function () {
+    // --- Disponible para Administrador y Recepción ---
     Route::get('/api/estudios', [EstudioController::class, 'index']);
-    Route::post('/api/estudios', [EstudioController::class, 'store']);
     Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
-    Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
-    Route::patch('/api/estudios/{id}/visibilidad', [EstudioController::class, 'cambiarVisibilidad']);
-    Route::delete('/api/estudios/{id}', [EstudioController::class, 'destroy']);
+    Route::get('/api/medicos', [MedicoController::class, 'index']);
 
-    // Agenda de citas
     Route::get('/api/citas', [CitaController::class, 'index']);
     Route::post('/api/citas', [CitaController::class, 'store']);
     Route::put('/api/citas/{id}', [CitaController::class, 'update'])->whereNumber('id');
     Route::patch('/api/citas/{id}/estado', [CitaController::class, 'cambiarEstado'])->whereNumber('id');
     Route::delete('/api/citas/{id}', [CitaController::class, 'destroy'])->whereNumber('id');
-
-    // Gestión Landing. Se usa POST también para editar porque PHP no lee archivos en PUT.
-    Route::get('/api/landing/promociones', [GestionLandingController::class, 'promociones']);
-    Route::post('/api/landing/promociones', [GestionLandingController::class, 'guardarPromocion']);
-    Route::post('/api/landing/promociones/{id}', [GestionLandingController::class, 'guardarPromocion'])->whereNumber('id');
-    Route::patch('/api/landing/promociones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPromocion'])->whereNumber('id');
-    Route::delete('/api/landing/promociones/{id}', [GestionLandingController::class, 'eliminarPromocion'])->whereNumber('id');
-
-    Route::get('/api/landing/publicaciones', [GestionLandingController::class, 'publicaciones']);
-    Route::post('/api/landing/publicaciones', [GestionLandingController::class, 'guardarPublicacion']);
-    Route::post('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'guardarPublicacion'])->whereNumber('id');
-    Route::patch('/api/landing/publicaciones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPublicacion'])->whereNumber('id');
-    Route::delete('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'eliminarPublicacion'])->whereNumber('id');
-
-    // Captura rápida por jornadas
-    Route::post('/api/jornadas', [JornadaController::class, 'store']);
-    Route::put('/api/jornadas/{id}', [JornadaController::class, 'update'])->whereNumber('id');
-    Route::delete('/api/jornadas/{id}', [JornadaController::class, 'destroy'])->whereNumber('id');
-    Route::post('/api/jornadas/{id}/participantes', [JornadaController::class, 'agregarParticipantes'])->whereNumber('id');
-    Route::patch('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'actualizarParticipante'])->whereNumber(['id', 'participante']);
-    Route::delete('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'eliminarParticipante'])->whereNumber(['id', 'participante']);
-    Route::post('/api/jornadas/{id}/reportes', [JornadaController::class, 'generarReportes'])->whereNumber('id');
-    Route::get('/api/jornadas/{id}/csv', [JornadaController::class, 'exportarCsv'])->whereNumber('id');
-
-    Route::get('/api/estudios-con-examenes', [CapturaResultadosController::class, 'index']);
-    Route::post('/api/resultados', [CapturaResultadosController::class, 'store']);
-    Route::get('/api/resultados/pdf', [CapturaResultadosController::class, 'generarPDF']);
 
     Route::post('/api/cotizaciones', [CotizacionController::class, 'store']);
     Route::get('/api/cotizaciones', [CotizacionController::class, 'index']);
@@ -127,28 +97,60 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/pacientes', [PacienteController::class, 'index']);
     Route::post('/api/pacientes', [PacienteController::class, 'store']);
     Route::get('/api/pacientes/buscar', [PacienteController::class, 'buscar']);
-    Route::get('/api/pacientes/{id}', [PacienteController::class, 'show']);
-    Route::put('/api/pacientes/{id}', [PacienteController::class, 'update']);
-    Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy']);
+    Route::get('/api/pacientes/{id}/resultados-anteriores', [PacienteController::class, 'resultadosAnteriores'])->whereNumber('id');
+    Route::get('/api/pacientes/{id}', [PacienteController::class, 'show'])->whereNumber('id');
+    Route::put('/api/pacientes/{id}', [PacienteController::class, 'update'])->whereNumber('id');
+
 
     Route::post('/api/reportes', [ReporteController::class, 'store']);
     Route::post('/api/reportes/preview', [ReporteController::class, 'previsualizarBorrador']);
     Route::get('/api/reportes/folio/{folio}', [ReporteController::class, 'buscarPorFolio']);
+    // PDF y envío: Recepción solo si todo lo impreso ya está validado (se revisa en el controlador)
     Route::get('/api/reportes/{id}/pdf', [ReporteController::class, 'generarPDF']);
     Route::get('/api/reportes/{id}/pdf-preview', [ReporteController::class, 'previsualizarPDF']);
+    Route::get('/api/reportes/{id}/envio', [ReporteController::class, 'enlaceEnvio'])->whereNumber('id');
     Route::get('/api/reportes/{id}/orden', [ReporteController::class, 'generarOrdenTrabajo']);
     Route::put('/api/reportes/{id}', [ReporteController::class, 'actualizarReporte']);
+    Route::patch('/api/reportes/{id}/estudios/{estudio}/incluir', [ReporteController::class, 'cambiarInclusion'])->whereNumber(['id', 'estudio']);
 
-    Route::get('/api/medicos', [MedicoController::class, 'index']);
-    Route::post('/api/medicos', [MedicoController::class, 'store']);
-    Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
-    Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
-});
+    // --- Solo Administrador ---
+    Route::middleware('rol:admin')->group(function () {
+        Route::post('/api/reportes/{id}/validar', [ReporteController::class, 'validar'])->whereNumber('id');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    Route::get('/reportes/{id}', [ReporteController::class, 'show'])->name('reportes.show');
-    Route::get('/gestion-medicos', [MedicoController::class, 'page'])->name('gestion.medicos');
+        Route::post('/api/estudios', [EstudioController::class, 'store']);
+        Route::put('/api/estudios/{id}', [EstudioController::class, 'update']);
+        Route::patch('/api/estudios/{id}/visibilidad', [EstudioController::class, 'cambiarVisibilidad']);
+        Route::delete('/api/estudios/{id}', [EstudioController::class, 'destroy']);
+
+        Route::delete('/api/pacientes/{id}', [PacienteController::class, 'destroy'])->whereNumber('id');
+
+        Route::post('/api/medicos', [MedicoController::class, 'store']);
+        Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
+        Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
+
+        // Gestión Landing. Se usa POST también para editar porque PHP no lee archivos en PUT.
+        Route::get('/api/landing/promociones', [GestionLandingController::class, 'promociones']);
+        Route::post('/api/landing/promociones', [GestionLandingController::class, 'guardarPromocion']);
+        Route::post('/api/landing/promociones/{id}', [GestionLandingController::class, 'guardarPromocion'])->whereNumber('id');
+        Route::patch('/api/landing/promociones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPromocion'])->whereNumber('id');
+        Route::delete('/api/landing/promociones/{id}', [GestionLandingController::class, 'eliminarPromocion'])->whereNumber('id');
+
+        Route::get('/api/landing/publicaciones', [GestionLandingController::class, 'publicaciones']);
+        Route::post('/api/landing/publicaciones', [GestionLandingController::class, 'guardarPublicacion']);
+        Route::post('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'guardarPublicacion'])->whereNumber('id');
+        Route::patch('/api/landing/publicaciones/{id}/estado', [GestionLandingController::class, 'cambiarEstadoPublicacion'])->whereNumber('id');
+        Route::delete('/api/landing/publicaciones/{id}', [GestionLandingController::class, 'eliminarPublicacion'])->whereNumber('id');
+
+        // Captura rápida por jornadas
+        Route::post('/api/jornadas', [JornadaController::class, 'store']);
+        Route::put('/api/jornadas/{id}', [JornadaController::class, 'update'])->whereNumber('id');
+        Route::delete('/api/jornadas/{id}', [JornadaController::class, 'destroy'])->whereNumber('id');
+        Route::post('/api/jornadas/{id}/participantes', [JornadaController::class, 'agregarParticipantes'])->whereNumber('id');
+        Route::patch('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'actualizarParticipante'])->whereNumber(['id', 'participante']);
+        Route::delete('/api/jornadas/{id}/participantes/{participante}', [JornadaController::class, 'eliminarParticipante'])->whereNumber(['id', 'participante']);
+        Route::post('/api/jornadas/{id}/reportes', [JornadaController::class, 'generarReportes'])->whereNumber('id');
+        Route::get('/api/jornadas/{id}/csv', [JornadaController::class, 'exportarCsv'])->whereNumber('id');
+    });
 });
 
 // Portal médicos (sin autenticación de admin)
@@ -195,6 +197,7 @@ Route::get('/prueba-pdf', function () {
                 'valido' => 'QFB Angel Augusto Pérez Arias',
                 'tipo_muestra' => 'Sangre',
                 'metodo' => 'Colorimetría',
+                'observaciones' => null,
                 'estudio' => (object) ['nombre' => 'PRUEBA CLÍNICA #' . $i],
                 'resultados' => collect(range(1, 25))->map(function ($j) {
                     $fueraRango = rand(0, 10) > 7;

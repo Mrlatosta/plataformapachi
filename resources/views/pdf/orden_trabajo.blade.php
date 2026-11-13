@@ -31,7 +31,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: url("{{ public_path('img/imgbiolabfoot.png') }}") no-repeat center center;
+        background: url("{{ public_path('img/pdf/imgbiolabfoot.png') }}") no-repeat center center;
         background-size: 350px;
         opacity: 0.13;
         z-index: -1;
@@ -120,7 +120,7 @@
               <table>
                 <tr>
                   <td>
-                    <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 70px; margin-right: 5px;">
+                    <img src="{{ public_path('img/pdf/imgbiolabtrans.png') }}" style="width: 70px; margin-right: 5px;">
                   </td>
                   <td style="padding-left: 8px;">
                     <div style="font-weight: bold; font-size: 12px;">
@@ -128,9 +128,9 @@
                     </div>
                     <div style="font-size: 8px;">
                       <div>Folio: {{ $reporte->folio }}</div>
-                      <div><img src="{{ public_path('img/codbarras.png') }}" style="width: 60px; height: 15px;" alt=""></div>
+                      <div><img src="{{ public_path('img/pdf/codbarras.png') }}" style="width: 60px; height: 15px;" alt=""></div>
                       <div style="margin-top: 3px;">
-                        Médico: <strong>{{ strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
+                        Médico: <strong>{{ mb_strtoupper($reporte->medico_solicitante ?: 'A QUIEN CORRESPONDA') }}</strong>
                       </div>
                     </div>
                   </td>
@@ -152,7 +152,7 @@
             <tr>
               <td style="vertical-align: top; width: 50%; padding-right: 8px;">
                 <div style="margin-bottom: 3px;">
-                  <strong>Paciente:</strong> {{ strtoupper($reporte->nombre_cliente) }}
+                  <strong>Paciente:</strong> {{ mb_strtoupper($reporte->nombre_cliente) }}
                 </div>
                 <div style="margin-bottom: 3px;">
                   <strong>F. Nacimiento:</strong> {{ $reporte->fecha_nacimiento ? \Carbon\Carbon::parse($reporte->fecha_nacimiento)->format('d-m-Y') : 'NO ESPECIFICADA' }}
@@ -162,7 +162,7 @@
 
               <td style="vertical-align: top; width: 50%; padding-left: 8px;">
                 <div style="margin-bottom: 3px;">
-                  <strong>Correo:</strong> {{ strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}
+                  <strong>Correo:</strong> {{ mb_strtoupper($reporte->email ?: 'NO ESPECIFICADO') }}
                 </div>
                 <div><strong>Edad:</strong> {{ $reporte->edad }} años</div>
               </td>
@@ -187,7 +187,7 @@
           <tbody>
             @foreach ($reporte->estudios as $estudio)
             <tr>
-              <td>{{ strtoupper($estudio->estudio->nombre) }}</td>
+              <td>{{ mb_strtoupper($estudio->estudio->nombre) }}</td>
               <td style="text-align:right;">${{ number_format($estudio->precio, 2) }}</td>
             </tr>
             @endforeach
@@ -244,15 +244,15 @@
               @endif
             </td>
             <td width="25%">
-              <img src="{{ public_path('img/firmados.png') }}" width="60px">
+              <img src="{{ public_path('img/pdf/firmados.png') }}" width="60px">
               <hr style="margin: 2px 0;">
               <strong style="font-size: 7px;">Q.F.B Ángel Augusto Pérez Arias</strong><br>
               <span style="font-size: 6px;">Univ. Popular de la Chontalpa</span><br>
               <span style="font-size: 6px;">Céd. Prof. 14083392</span><br>
-              <img src="{{ public_path('img/whatsapp.png') }}" width="8px"> <span style="font-size: 6px;">998 654 3958</span>
+              <img src="{{ public_path('img/pdf/whatsapp.png') }}" width="8px"> <span style="font-size: 6px;">998 654 3958</span>
             </td>
             <td width="25%" align="center">
-              <img src="{{ public_path('img/imgbiolabtrans.png') }}" width="50px">
+              <img src="{{ public_path('img/pdf/imgbiolabtrans.png') }}" width="50px">
             </td>
             <td width="25%" style="font-size: 7px;">
               Av. 103, Mz. 116, Lt. 29<br>

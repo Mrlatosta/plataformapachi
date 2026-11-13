@@ -61,7 +61,8 @@ const eliminar = async () => {
             <h2 class="text-xl font-semibold leading-tight text-gray-800">Captura rápida</h2>
         </template>
 
-        <div class="py-8">
+        <!-- relative: contiene los textos sr-only para que no alarguen la ventana -->
+        <div class="relative py-8">
             <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>

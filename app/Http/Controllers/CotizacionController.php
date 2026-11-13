@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\CotizacionEstudio;
 use App\Models\Estudio;
+use App\Services\ReportePdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,15 +14,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CotizacionController extends Controller
 {
-    private function applyPageNumbers($pdf, float $x = 500, float $y = 770, int $size = 9): void
-    {
-        $dompdf = $pdf->getDomPDF();
-        $dompdf->render();
-        $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
-        $canvas->page_text($x, $y, 'Pagina {PAGE_NUM} de {PAGE_COUNT}', $font, $size, [0.4, 0.4, 0.4]);
-    }
-
     /**
      * Listar todas las cotizaciones
      */
@@ -77,6 +69,15 @@ class CotizacionController extends Controller
             'estudios.*.cantidad.required' => 'Cada estudio debe tener una cantidad',
             'estudios.*.cantidad.min' => 'La cantidad debe ser al menos 1',
         ]);
+
+        // T6: Recepción cotiza con los precios del catálogo y sin descuento
+        if (! $request->user()->esAdmin()) {
+            $catalogo = \App\Models\Estudio::whereIn('id', collect($validated['estudios'])->pluck('id'))->pluck('precio', 'id');
+            $validated['estudios'] = collect($validated['estudios'])
+                ->map(fn ($estudio) => [...$estudio, 'precio' => (float) ($catalogo[$estudio['id']] ?? 0)])
+                ->all();
+            $validated['descuento'] = 0;
+        }
 
         try {
             $cotizacion = DB::transaction(function () use ($validated) {
@@ -225,7 +226,7 @@ class CotizacionController extends Controller
         $pdf = Pdf::loadView('pdf.cotizacion_biolab', $data)
             ->setPaper('letter', 'portrait');
 
-        $this->applyPageNumbers($pdf, 500, 770, 9);
+        ReportePdf::numerarPaginas($pdf);
 
         return $pdf->download("cotizacion-{$cotizacion->folio}.pdf");
     }

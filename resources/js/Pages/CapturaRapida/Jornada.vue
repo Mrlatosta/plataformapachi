@@ -516,7 +516,9 @@ const claseBotonSecundario = 'inline-flex items-center justify-center gap-2 roun
             <h2 class="text-xl font-semibold leading-tight text-gray-800">Captura rápida</h2>
         </template>
 
-        <div class="pt-6">
+        <!-- relative: los textos sr-only (absolute) de cada renglón quedan dentro del área con scroll;
+             sin esto alargan la ventana y aparece una segunda barra de desplazamiento -->
+        <div class="relative pt-6">
             <div class="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
                 <!-- Encabezado -->
                 <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -737,7 +739,8 @@ const claseBotonSecundario = 'inline-flex items-center justify-center gap-2 roun
                         </div>
                     </div>
 
-                    <div v-else class="overflow-x-auto">
+                    <!-- relative: recorta aquí también los sr-only al desplazar la tabla de lado -->
+                    <div v-else class="relative overflow-x-auto">
                         <table class="min-w-full text-sm">
                             <thead class="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <tr v-if="variosEstudios && !compacta">

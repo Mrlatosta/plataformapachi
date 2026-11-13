@@ -357,7 +357,7 @@
         <div class="header-content">
             <div class="header-left">
                 <div class="logo-section">
-                    <img src="{{ public_path('img/imgbiolabtrans.png') }}" style="width: 80px; margin-bottom: 10px;">
+                    <img src="{{ public_path('img/pdf/imgbiolabtrans.png') }}" style="width: 80px; margin-bottom: 10px;">
                 </div>
                 <div class="company-name">
                     Laboratorio de Análisis Clínicos "BIOLAB"
@@ -388,7 +388,7 @@
     <div class="info-box">
         <div class="info-row">
             <div class="info-label">Cliente:</div>
-            <div class="info-value"><strong>{{ strtoupper($cliente['nombre']) }}</strong></div>
+            <div class="info-value"><strong>{{ mb_strtoupper($cliente['nombre']) }}</strong></div>
         </div>
         @if(!empty($cliente['email']))
         <div class="info-row">
@@ -428,7 +428,7 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>
-                    <strong>{{ strtoupper($estudio['nombre']) }}</strong>
+                    <strong>{{ mb_strtoupper($estudio['nombre']) }}</strong>
                     @if(!empty($estudio['descripcion']))
                     <div class="item-description">{{ $estudio['descripcion'] }}</div>
                     @endif
@@ -443,7 +443,7 @@
                     @if(!empty($estudio['metodo']) || !empty($estudio['tiempo_entrega']))
                     <div class="estudio-meta">
                         @if(!empty($estudio['metodo']))
-                        <div><span class="meta-label">Metodologia:</span> {{ $estudio['metodo'] }}</div>
+                        <div><span class="meta-label">Metodología:</span> {{ $estudio['metodo'] }}</div>
                         @endif
                         @if(!empty($estudio['tiempo_entrega']))
                         <div><span class="meta-label">Tiempo de entrega:</span> {{ $estudio['tiempo_entrega'] }}</div>

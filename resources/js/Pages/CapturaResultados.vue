@@ -13,12 +13,12 @@
 
     <div class="py-8">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        
+
         <!-- Fechas y Médico -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-              <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Información de Fechas
@@ -26,275 +26,150 @@
           </div>
           <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Toma de muestra</label>
-              <input 
-                type="datetime-local" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                v-model="form.toma_muestra" 
-              />
+              <label for="toma-muestra" class="block text-sm font-medium text-gray-700">Toma de muestra</label>
+              <input id="toma-muestra" type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" v-model="form.toma_muestra" />
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Fecha de reporte</label>
-              <input 
-                type="datetime-local" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                v-model="form.fecha_reporte" 
-              />
+              <label for="fecha-reporte" class="block text-sm font-medium text-gray-700">Fecha de reporte</label>
+              <input id="fecha-reporte" type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" v-model="form.fecha_reporte" />
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Fecha de validación</label>
-              <input 
-                type="datetime-local" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                v-model="form.fecha_validacion" 
-              />
+              <label for="fecha-validacion" class="block text-sm font-medium text-gray-700">Fecha de validación</label>
+              <input v-if="esAdmin" id="fecha-validacion" type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" v-model="form.fecha_validacion" />
+              <p v-else id="fecha-validacion" class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">
+                Se registra cuando el Q.F.B. valida
+              </p>
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
+              <span class="block text-sm font-medium text-gray-700">
                 Médico solicitante <span class="text-gray-400 text-xs">(opcional)</span>
-              </label>
-              <!-- Selector de modo -->
-              <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium">
-                <button type="button"
-                  @click="onModoMedicoChange('registrado')"
+              </span>
+              <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium" role="group" aria-label="Tipo de médico">
+                <button type="button" @click="onModoMedicoChange('registrado')" :aria-pressed="modoMedico === 'registrado'"
                   :class="['flex-1 py-1.5 transition-colors', modoMedico === 'registrado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
                   Registrado
                 </button>
-                <button type="button"
-                  @click="onModoMedicoChange('otro')"
+                <button type="button" @click="onModoMedicoChange('otro')" :aria-pressed="modoMedico === 'otro'"
                   :class="['flex-1 py-1.5 border-x border-gray-300 transition-colors', modoMedico === 'otro' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
                   Otro
                 </button>
-                <button type="button"
-                  @click="onModoMedicoChange('na')"
+                <button type="button" @click="onModoMedicoChange('na')" :aria-pressed="modoMedico === 'na'"
                   :class="['flex-1 py-1.5 transition-colors', modoMedico === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
                   N/A
                 </button>
               </div>
-              <!-- Dropdown médicos registrados -->
-              <select v-if="modoMedico === 'registrado'"
-                v-model="form.medico_id"
+              <select v-if="modoMedico === 'registrado'" v-model="form.medico_id" aria-label="Médico registrado"
                 @change="form.medico_solicitante = medicosDisponibles.find(m => m.id === form.medico_id)?.nombre ?? ''"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
-              >
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm">
                 <option :value="null">— Selecciona un médico —</option>
                 <option v-for="m in medicosDisponibles" :key="m.id" :value="m.id">
                   {{ m.nombre }}{{ m.especialidad ? ` (${m.especialidad})` : '' }}
                 </option>
               </select>
-              <!-- Texto libre -->
-              <input v-else-if="modoMedico === 'otro'"
-                v-model="form.medico_solicitante"
-                type="text"
-                placeholder="Nombre del médico"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
-              />
-              <!-- N/A badge -->
+              <input v-else-if="modoMedico === 'otro'" v-model="form.medico_solicitante" type="text" placeholder="Nombre del médico" aria-label="Nombre del médico"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
               <div v-else class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-500">
                 N/A — Sin médico solicitante
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Datos del Paciente -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md">
-          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200">
+        <!-- Datos del Paciente (T1) -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
+          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-              <svg class="w-5 h-5 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Datos del Paciente
             </h3>
           </div>
-          <div class="p-6">
-            <!-- Tabs: Existente / Nuevo -->
-            <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
-              <button
-                @click="modoPaciente = 'existente'"
-                :class="[
-                  'flex-1 flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200',
-                  modoPaciente === 'existente'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                ]"
-              >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Buscar Paciente Existente
-              </button>
-              <button
-                @click="modoPaciente = 'nuevo'; limpiarPacienteSeleccionado()"
-                :class="[
-                  'flex-1 flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200',
-                  modoPaciente === 'nuevo'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                ]"
-              >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                Nuevo Paciente
+          <div class="p-6 space-y-4">
+            <!-- Paciente registrado elegido -->
+            <div v-if="pacienteSeleccionado" class="flex flex-wrap items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-600 text-white font-semibold" aria-hidden="true">
+                {{ pacienteSeleccionado.nombre.charAt(0).toUpperCase() }}
+              </div>
+              <div class="flex-1 min-w-[12rem]">
+                <p class="font-semibold text-emerald-900">Paciente registrado</p>
+                <p class="text-xs text-emerald-800">
+                  <template v-if="pacienteSeleccionado.ordenes">
+                    {{ pacienteSeleccionado.ordenes }} {{ pacienteSeleccionado.ordenes === 1 ? 'orden anterior' : 'órdenes anteriores' }}
+                    <span v-if="pacienteSeleccionado.ultima_visita"> · última el {{ formatoFechaCorta(pacienteSeleccionado.ultima_visita) }}</span>
+                  </template>
+                  <template v-else-if="pacienteSeleccionado.ordenes === 0">Sin órdenes anteriores</template>
+                  <span v-if="anteriores.hayHistorial.value"> · se muestra su resultado anterior junto a cada analito</span>
+                </p>
+              </div>
+              <a :href="route('pacientes.historial', pacienteSeleccionado.id)" target="_blank" rel="noopener"
+                class="px-3 py-1.5 text-sm font-medium text-emerald-800 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-100">
+                Ver historial
+              </a>
+              <button type="button" @click="limpiarPacienteSeleccionado"
+                class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cambiar paciente
               </button>
             </div>
+            <p v-else class="text-sm text-gray-500">
+              Escribe el nombre: si el paciente ya vino antes aparecerá en la lista y se llenan sus datos. Si no, se registra al guardar.
+            </p>
 
-            <!-- Modo: Buscar paciente existente -->
-            <div v-if="modoPaciente === 'existente'">
-              <div class="relative max-w-2xl mb-4">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="Escribe el nombre del paciente para buscar..."
-                  v-model="busquedaPaciente"
-                  @input="filtrarPacientes"
-                  @focus="filtrarPacientes"
-                />
-
-                <!-- Lista desplegable de pacientes -->
-                <transition
-                  enter-active-class="transition ease-out duration-100"
-                  enter-from-class="transform opacity-0 scale-95"
-                  enter-to-class="transform opacity-100 scale-100"
-                  leave-active-class="transition ease-in duration-75"
-                  leave-from-class="transform opacity-100 scale-100"
-                  leave-to-class="transform opacity-0 scale-95"
-                >
-                  <ul
-                    v-if="pacientesFiltrados.length > 0 && !pacienteSeleccionado"
-                    class="absolute w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50"
-                  >
-                    <li
-                      v-for="paciente in pacientesFiltrados"
-                      :key="paciente.id"
-                      class="px-4 py-3 hover:bg-emerald-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-                      @click="seleccionarPaciente(paciente)"
-                    >
-                      <div class="flex justify-between items-center">
-                        <div class="flex items-center">
-                          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-semibold text-xs mr-3">
-                            {{ paciente.nombre.charAt(0).toUpperCase() }}
-                          </div>
-                          <div>
-                            <span class="font-medium text-gray-800">{{ paciente.nombre }}</span>
-                            <span v-if="paciente.telefono" class="text-xs text-gray-500 ml-2">{{ paciente.telefono }}</span>
-                          </div>
-                        </div>
-                        <span
-                          :class="{
-                            'bg-blue-100 text-blue-700': paciente.sexo === 'Masculino',
-                            'bg-pink-100 text-pink-700': paciente.sexo === 'Femenino',
-                          }"
-                          class="text-xs font-medium px-2 py-0.5 rounded-full"
-                          v-if="paciente.sexo"
-                        >
-                          {{ paciente.sexo }}
-                        </span>
-                      </div>
-                    </li>
-                  </ul>
-                </transition>
-              </div>
-
-              <!-- Paciente seleccionado badge -->
-              <div v-if="pacienteSeleccionado" class="mb-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-semibold">
-                  {{ pacienteSeleccionado.nombre.charAt(0).toUpperCase() }}
-                </div>
-                <div class="flex-1">
-                  <p class="font-semibold text-emerald-800">{{ pacienteSeleccionado.nombre }}</p>
-                  <p class="text-xs text-emerald-600">
-                    {{ pacienteSeleccionado.sexo || 'Sin sexo' }} &middot; 
-                    {{ pacienteSeleccionado.edad != null ? pacienteSeleccionado.edad + ' años' : 'Sin edad' }}
-                    <span v-if="pacienteSeleccionado.telefono"> &middot; {{ pacienteSeleccionado.telefono }}</span>
-                  </p>
-                </div>
-                <button
-                  @click="limpiarPacienteSeleccionado"
-                  class="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
-                  title="Cambiar paciente"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Campos del paciente (editables en modo nuevo, readonly en modo existente con paciente seleccionado) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div class="space-y-2 md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Nombre completo</label>
-                <input 
-                  type="text" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
-                  v-model="form.cliente.nombre" 
-                  placeholder="Ingrese el nombre del paciente"
+                <label for="paciente-nombre" class="block text-sm font-medium text-gray-700">Nombre completo</label>
+                <PacienteBuscador
+                  id="paciente-nombre"
+                  v-model="form.cliente.nombre"
                   :readonly="!!pacienteSeleccionado"
+                  @seleccionar="seleccionarPaciente"
                 />
               </div>
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Email <span class="text-gray-400 text-xs">(opcional)</span>
-                </label>
-                <input 
-                  type="email" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
-                  v-model="form.cliente.email" 
-                  placeholder="correo@ejemplo.com"
-                  :readonly="!!pacienteSeleccionado"
-                />
+                <label for="paciente-nacimiento" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                <input id="paciente-nacimiento" type="date" v-model="form.cliente.fecha_nacimiento"
+                  :readonly="bloqueado('fecha_nacimiento')"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  :class="{ 'bg-gray-50': bloqueado('fecha_nacimiento') }" />
               </div>
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                <input 
-                  type="date" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
-                  v-model="form.cliente.fecha_nacimiento" 
-                  :readonly="!!pacienteSeleccionado"
-                />
+                <label for="paciente-edad" class="block text-sm font-medium text-gray-700">Edad</label>
+                <input id="paciente-edad" type="number" v-model="form.cliente.edad" readonly placeholder="Se calcula sola"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" />
               </div>
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Edad</label>
-                <input 
-                  type="number" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                  v-model="form.cliente.edad" 
-                  readonly
-                  placeholder="Se calcula automáticamente"
-                />
-              </div>
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Sexo</label>
-                <select 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" 
-                  :class="{ 'bg-gray-50': pacienteSeleccionado }"
-                  v-model="form.cliente.sexo"
-                  :disabled="!!pacienteSeleccionado"
-                >
+                <label for="paciente-sexo" class="block text-sm font-medium text-gray-700">Sexo</label>
+                <select id="paciente-sexo" v-model="form.cliente.sexo" :disabled="bloqueado('sexo')"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  :class="{ 'bg-gray-50': bloqueado('sexo') }">
                   <option value="">Seleccione</option>
                   <option>Masculino</option>
                   <option>Femenino</option>
                 </select>
               </div>
+              <div class="space-y-2">
+                <label for="paciente-telefono" class="block text-sm font-medium text-gray-700">
+                  Teléfono <span class="text-gray-400 text-xs">(para enviar resultados por WhatsApp)</span>
+                </label>
+                <input id="paciente-telefono" type="tel" inputmode="tel" v-model="form.cliente.telefono" placeholder="998 123 4567"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+              </div>
+              <div class="space-y-2">
+                <label for="paciente-email" class="block text-sm font-medium text-gray-700">
+                  Email <span class="text-gray-400 text-xs">(opcional)</span>
+                </label>
+                <input id="paciente-email" type="email" v-model="form.cliente.email" placeholder="correo@ejemplo.com"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- Estudios -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md">
-          <div class="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-              <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
               Estudios y Exámenes
@@ -303,515 +178,304 @@
           <div class="p-6">
             <!-- Búsqueda de estudios -->
             <div class="mb-6 max-w-2xl">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Buscar estudio</label>
+              <label for="buscar-estudio" class="block text-sm font-medium text-gray-700 mb-2">Agregar estudio</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
                 <input
+                  id="buscar-estudio"
                   type="text"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  autocomplete="off"
+                  class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Escribe el nombre del estudio o haz clic para ver todos..."
                   v-model="busquedaEstudio"
                   @focus="mostrarTodosEstudios"
                   @input="filtrarEstudios"
+                  @keydown.esc="estudiosFiltrados = []"
+                  @blur="cerrarListaEstudios"
                 />
-                
-                <!-- Lista desplegable mejorada -->
-                <transition
-                  enter-active-class="transition ease-out duration-100"
-                  enter-from-class="transform opacity-0 scale-95"
-                  enter-to-class="transform opacity-100 scale-100"
-                  leave-active-class="transition ease-in duration-75"
-                  leave-from-class="transform opacity-100 scale-100"
-                  leave-to-class="transform opacity-0 scale-95"
-                >
-                  <ul
-                    v-if="estudiosFiltrados.length > 0"
-                    class="absolute w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50"
-                  >
-                    <li
-                      v-for="estudio in estudiosFiltrados"
-                      :key="estudio.id"
-                      class="px-4 py-3 hover:bg-purple-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-                      @click="seleccionarEstudio(estudio)"
-                    >
-                      <div class="flex justify-between items-center">
-                        <span class="font-medium text-gray-800">{{ estudio.nombre }}</span>
-                        <span class="text-sm font-semibold text-purple-600">${{ parseFloat(estudio.precio).toFixed(2) }}</span>
-                      </div>
-                    </li>
-                  </ul>
-                </transition>
+                <ul v-if="estudiosFiltrados.length > 0" class="absolute w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50">
+                  <li v-for="estudio in estudiosFiltrados" :key="estudio.id"
+                    class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    @mousedown.prevent="seleccionarEstudio(estudio)">
+                    <div class="flex justify-between items-center">
+                      <span class="font-medium text-gray-800">{{ estudio.nombre }}</span>
+                      <span class="text-sm font-semibold text-purple-600">${{ parseFloat(estudio.precio).toFixed(2) }}</span>
+                    </div>
+                  </li>
+                </ul>
               </div>
             </div>
 
             <!-- Lista de estudios agregados -->
-            <transition-group name="list" tag="div" class="space-y-4">
-              <div 
-                v-for="(estudio, index) in form.estudios" 
-                :key="`estudio-${index}`" 
-                class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all"
+            <div class="space-y-4">
+              <article
+                v-for="(estudio, index) in form.estudios"
+                :key="`estudio-${estudio.id}`"
+                class="rounded-xl p-6 border shadow-sm"
+                :class="estudio.incluir_en_reporte ? 'bg-gray-50 border-gray-200' : 'bg-white border-dashed border-gray-300'"
               >
-                <div class="flex justify-between items-start mb-4">
+                <div class="flex flex-wrap justify-between items-start gap-3 mb-4">
                   <h4 class="text-xl font-bold text-gray-800 flex items-center">
-                    <span class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">
-                      {{ index + 1 }}
-                    </span>
+                    <span class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3" aria-hidden="true">{{ index + 1 }}</span>
                     {{ estudio.nombre }}
                   </h4>
-                  <button
-                    class="flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                    @click="eliminarEstudio(index)"
-                  >
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Eliminar
-                  </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Tipo de muestra</label>
-                    <input 
-                      type="text" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                      v-model="estudio.tipo_muestra" 
+                  <div class="flex flex-wrap items-center gap-4">
+                    <Interruptor
+                      v-model="estudio.incluir_en_reporte"
+                      etiqueta="Incluir en reporte"
+                      :descripcion="estudio.incluir_en_reporte ? 'Sale en el PDF' : 'No sale en el PDF; captúralo cuando esté listo'"
                     />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Método</label>
-                    <input 
-                      type="text" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                      v-model="estudio.metodo" 
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Elaboró</label>
-                    <input 
-                      type="text" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                      v-model="estudio.elaboro" 
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Validó</label>
-                    <input 
-                      type="text" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                      v-model="estudio.valido" 
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Precio ($)</label>
-                    <input 
-                      type="number" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm font-semibold" 
-                      step="0.01" 
-                      v-model="estudio.precio" 
-                    />
+                    <button type="button"
+                      class="flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium"
+                      @click="eliminarEstudio(index)">
+                      Quitar
+                    </button>
                   </div>
                 </div>
 
-                <!-- Campo de Observaciones -->
-                <div class="mt-4 space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
-                    <svg class="w-4 h-4 inline mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                    </svg>
-                    Observaciones del Estudio
-                  </label>
-                  <textarea 
-                    v-model="estudio.observaciones"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm resize-none"
-                    placeholder="Ingrese observaciones específicas para este estudio (opcional)..."
-                  ></textarea>
+                <div v-if="!estudio.incluir_en_reporte" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+                  Este estudio queda en la orden como <strong>pendiente</strong>. Cuando tengas el resultado, ábrelo en
+                  <em>Lista de reportes → Editar</em>, captúralo y enciende «Incluir en reporte».
                 </div>
 
-                <!-- Tabla de exámenes modernizada -->
-                <div class="overflow-hidden rounded-lg border border-gray-200">
-                  <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                      <thead class="bg-gray-100">
-                        <tr>
-                          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Examen</th>
-                          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Unidad</th>
-                          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Valor referencia</th>
-                          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Resultado</th>
-                        </tr>
-                      </thead>
-                      <tbody class="bg-white divide-y divide-gray-200">
-                        <tr 
-                          v-for="(examen, exIndex) in estudio.examenes" 
-                          :key="exIndex"
-                          class="hover:bg-gray-50 transition-colors"
-                        >
-                          <td class="px-4 py-3 text-sm text-gray-900">{{ examen.nombre_examen }}</td>
-                          <td class="px-4 py-3 text-sm text-gray-600">{{ examen.unidad }}</td>
-                          <td class="px-4 py-3 text-sm text-gray-600">{{ examen.valor_referencia }}</td>
-                          <td class="px-4 py-3">
-                            <div class="flex items-center space-x-3">
-                              <input 
-                                type="text" 
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm" 
-                                v-model="examen.resultado"
-                                placeholder="Ingrese resultado"
-                                @blur="onFueraRangoChange(examen)"
-                              />
-                              <label class="flex items-center cursor-pointer group">
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 text-red-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-red-500"
-                                  v-model="examen.fuera_rango"
-                                  :true-value="true"
-                                  :false-value="false"
-                                  @change="onFueraRangoChange(examen)"
-                                />
-                                <span
-                                  class="ml-2 text-xs font-medium transition-colors"
-                                  :class="examen.fuera_rango ? 'text-red-600 font-bold' : 'text-gray-700'"
-                                >
-                                  F.R. {{ examen.fuera_rango ? '✓' : '' }}
-                                </span>
-                              </label>
-                              <select
-                                v-if="examen.fuera_rango"
-                                v-model="examen.direccion_rango"
-                                class="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                title="Flecha que se imprime en el reporte"
-                              >
-                                <option :value="null">Sin flecha</option>
-                                <option value="alto">↑ Alto</option>
-                                <option value="bajo">↓ Bajo</option>
-                              </select>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="esAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'">
+                  <div class="space-y-1">
+                    <label :for="`muestra-${index}`" class="block text-sm font-medium text-gray-700">Tipo de muestra</label>
+                    <input :id="`muestra-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.tipo_muestra" />
+                  </div>
+                  <div class="space-y-1">
+                    <label :for="`metodo-${index}`" class="block text-sm font-medium text-gray-700">Método</label>
+                    <input :id="`metodo-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.metodo" />
+                  </div>
+                  <div class="space-y-1">
+                    <label :for="`elaboro-${index}`" class="block text-sm font-medium text-gray-700">Elaboró</label>
+                    <input :id="`elaboro-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.elaboro" />
+                  </div>
+                  <div v-if="esAdmin" class="space-y-1">
+                    <label :for="`valido-${index}`" class="block text-sm font-medium text-gray-700">Validó</label>
+                    <input :id="`valido-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.valido" />
+                  </div>
+                  <div class="space-y-1">
+                    <label :for="`precio-${index}`" class="block text-sm font-medium text-gray-700">Precio ($)</label>
+                    <input :id="`precio-${index}`" type="number" step="0.01" v-model="estudio.precio" :readonly="!permisos.editar_precios"
+                      :title="permisos.editar_precios ? '' : 'Precio del catálogo; solo el administrador lo cambia'"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-semibold"
+                      :class="{ 'bg-gray-50 text-gray-600': !permisos.editar_precios }" />
                   </div>
                 </div>
-              </div>
-            </transition-group>
 
-            <!-- Mensaje cuando no hay estudios -->
+                <div class="mb-4 space-y-1">
+                  <label :for="`obs-${index}`" class="block text-sm font-medium text-gray-700">Observaciones del estudio</label>
+                  <textarea :id="`obs-${index}`" v-model="estudio.observaciones" rows="2"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    placeholder="Opcional. Se imprime a todo el ancho debajo del estudio." />
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                      <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Examen</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Valor de referencia</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider min-w-[20rem]">Resultado</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr v-for="(examen, exIndex) in estudio.examenes" :key="examen.id" class="align-top">
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                          <label :for="`res-${index}-${exIndex}`">{{ examen.nombre_examen }}</label>
+                          <span v-if="examen.unidad" class="block text-xs text-gray-500">{{ examen.unidad }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">
+                          <ul v-if="examen.niveles?.length" class="space-y-0.5 text-xs">
+                            <li v-for="nivel in examen.niveles" :key="nivel.id"
+                              :class="nivel.es_normal ? 'font-semibold text-gray-800' : ''">
+                              {{ textoNivel(nivel) }} · {{ nivel.interpretacion }}
+                            </li>
+                          </ul>
+                          <span v-else>{{ examen.valor_referencia }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                          <ResultadoCelda
+                            :examen="examen"
+                            :input-id="`res-${index}-${exIndex}`"
+                            :anterior="anteriores.anteriorDe(examen.id, examen.nombre_examen)"
+                            @escribir="onEscribir(examen)"
+                            @marca="(valor) => aplicarMarcaManual(examen, valor)"
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
             <div v-if="form.estudios.length === 0" class="text-center py-12">
-              <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
               <p class="text-gray-500 text-lg">No hay estudios agregados</p>
               <p class="text-gray-400 text-sm mt-2">Busca y selecciona estudios para agregar</p>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- Total y botones -->
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="w-full sm:w-auto">
-            <label class="flex items-start gap-3 mb-4 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
-              <input
-                type="checkbox"
-                class="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
-                v-model="form.aplica_iva"
-              />
+        <section class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="w-full lg:w-auto">
+            <label class="flex items-start gap-3 mb-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50">
+              <input type="checkbox" class="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500" v-model="form.aplica_iva" />
               <span>
                 <span class="block text-sm font-medium text-gray-700">Aplicar IVA ({{ IVA_PORCENTAJE }}%)</span>
-                <span class="block text-xs text-gray-500">
-                  Se desglosara en la orden de trabajo y en el reporte.
-                </span>
+                <span class="block text-xs text-gray-500">Se desglosa en la orden de trabajo y en el reporte.</span>
               </span>
             </label>
-            <label class="flex items-center justify-between gap-3 mb-4 p-3 border border-gray-300 rounded-lg">
-              <span class="text-sm font-medium text-gray-700">Descuento (%)</span>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                v-model.number="form.descuento"
+            <label class="flex items-center justify-between gap-3 mb-3 p-3 border border-gray-300 rounded-lg">
+              <span class="text-sm font-medium text-gray-700">
+                Descuento (%)
+                <span v-if="!permisos.editar_precios" class="block text-xs font-normal text-gray-500">Solo el administrador aplica descuentos</span>
+              </span>
+              <input type="number" min="0" max="100" step="0.01" v-model.number="form.descuento" :readonly="!permisos.editar_precios"
                 class="w-24 text-sm text-right rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
-              />
+                :class="{ 'bg-gray-50': !permisos.editar_precios }" />
             </label>
-            <div v-if="form.aplica_iva || montoDescuento > 0" class="space-y-1 mb-2">
-              <div class="flex items-center justify-between gap-6 text-gray-600">
-                <span>Subtotal:</span>
-                <span class="font-semibold">${{ totalEstudios.toFixed(2) }}</span>
-              </div>
-              <div v-if="montoDescuento > 0" class="flex items-center justify-between gap-6 text-gray-600">
-                <span>Descuento ({{ form.descuento }}%):</span>
-                <span class="font-semibold text-red-600">-${{ montoDescuento.toFixed(2) }}</span>
-              </div>
-              <div v-if="form.aplica_iva" class="flex items-center justify-between gap-6 text-gray-600">
-                <span>IVA ({{ IVA_PORCENTAJE }}%):</span>
-                <span class="font-semibold">${{ montoIva.toFixed(2) }}</span>
-              </div>
+            <div v-if="form.aplica_iva || montoDescuento > 0" class="space-y-1 mb-2 text-gray-600">
+              <div class="flex items-center justify-between gap-6"><span>Subtotal:</span><span class="font-semibold">${{ totalEstudios.toFixed(2) }}</span></div>
+              <div v-if="montoDescuento > 0" class="flex items-center justify-between gap-6"><span>Descuento ({{ form.descuento }}%):</span><span class="font-semibold text-red-600">-${{ montoDescuento.toFixed(2) }}</span></div>
+              <div v-if="form.aplica_iva" class="flex items-center justify-between gap-6"><span>IVA ({{ IVA_PORCENTAJE }}%):</span><span class="font-semibold">${{ montoIva.toFixed(2) }}</span></div>
             </div>
             <div class="flex items-center">
               <span class="text-gray-600 text-lg mr-3">Total de la orden:</span>
               <span class="text-3xl font-bold text-green-600">${{ totalConIva.toFixed(2) }}</span>
             </div>
           </div>
-          <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <button
-              class="flex items-center justify-center px-6 py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-sm font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="previsualizarReporte"
-              :disabled="generandoPreview || guardando"
-            >
-              <svg v-if="!generandoPreview" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <svg v-else class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ generandoPreview ? 'Generando...' : 'Previsualizar' }}
-            </button>
-            <button
-              class="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="guardarReporte"
-              :disabled="guardando || generandoPreview"
-            >
-              <svg v-if="!guardando" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <svg v-else class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ guardando ? 'Guardando...' : 'Guardar Reporte' }}
-            </button>
+          <div class="flex flex-col gap-2 w-full lg:w-auto">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button type="button"
+                class="flex items-center justify-center px-6 py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="previsualizarReporte" :disabled="generandoPreview || guardando">
+                {{ generandoPreview ? 'Generando…' : 'Previsualizar' }}
+              </button>
+              <button type="button"
+                class="flex items-center justify-center px-8 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="guardarReporte" :disabled="guardando || generandoPreview">
+                {{ guardando ? 'Guardando…' : (esAdmin ? 'Guardar y validar' : 'Guardar para validación') }}
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 sm:text-right">
+              {{ esAdmin
+                ? 'Lo capturado queda validado con tu usuario.'
+                : 'El Q.F.B. revisará y validará los resultados antes de entregarlos.' }}
+            </p>
+          </div>
+        </section>
+
+        <!-- Modal de vista previa -->
+        <div v-if="mostrarPreview" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="cerrarPreview"
+          role="dialog" aria-modal="true" aria-labelledby="titulo-preview">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div>
+                <h3 id="titulo-preview" class="text-lg font-bold text-gray-800">Vista previa del reporte</h3>
+                <p class="text-xs text-gray-500">Todavía no se ha guardado nada. Revisa el documento y decide si continuar editando.</p>
+              </div>
+              <button type="button" @click="cerrarPreview" class="text-gray-400 hover:text-gray-600" aria-label="Cerrar vista previa">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 px-6 py-3 border-b border-gray-200 bg-gray-50">
+              <button type="button" @click="cambiarDocumentoPreview('reporte')" :disabled="generandoPreview"
+                class="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                :class="documentoPreview === 'reporte' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'">
+                Reporte de resultados
+              </button>
+              <button type="button" @click="cambiarDocumentoPreview('orden')" :disabled="generandoPreview"
+                class="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                :class="documentoPreview === 'orden' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'">
+                Orden de trabajo
+              </button>
+              <span v-if="generandoPreview" class="text-xs text-gray-500 ml-2">Generando…</span>
+            </div>
+            <div class="flex-1 bg-gray-100 relative">
+              <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full" title="Vista previa del documento"></iframe>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-white">
+              <button type="button" @click="cerrarPreview" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+                Seguir editando
+              </button>
+              <button type="button" @click="confirmarYGuardar" :disabled="guardando || generandoPreview"
+                class="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold shadow-md disabled:opacity-50">
+                Confirmar y guardar
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Modal de vista previa -->
-        <transition
-          enter-active-class="transition ease-out duration-200"
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-100"
-          leave-active-class="transition ease-in duration-150"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
+        <!-- Notificación -->
+        <div
+          v-if="notification.show"
+          role="status"
+          aria-live="polite"
+          :class="[
+            'fixed bottom-8 right-8 px-6 py-4 rounded-lg shadow-xl z-50 max-w-md',
+            notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          ]"
         >
-          <div
-            v-if="mostrarPreview"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-            @click.self="cerrarPreview"
-          >
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
-              <!-- Encabezado -->
-              <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div>
-                  <h3 class="text-lg font-bold text-gray-800">Vista previa del reporte</h3>
-                  <p class="text-xs text-gray-500">
-                    Todavía no se ha guardado nada. Revisa el documento y decide si continuar editando.
-                  </p>
-                </div>
-                <button
-                  @click="cerrarPreview"
-                  class="text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Cerrar"
-                >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Selector de documento -->
-              <div class="flex items-center gap-2 px-6 py-3 border-b border-gray-200 bg-gray-50">
-                <button
-                  @click="cambiarDocumentoPreview('reporte')"
-                  :disabled="generandoPreview"
-                  class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                  :class="documentoPreview === 'reporte' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'"
-                >
-                  Reporte de resultados
-                </button>
-                <button
-                  @click="cambiarDocumentoPreview('orden')"
-                  :disabled="generandoPreview"
-                  class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                  :class="documentoPreview === 'orden' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'"
-                >
-                  Orden de trabajo
-                </button>
-                <span v-if="generandoPreview" class="text-xs text-gray-500 ml-2">Generando...</span>
-              </div>
-
-              <!-- Documento -->
-              <div class="flex-1 bg-gray-100 relative">
-                <iframe
-                  v-if="previewUrl"
-                  :src="previewUrl"
-                  class="w-full h-full"
-                  title="Vista previa del documento"
-                ></iframe>
-                <div
-                  v-if="generandoPreview"
-                  class="absolute inset-0 flex items-center justify-center bg-white/70"
-                >
-                  <svg class="animate-spin w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-              </div>
-
-              <!-- Acciones -->
-              <div class="flex flex-col sm:flex-row justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-white">
-                <button
-                  @click="cerrarPreview"
-                  class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                >
-                  Seguir editando
-                </button>
-                <button
-                  @click="confirmarYGuardar"
-                  :disabled="guardando || generandoPreview"
-                  class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Confirmar y guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        </transition>
-
-        <!-- Toast de notificación -->
-        <transition
-          enter-active-class="transition ease-out duration-300"
-          enter-from-class="transform translate-y-2 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition ease-in duration-200"
-          leave-from-class="transform translate-y-0 opacity-100"
-          leave-to-class="transform translate-y-2 opacity-0"
-        >
-          <div 
-            v-if="notification.show" 
-            :class="[
-              'fixed bottom-8 right-8 px-6 py-4 rounded-lg shadow-xl z-50 max-w-md',
-              notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-            ]"
-          >
-            <div class="flex items-start">
-              <svg 
-                v-if="notification.type === 'success'" 
-                class="w-6 h-6 text-green-600 mr-3" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <svg 
-                v-else 
-                class="w-6 h-6 text-red-600 mr-3" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p :class="[
-                  'font-semibold',
-                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
-                ]">
-                  {{ notification.message }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </transition>
+          <p :class="['font-semibold', notification.type === 'success' ? 'text-green-800' : 'text-red-800']">
+            {{ notification.message }}
+          </p>
+        </div>
       </div>
     </div>
   </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { computed } from 'vue'
-import { Head } from '@inertiajs/vue3'
-import { direccionFueraRango } from '@/utils/rangoReferencia'
+import { Head, usePage } from '@inertiajs/vue3'
 import { IVA_PORCENTAJE, calcularTotales } from '@/utils/iva'
+import PacienteBuscador from '@/Components/Captura/PacienteBuscador.vue'
+import ResultadoCelda from '@/Components/Captura/ResultadoCelda.vue'
+import Interruptor from '@/Components/Captura/Interruptor.vue'
+import {
+  aplicarMarcaManual,
+  formatoFechaCorta,
+  marcarRango,
+  recalcularOrden,
+  usePermisos,
+  useResultadosAnteriores,
+} from '@/utils/captura'
 
-// Props de Inertia (cotizacion precargada desde Cotizaciones)
 const props = defineProps({
-  cotizacionPrecargada: {
-    type: Object,
-    default: null,
-  },
+  cotizacionPrecargada: { type: Object, default: null },
 })
 
-// Estado de guardado
+const RESPONSABLE = 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS'
+
+const page = usePage()
+const permisos = usePermisos()
+const esAdmin = computed(() => !!permisos.value.validar)
+const nombreUsuario = computed(() => page.props.auth?.user?.name || '')
+
 const guardando = ref(false)
-
-// Estado del paciente
-const modoPaciente = ref('existente') // 'existente' | 'nuevo'
-const busquedaPaciente = ref('')
-const pacientesDisponibles = ref([])
-const pacientesFiltrados = ref([])
 const pacienteSeleccionado = ref(null)
+const anteriores = useResultadosAnteriores()
 
-// Sistema de notificaciones
-const notification = reactive({
-  show: false,
-  message: '',
-  type: 'success' // success | error
-})
+const notification = reactive({ show: false, message: '', type: 'success' })
+let temporizadorAviso = null
 
-function mostrarNotificacion(mensaje, tipo = 'success') {
+function mostrarNotificacion(mensaje, tipo = 'success', duracion = 5000) {
   notification.message = mensaje
   notification.type = tipo
   notification.show = true
-  
-  setTimeout(() => {
-    notification.show = false
-  }, 4000)
+  clearTimeout(temporizadorAviso)
+  temporizadorAviso = setTimeout(() => { notification.show = false }, duracion)
 }
 
-// 💰 Cálculo automático del subtotal (suma de los estudios, sin IVA)
-const totalEstudios = computed(() => {
-  return form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0)
-})
+const clienteVacio = () => ({ nombre: '', email: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' })
 
-// 💰 Descuento (heredado de la cotización) e IVA opcional de la orden de trabajo
-const totales = computed(() => calcularTotales(totalEstudios.value, form.descuento, form.aplica_iva))
-const montoDescuento = computed(() => totales.value.montoDescuento)
-const montoIva = computed(() => totales.value.iva)
-const totalConIva = computed(() => totales.value.total)
-
-// ===== Vista previa antes de guardar =====
-const mostrarPreview = ref(false)
-const generandoPreview = ref(false)
-const previewUrl = ref('')
-const documentoPreview = ref('reporte') // 'reporte' | 'orden'
-
-const estudiosDisponibles = ref([])
-const selectedEstudioId = ref('')
-const medicosDisponibles = ref([])
-const modoMedico = ref('registrado') // 'registrado' | 'otro' | 'na'
-
-const onModoMedicoChange = (modo) => {
-  modoMedico.value = modo
-  form.medico_id = null
-  if (modo === 'na') {
-    form.medico_solicitante = 'N/A'
-  } else if (modo === 'registrado') {
-    form.medico_solicitante = ''
-  } else {
-    form.medico_solicitante = ''
-  }
-}
 const form = reactive({
+  paciente_id: null,
+  cotizacion_id: null,
   toma_muestra: '',
   fecha_reporte: '',
   fecha_validacion: '',
@@ -819,305 +483,256 @@ const form = reactive({
   medico_id: null,
   aplica_iva: false,
   descuento: 0,
-  cliente: {
-    nombre: '',
-    email: '',
-    fecha_nacimiento: '',
-    edad: '',
-    sexo: '',
-  },
+  cliente: clienteVacio(),
   estudios: [],
 })
+
+// Totales
+const totalEstudios = computed(() => form.estudios.reduce((sum, e) => sum + (parseFloat(e.precio) || 0), 0))
+const totales = computed(() => calcularTotales(totalEstudios.value, form.descuento, form.aplica_iva))
+const montoDescuento = computed(() => totales.value.montoDescuento)
+const montoIva = computed(() => totales.value.iva)
+const totalConIva = computed(() => totales.value.total)
+
+// Vista previa
+const mostrarPreview = ref(false)
+const generandoPreview = ref(false)
+const previewUrl = ref('')
+const documentoPreview = ref('reporte')
+
+const estudiosDisponibles = ref([])
+const medicosDisponibles = ref([])
+const modoMedico = ref('registrado')
 const busquedaEstudio = ref('')
 const estudiosFiltrados = ref([])
 
-// Función para cargar estudios desde el API
+const onModoMedicoChange = (modo) => {
+  modoMedico.value = modo
+  form.medico_id = null
+  form.medico_solicitante = modo === 'na' ? 'N/A' : ''
+}
+
 const cargarEstudios = async () => {
   try {
-    const response = await axios.get('/api/estudios')
-    estudiosDisponibles.value = response.data
+    const { data } = await axios.get('/api/estudios')
+    estudiosDisponibles.value = data
   } catch (error) {
     console.error('Error al cargar estudios:', error)
-    mostrarNotificacion('Error al cargar los estudios disponibles', 'error')
+    mostrarNotificacion('No se pudieron cargar los estudios. Recarga la página.', 'error')
   }
 }
 
 const cargarMedicos = async () => {
   try {
-    const res = await axios.get('/api/medicos')
-    medicosDisponibles.value = res.data.filter(m => m.activo)
+    const { data } = await axios.get('/api/medicos')
+    medicosDisponibles.value = data.filter(m => m.activo)
   } catch (e) {
     console.error('Error al cargar médicos:', e)
   }
 }
 
 onMounted(async () => {
-  await Promise.all([cargarEstudios(), cargarPacientes(), cargarMedicos()])
-
-  // Si viene una cotización precargada, auto-llenar paciente y estudios
-  if (props.cotizacionPrecargada) {
-    precargarDesdeCotizacion(props.cotizacionPrecargada)
-  }
+  await Promise.all([cargarEstudios(), cargarMedicos()])
+  if (props.cotizacionPrecargada) precargarDesdeCotizacion(props.cotizacionPrecargada)
 })
 
-/**
- * Precarga los datos del paciente y estudios desde una cotización guardada
- */
-function precargarDesdeCotizacion(cotizacion) {
-  // Heredar la casilla de IVA y el descuento de la cotización
-  form.aplica_iva = Boolean(cotizacion.aplica_iva)
-  form.descuento = parseFloat(cotizacion.descuento) || 0
+// ===== Paciente (T1) =====
+const pacienteParaRango = computed(() => ({ sexo: form.cliente.sexo, edad: form.cliente.edad }))
 
-  // Precargar paciente
-  if (cotizacion.paciente) {
-    const paciente = cotizacion.paciente
-    pacienteSeleccionado.value = paciente
-    modoPaciente.value = 'existente'
-    form.cliente.nombre = paciente.nombre || ''
-    form.cliente.email = paciente.email || ''
-    form.cliente.fecha_nacimiento = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('T')[0] : ''
-    form.cliente.edad = paciente.edad || ''
-    form.cliente.sexo = paciente.sexo || ''
-  } else if (cotizacion.nombre_cliente) {
-    // Si no tiene paciente registrado, usar los datos directos de la cotización
-    modoPaciente.value = 'nuevo'
-    form.cliente.nombre = cotizacion.nombre_cliente || ''
-    form.cliente.email = cotizacion.email || ''
-  }
-
-  // Precargar estudios
-  if (cotizacion.estudios && cotizacion.estudios.length > 0) {
-    cotizacion.estudios.forEach(ce => {
-      const estudioCompleto = ce.estudio
-      if (!estudioCompleto) return
-
-      // Evitar duplicados
-      if (form.estudios.some(e => e.id === estudioCompleto.id)) return
-
-      form.estudios.push({
-        id: estudioCompleto.id,
-        nombre: estudioCompleto.nombre,
-        tipo_muestra: (estudioCompleto.tipo_muestra && estudioCompleto.tipo_muestra !== 'N/A') ? estudioCompleto.tipo_muestra : '',
-        metodo: (estudioCompleto.metodo && estudioCompleto.metodo !== 'N/A') ? estudioCompleto.metodo : '',
-        elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-        valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-        precio: parseFloat(ce.precio) || parseFloat(estudioCompleto.precio) || 0,
-        observaciones: '',
-        examenes: (estudioCompleto.examenes || []).map(e => ({
-          id: e.id,
-          nombre_examen: e.nombre_examen,
-          unidad: e.unidad,
-          valor_referencia: e.valor_referencia,
-          resultado: '',
-          fuera_rango: false,
-          direccion_rango: null,
-        })),
-      })
-    })
-
-    // "origen" viene cuando la precarga es desde una cita de la agenda
-    const origen = cotizacion.origen || `Cotización ${cotizacion.folio}`
-    mostrarNotificacion(`${origen} cargada: ${form.estudios.length} estudio(s) y datos del paciente`, 'success')
-  }
-}
-
-// Funciones de pacientes
-const cargarPacientes = async () => {
-  try {
-    const response = await axios.get('/api/pacientes')
-    pacientesDisponibles.value = response.data
-  } catch (error) {
-    console.error('Error al cargar pacientes:', error)
-  }
-}
-
-function filtrarPacientes() {
-  const termino = busquedaPaciente.value.toLowerCase().trim()
-  if (termino === '') {
-    pacientesFiltrados.value = [...pacientesDisponibles.value]
-    return
-  }
-  pacientesFiltrados.value = pacientesDisponibles.value.filter(p =>
-    p.nombre.toLowerCase().includes(termino)
-  )
-}
+// Con un paciente registrado, sus datos de identidad no se editan aquí (solo los que falten)
+const bloqueado = (campo) => !!pacienteSeleccionado.value && !!pacienteSeleccionado.value[campo]
 
 function seleccionarPaciente(paciente) {
   pacienteSeleccionado.value = paciente
+  form.paciente_id = paciente.id
   form.cliente.nombre = paciente.nombre
-  form.cliente.email = paciente.email || ''
-  form.cliente.fecha_nacimiento = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('T')[0] : ''
-  form.cliente.edad = paciente.edad || ''
+  form.cliente.email = paciente.email || form.cliente.email
+  form.cliente.telefono = paciente.telefono || form.cliente.telefono
+  form.cliente.fecha_nacimiento = paciente.fecha_nacimiento ? String(paciente.fecha_nacimiento).slice(0, 10) : ''
   form.cliente.sexo = paciente.sexo || ''
-  busquedaPaciente.value = ''
-  pacientesFiltrados.value = []
-  mostrarNotificacion(`Paciente "${paciente.nombre}" seleccionado`, 'success')
+  anteriores.cargar(paciente.id)
 }
 
 function limpiarPacienteSeleccionado() {
   pacienteSeleccionado.value = null
-  form.cliente = { nombre: '', email: '', fecha_nacimiento: '', edad: '', sexo: '' }
-  busquedaPaciente.value = ''
-  pacientesFiltrados.value = []
-}
-
-// Al marcar F.R. se propone la flecha (alto / bajo) comparando el resultado
-// contra el valor de referencia; el laboratorio puede cambiarla manualmente.
-function onFueraRangoChange(examen) {
-  if (!examen.fuera_rango) {
-    examen.direccion_rango = null
-    return
-  }
-
-  if (!examen.direccion_rango) {
-    examen.direccion_rango = direccionFueraRango(examen.resultado, examen.valor_referencia)
-  }
+  form.paciente_id = null
+  form.cliente = clienteVacio()
+  anteriores.cargar(null)
+  setTimeout(() => document.getElementById('paciente-nombre')?.focus(), 0)
 }
 
 watch(() => form.cliente.fecha_nacimiento, (nuevaFecha) => {
-  if (nuevaFecha) {
-    const hoy = new Date()
-    const nacimiento = new Date(nuevaFecha)
-    let edad = hoy.getFullYear() - nacimiento.getFullYear()
-    const mes = hoy.getMonth() - nacimiento.getMonth()
-
-    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--
-    }
-
-    form.cliente.edad = edad
-  } else {
+  if (!nuevaFecha) {
     form.cliente.edad = ''
+    return
   }
+  const hoy = new Date()
+  const nacimiento = new Date(`${nuevaFecha}T00:00:00`)
+  let edad = hoy.getFullYear() - nacimiento.getFullYear()
+  const mes = hoy.getMonth() - nacimiento.getMonth()
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad--
+  form.cliente.edad = edad >= 0 ? edad : ''
 })
 
-function agregarEstudio() {
-  if (!selectedEstudioId.value) return
-  const estudio = estudiosDisponibles.value.find(e => e.id == selectedEstudioId.value)
-  if (!estudio) return
+// T4: si cambia el sexo o la edad, el intervalo que aplica puede cambiar
+watch(pacienteParaRango, () => {
+  form.estudios.forEach(e => e.examenes.forEach(ex => {
+    if (!ex.marca_manual) marcarRango(ex, pacienteParaRango.value)
+  }))
+}, { deep: true })
 
-  form.estudios.push({
+// ===== Estudios =====
+const listasDeExamenes = () => form.estudios.map(e => e.examenes)
+
+function nuevoEstudio(estudio, precio) {
+  return {
     id: estudio.id,
     nombre: estudio.nombre,
     tipo_muestra: (estudio.tipo_muestra && estudio.tipo_muestra !== 'N/A') ? estudio.tipo_muestra : '',
     metodo: (estudio.metodo && estudio.metodo !== 'N/A') ? estudio.metodo : '',
-    elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-    valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-    precio: parseFloat(estudio.precio) || 0,
+    elaboro: esAdmin.value ? RESPONSABLE : nombreUsuario.value,
+    valido: RESPONSABLE,
+    precio,
     observaciones: '',
-    examenes: estudio.examenes.map(e => ({
+    incluir_en_reporte: true,
+    examenes: (estudio.examenes || []).map(e => ({
       id: e.id,
       nombre_examen: e.nombre_examen,
       unidad: e.unidad,
       valor_referencia: e.valor_referencia,
+      niveles: e.niveles || [],
       resultado: '',
       fuera_rango: false,
       direccion_rango: null,
+      calculado: false,
+      formula: '',
+      marca_manual: false,
     })),
-  })
-
-  selectedEstudioId.value = ''
+  }
 }
 
-/**
- * Validaciones compartidas por la vista previa y el guardado, para que lo que
- * se previsualiza sea exactamente lo que se va a guardar.
- * Devuelve true si el formulario esta completo.
- */
+function onEscribir(examen) {
+  examen.marca_manual = false
+  marcarRango(examen, pacienteParaRango.value)
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+}
+
+function precargarDesdeCotizacion(cotizacion) {
+  form.aplica_iva = Boolean(cotizacion.aplica_iva)
+  form.descuento = parseFloat(cotizacion.descuento) || 0
+  form.cotizacion_id = cotizacion.id ?? null
+
+  if (cotizacion.paciente) {
+    seleccionarPaciente(cotizacion.paciente)
+  } else if (cotizacion.nombre_cliente) {
+    form.cliente.nombre = cotizacion.nombre_cliente || ''
+    form.cliente.email = cotizacion.email || ''
+    form.cliente.telefono = cotizacion.telefono || ''
+  }
+
+  (cotizacion.estudios || []).forEach(ce => {
+    const estudioCompleto = estudiosDisponibles.value.find(e => e.id === ce.estudio?.id) || ce.estudio
+    if (!estudioCompleto || form.estudios.some(e => e.id === estudioCompleto.id)) return
+    form.estudios.push(nuevoEstudio(estudioCompleto, parseFloat(ce.precio) || parseFloat(estudioCompleto.precio) || 0))
+  })
+
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+
+  if (form.estudios.length) {
+    const origen = cotizacion.origen || `Cotización ${cotizacion.folio}`
+    mostrarNotificacion(`${origen} cargada: ${form.estudios.length} estudio(s) y datos del paciente`)
+  }
+}
+
+function filtrarEstudios() {
+  const termino = busquedaEstudio.value.toLowerCase().trim()
+  estudiosFiltrados.value = termino === ''
+    ? [...estudiosDisponibles.value]
+    : estudiosDisponibles.value.filter(e => e.nombre.toLowerCase().includes(termino))
+}
+
+function mostrarTodosEstudios() {
+  estudiosFiltrados.value = [...estudiosDisponibles.value]
+}
+
+function cerrarListaEstudios() {
+  setTimeout(() => { estudiosFiltrados.value = [] }, 150)
+}
+
+function seleccionarEstudio(estudio) {
+  busquedaEstudio.value = ''
+  estudiosFiltrados.value = []
+
+  if (form.estudios.some(e => e.id === estudio.id)) {
+    mostrarNotificacion('Este estudio ya está en la orden', 'error')
+    return
+  }
+
+  form.estudios.push(nuevoEstudio(estudio, parseFloat(estudio.precio) || 0))
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+  mostrarNotificacion(`${estudio.nombre} agregado`, 'success', 2500)
+}
+
+function eliminarEstudio(index) {
+  const nombreEstudio = form.estudios[index].nombre
+  if (confirm(`¿Quitar "${nombreEstudio}" de la orden?`)) {
+    form.estudios.splice(index, 1)
+    recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+  }
+}
+
+const textoNivel = (nivel) => {
+  const n = (v) => (v === null || v === undefined || v === '' ? null : Number(v))
+  const desde = n(nivel.desde)
+  const hasta = n(nivel.hasta)
+  if (desde !== null && hasta !== null) return `${desde} – ${hasta}`
+  if (desde !== null) return `≥ ${desde}`
+  if (hasta !== null) return `≤ ${hasta}`
+  return '—'
+}
+
+// ===== Validación y guardado =====
 function validarFormulario() {
-  if (!form.cliente.nombre || form.cliente.nombre.trim() === '') {
-    mostrarNotificacion('Por favor ingresa el nombre del paciente', 'error')
-    return false
-  }
+  const error = (mensaje) => { mostrarNotificacion(mensaje, 'error'); return false }
 
-  if (!form.cliente.fecha_nacimiento) {
-    mostrarNotificacion('Por favor ingresa la fecha de nacimiento del paciente', 'error')
-    return false
-  }
+  if (!form.cliente.nombre?.trim()) return error('Escribe el nombre del paciente')
+  if (!form.cliente.fecha_nacimiento) return error('Falta la fecha de nacimiento del paciente')
+  if (!form.cliente.sexo) return error('Selecciona el sexo del paciente')
+  if (!form.toma_muestra) return error('Falta la fecha de toma de muestra')
+  if (!form.fecha_reporte) return error('Falta la fecha de reporte')
+  if (esAdmin.value && !form.fecha_validacion) return error('Falta la fecha de validación')
+  if (form.estudios.length === 0) return error('Agrega al menos un estudio')
 
-  if (!form.cliente.sexo) {
-    mostrarNotificacion('Por favor selecciona el sexo del paciente', 'error')
-    return false
-  }
-
-  if (!form.toma_muestra) {
-    mostrarNotificacion('Por favor ingresa la fecha de toma de muestra', 'error')
-    return false
-  }
-
-  if (!form.fecha_reporte) {
-    mostrarNotificacion('Por favor ingresa la fecha de reporte', 'error')
-    return false
-  }
-
-  if (!form.fecha_validacion) {
-    mostrarNotificacion('Por favor ingresa la fecha de validación', 'error')
-    return false
-  }
-  
-  if (form.estudios.length === 0) {
-    mostrarNotificacion('Debes agregar al menos un estudio', 'error')
-    return false
-  }
-
-  // Validar que todos los estudios tengan al menos un resultado
-  for (let i = 0; i < form.estudios.length; i++) {
-    const estudio = form.estudios[i]
-    
-    if (!estudio.precio || estudio.precio <= 0) {
-      mostrarNotificacion(`El estudio "${estudio.nombre}" debe tener un precio válido`, 'error')
-      return false
+  for (const estudio of form.estudios) {
+    if (esAdmin.value && (!estudio.precio || estudio.precio <= 0)) {
+      return error(`El estudio "${estudio.nombre}" debe tener un precio válido`)
     }
 
-    const tieneResultados = estudio.examenes.some(examen => 
-      examen.resultado && examen.resultado.trim() !== ''
-    )
-    
-    if (!tieneResultados) {
-      mostrarNotificacion(`El estudio "${estudio.nombre}" debe tener al menos un resultado capturado`, 'error')
-      return false
+    const tieneResultados = estudio.examenes.some(ex => ex.resultado && String(ex.resultado).trim() !== '')
+    if (estudio.incluir_en_reporte && !tieneResultados) {
+      return error(`"${estudio.nombre}" no tiene resultados. Captúralos o apaga «Incluir en reporte» si sale otro día.`)
     }
   }
 
   return true
 }
 
-/**
- * Pide al servidor el PDF del borrador (sin guardarlo) y lo muestra en el modal.
- */
 async function cargarPreview(documento) {
   generandoPreview.value = true
-
   try {
-    const response = await axios.post(
-      '/api/reportes/preview',
-      { ...form, documento },
-      { responseType: 'blob' }
-    )
-
+    const response = await axios.post('/api/reportes/preview', { ...form, documento }, { responseType: 'blob' })
     liberarPreview()
-    previewUrl.value = window.URL.createObjectURL(
-      new Blob([response.data], { type: 'application/pdf' })
-    )
+    previewUrl.value = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     documentoPreview.value = documento
     return true
   } catch (error) {
-    console.error('Error al generar la vista previa:', error)
-
-    // El error viene como blob porque pedimos responseType: 'blob'
     let mensaje = 'No se pudo generar la vista previa'
     if (error.response?.data instanceof Blob) {
       try {
-        const texto = await error.response.data.text()
-        const datos = JSON.parse(texto)
-        mensaje = datos.errors
-          ? Object.values(datos.errors).flat()[0]
-          : (datos.message || mensaje)
-      } catch (e) {
-        // Si no es JSON se queda el mensaje genérico
-      }
+        const datos = JSON.parse(await error.response.data.text())
+        mensaje = datos.errors ? Object.values(datos.errors).flat()[0] : (datos.message || mensaje)
+      } catch (e) { /* respuesta que no es JSON */ }
     }
-
     mostrarNotificacion(mensaje, 'error')
     return false
   } finally {
@@ -1126,13 +741,8 @@ async function cargarPreview(documento) {
 }
 
 async function previsualizarReporte() {
-  if (generandoPreview.value || guardando.value) return
-
-  if (!validarFormulario()) return
-
-  if (await cargarPreview('reporte')) {
-    mostrarPreview.value = true
-  }
+  if (generandoPreview.value || guardando.value || !validarFormulario()) return
+  if (await cargarPreview('reporte')) mostrarPreview.value = true
 }
 
 async function cambiarDocumentoPreview(documento) {
@@ -1147,204 +757,69 @@ function liberarPreview() {
   }
 }
 
-// "Seguir editando": cierra el modal sin guardar nada
 function cerrarPreview() {
   mostrarPreview.value = false
   documentoPreview.value = 'reporte'
   liberarPreview()
 }
 
-// "Confirmar y guardar": cierra la vista previa y ejecuta el guardado normal
 async function confirmarYGuardar() {
   cerrarPreview()
   await guardarReporte()
 }
 
-onBeforeUnmount(liberarPreview)
+const cerrarConEscape = (e) => { if (e.key === 'Escape' && mostrarPreview.value) cerrarPreview() }
+onMounted(() => window.addEventListener('keydown', cerrarConEscape))
+onBeforeUnmount(() => {
+  liberarPreview()
+  window.removeEventListener('keydown', cerrarConEscape)
+  clearTimeout(temporizadorAviso)
+})
+
+function limpiarFormulario() {
+  form.paciente_id = null
+  form.cotizacion_id = null
+  form.cliente = clienteVacio()
+  form.estudios = []
+  form.toma_muestra = ''
+  form.fecha_reporte = ''
+  form.fecha_validacion = ''
+  form.medico_solicitante = ''
+  form.medico_id = null
+  form.aplica_iva = false
+  form.descuento = 0
+  modoMedico.value = 'registrado'
+  pacienteSeleccionado.value = null
+  anteriores.cargar(null)
+}
 
 async function guardarReporte() {
-  if (guardando.value) return
-
-  if (!validarFormulario()) return
-
+  if (guardando.value || !validarFormulario()) return
   guardando.value = true
 
   try {
-    // Debug: Verificar valores de fuera_rango antes de enviar
-    console.log('=== DEBUG: Datos antes de enviar ===')
-    form.estudios.forEach((estudio, idx) => {
-      console.log(`Estudio ${idx + 1}: ${estudio.nombre}`)
-      estudio.examenes.forEach((examen, exIdx) => {
-        console.log(`  Examen ${exIdx + 1}: ${examen.nombre_examen}`)
-        console.log(`    Resultado: ${examen.resultado}`)
-        console.log(`    Fuera de rango: ${examen.fuera_rango} (tipo: ${typeof examen.fuera_rango})`)
-      })
-    })
+    const { data } = await axios.post('/api/reportes', form)
+    const pendientes = form.estudios.filter(e => !e.incluir_en_reporte).length
+    const extra = pendientes ? ` ${pendientes} estudio(s) quedaron pendientes para capturarse después.` : ''
 
-    // Solo se guarda en la BD; el PDF y la orden se descargan desde Lista de reportes
-    const response = await axios.post('/api/reportes', form)
-    const { folio } = response.data
-    mostrarNotificacion(`Reporte ${folio} guardado. Descárgalo desde Lista de reportes.`, 'success')
-
-    // Limpiar formulario después de guardar exitosamente
-    setTimeout(() => {
-      form.cliente = { nombre: '', email: '', fecha_nacimiento: '', edad: '', sexo: '' }
-      form.estudios = []
-      form.toma_muestra = ''
-      form.fecha_reporte = ''
-      form.fecha_validacion = ''
-      form.medico_solicitante = ''
-      form.medico_id = null
-      form.aplica_iva = false
-      form.descuento = 0
-      modoMedico.value = 'registrado'
-      pacienteSeleccionado.value = null
-      busquedaPaciente.value = ''
-      modoPaciente.value = 'existente'
-    }, 2000)
-
+    mostrarNotificacion(
+      esAdmin.value
+        ? `Reporte ${data.folio} guardado y validado.${extra} Descárgalo desde Lista de reportes.`
+        : `Reporte ${data.folio} guardado. Queda pendiente de validar por el Q.F.B.${extra}`,
+      'success',
+      7000,
+    )
+    limpiarFormulario()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (error) {
-    console.error('Error completo:', error)
-    
-    // Manejar diferentes tipos de errores
     if (error.response) {
-      // El servidor respondió con un código de error
-      const mensaje = error.response.data?.message || 
-                     error.response.data?.error || 
-                     'Error al guardar el reporte'
-      
-      // Si hay errores de validación del servidor
-      if (error.response.data?.errors) {
-        const errores = Object.values(error.response.data.errors).flat()
-        mostrarNotificacion(errores[0] || mensaje, 'error')
-      } else {
-        mostrarNotificacion(mensaje, 'error')
-      }
-    } else if (error.request) {
-      // La petición fue hecha pero no hubo respuesta
-      mostrarNotificacion('No se pudo conectar con el servidor. Verifica tu conexión.', 'error')
+      const errores = error.response.data?.errors
+      mostrarNotificacion(errores ? Object.values(errores).flat()[0] : (error.response.data?.message || 'Error al guardar el reporte'), 'error')
     } else {
-      // Algo pasó al configurar la petición
-      mostrarNotificacion('Error al procesar la solicitud. Por favor intenta de nuevo.', 'error')
+      mostrarNotificacion('No se pudo conectar con el servidor. Verifica tu conexión.', 'error')
     }
   } finally {
     guardando.value = false
   }
 }
-
-function filtrarEstudios() {
-  const termino = busquedaEstudio.value.toLowerCase().trim()
-  if (termino === '') {
-    estudiosFiltrados.value = [...estudiosDisponibles.value]
-    return
-  }
-  estudiosFiltrados.value = estudiosDisponibles.value.filter(e =>
-    e.nombre.toLowerCase().includes(termino)
-  )
-}
-
-function mostrarTodosEstudios() {
-  // Recargar estudios para obtener cambios recientes
-  cargarEstudios()
-  estudiosFiltrados.value = [...estudiosDisponibles.value]
-}
-
-function seleccionarEstudio(estudio) {
-  // Evita duplicados
-  if (form.estudios.some(e => e.id === estudio.id)) {
-    mostrarNotificacion('Este estudio ya fue agregado', 'error')
-    busquedaEstudio.value = ''
-    estudiosFiltrados.value = []
-    return
-  }
-
-  form.estudios.push({
-    id: estudio.id,
-    nombre: estudio.nombre,
-    tipo_muestra: (estudio.tipo_muestra && estudio.tipo_muestra !== 'N/A') ? estudio.tipo_muestra : '',
-    metodo: (estudio.metodo && estudio.metodo !== 'N/A') ? estudio.metodo : '',
-    elaboro: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-    valido: 'Q.F.B ÁNGEL AUGUSTO PÉREZ ARIAS',
-    precio: parseFloat(estudio.precio) || 0,
-    observaciones: '',
-    examenes: estudio.examenes.map(e => ({
-      id: e.id,
-      nombre_examen: e.nombre_examen,
-      unidad: e.unidad,
-      valor_referencia: e.valor_referencia,
-      resultado: '',
-      fuera_rango: false,
-      direccion_rango: null,
-    })),
-  })
-
-  mostrarNotificacion(`${estudio.nombre} agregado correctamente`, 'success')
-  busquedaEstudio.value = ''
-  estudiosFiltrados.value = []
-}
-
-function eliminarEstudio(index) {
-  const nombreEstudio = form.estudios[index].nombre
-  if (confirm(`¿Deseas eliminar "${nombreEstudio}" del reporte?`)) {
-    form.estudios.splice(index, 1)
-    mostrarNotificacion('Estudio eliminado', 'success')
-  }
-}
 </script>
-
-<style scoped>
-/* Animaciones para la lista de estudios */
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-/* Scrollbar personalizado */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #a855f7;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #9333ea;
-}
-
-/* Animación de hover suave */
-.hover\:shadow-md {
-  transition: box-shadow 0.3s ease;
-}
-
-/* Efecto de pulse para el spinner */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-</style>

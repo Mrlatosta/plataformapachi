@@ -2,21 +2,30 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import EstadoBadge from '@/Components/Captura/EstadoBadge.vue';
+import { usePermisos } from '@/utils/captura';
+import { enviarResultados } from '@/utils/envio';
 
 const props = defineProps({
     reportes: Object,
-    filters: Object
+    filters: Object,
+    porValidar: { type: Number, default: 0 },
 });
+
+const permisos = usePermisos();
+const esAdmin = computed(() => !!permisos.value.validar);
 
 const search = ref(props.filters.search || '');
 const fechaDesde = ref(props.filters.fecha_desde || '');
 const fechaHasta = ref(props.filters.fecha_hasta || '');
+const estado = ref(props.filters.estado || '');
 
 const filterReportes = () => {
     router.get('/reportes', {
         search: search.value,
         fecha_desde: fechaDesde.value,
-        fecha_hasta: fechaHasta.value
+        fecha_hasta: fechaHasta.value,
+        estado: estado.value || undefined,
     }, {
         preserveState: true,
         replace: true
@@ -27,7 +36,32 @@ const clearFilters = () => {
     search.value = '';
     fechaDesde.value = '';
     fechaHasta.value = '';
+    estado.value = '';
     filterReportes();
+};
+
+const alternarPorValidar = () => {
+    estado.value = estado.value === 'por_validar' ? '' : 'por_validar';
+    filterReportes();
+};
+
+// T6: solo se entrega lo validado
+const listo = (reporte) => ['listo', 'entregado'].includes(reporte.estado);
+const MOTIVO_NO_LISTO = 'Tiene estudios pendientes de validar o sin capturar';
+
+const aviso = ref(null);
+let temporizadorAviso = null;
+const avisar = (texto, ok = true) => {
+    aviso.value = { texto, ok };
+    clearTimeout(temporizadorAviso);
+    temporizadorAviso = setTimeout(() => { aviso.value = null; }, 6000);
+};
+
+const enviar = async (reporte, canal) => {
+    cerrarMenu();
+    const resultado = await enviarResultados(reporte.id, canal);
+    avisar(resultado.mensaje, resultado.ok);
+    if (resultado.ok) router.reload({ only: ['reportes'] });
 };
 
 const formatDate = (date) => {
@@ -56,7 +90,7 @@ const formatCurrency = (value) => {
 // Menu de acciones: uno solo para toda la lista, teletransportado a <body> con
 // posicion fija para que el contenedor con scroll de la tabla no lo recorte
 const ANCHO_MENU = 224; // w-56
-const ALTO_MENU_ESTIMADO = 170;
+const ALTO_MENU_ESTIMADO = 300;
 const menu = ref(null); // { reporte, left, top | bottom }
 
 const abrirMenu = (reporte, evento) => {
@@ -168,6 +202,18 @@ onBeforeUnmount(() => {
                                 </svg>
                                 Limpiar
                             </button>
+                            <button
+                                v-if="esAdmin || porValidar > 0"
+                                type="button"
+                                @click="alternarPorValidar"
+                                :aria-pressed="estado === 'por_validar'"
+                                class="w-full sm:w-auto sm:ml-auto px-4 py-2 text-sm rounded-lg border transition-colors flex items-center justify-center gap-2"
+                                :class="estado === 'por_validar' ? 'bg-amber-600 border-amber-600 text-white' : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100'"
+                            >
+                                Por validar
+                                <span class="inline-flex min-w-[1.5rem] justify-center rounded-full px-1.5 text-xs font-semibold"
+                                    :class="estado === 'por_validar' ? 'bg-white/25' : 'bg-amber-200'">{{ porValidar }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -182,9 +228,7 @@ onBeforeUnmount(() => {
                                     <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                         {{ reporte.folio }}
                                     </span>
-                                    <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        {{ reporte.total_estudios }} estudios
-                                    </span>
+                                    <EstadoBadge :estado="reporte.estado" tipo="orden" />
                                 </div>
                                 
                                 <div class="space-y-2 mb-4">
@@ -223,36 +267,30 @@ onBeforeUnmount(() => {
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folio</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edad/Sexo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudios</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folio</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="reporte in reportes.data" :key="reporte.id" class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-4 py-4 whitespace-nowrap">
                                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 {{ reporte.folio }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-4 py-4">
                                             <div class="text-sm font-medium text-gray-900">{{ reporte.nombre_cliente }}</div>
-                                            <div class="text-sm text-gray-500">{{ reporte.email || 'Sin email' }}</div>
+                                            <div class="text-sm text-gray-500">{{ reporte.edad }} años · {{ reporte.sexo }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ reporte.edad }} años</div>
-                                            <div class="text-sm text-gray-500">{{ reporte.sexo }}</div>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <EstadoBadge :estado="reporte.estado" tipo="orden" />
+                                            <span class="block mt-1 text-xs text-gray-500">{{ reporte.total_estudios }} estudios</span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                {{ reporte.total_estudios }} estudios
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ formatCurrency(reporte.total_precio) }}
                                             <span v-if="reporte.descuento > 0" class="block text-xs font-normal text-red-600">
                                                 Descuento {{ reporte.descuento }}%: -{{ formatCurrency(reporte.monto_descuento) }}
@@ -261,10 +299,10 @@ onBeforeUnmount(() => {
                                                 IVA incluido: {{ formatCurrency(reporte.iva) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ formatDate(reporte.created_at) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button
                                                 type="button"
                                                 @click="abrirMenu(reporte, $event)"
@@ -344,7 +382,11 @@ onBeforeUnmount(() => {
                     <p class="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
                         {{ menu.reporte.folio }}
                     </p>
+                    <p v-if="!listo(menu.reporte)" class="px-4 py-2 text-xs text-amber-800 bg-amber-50 border-b border-amber-100">
+                        {{ MOTIVO_NO_LISTO }}. {{ esAdmin ? 'El PDF saldrá como preliminar.' : 'Se podrá descargar y enviar al validarse.' }}
+                    </p>
                     <a
+                        v-if="esAdmin || listo(menu.reporte)"
                         role="menuitem"
                         :href="`/api/reportes/${menu.reporte.id}/pdf`"
                         @click="cerrarMenu"
@@ -353,8 +395,24 @@ onBeforeUnmount(() => {
                         <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8l-6-6H6a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
-                        Descargar reporte (PDF)
+                        {{ listo(menu.reporte) ? 'Descargar reporte (PDF)' : 'Descargar preliminar' }}
                     </a>
+                    <template v-if="listo(menu.reporte)">
+                        <button type="button" role="menuitem" @click="enviar(menu.reporte, 'whatsapp')"
+                            class="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            Enviar por WhatsApp
+                        </button>
+                        <button type="button" role="menuitem" @click="enviar(menu.reporte, 'correo')"
+                            class="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            Enviar por correo
+                        </button>
+                    </template>
                     <a
                         role="menuitem"
                         :href="`/api/reportes/${menu.reporte.id}/orden`"
@@ -375,10 +433,28 @@ onBeforeUnmount(() => {
                         <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 011.4 0l1.6 1.6a1 1 0 010 1.4L9.5 17.5 6 18l.5-3.5 8.2-8.2z"/>
                         </svg>
-                        Editar reporte
+                        {{ esAdmin && menu.reporte.estado === 'por_validar' ? 'Revisar y validar' : 'Editar reporte' }}
+                    </Link>
+                    <Link
+                        v-if="menu.reporte.paciente_id"
+                        role="menuitem"
+                        :href="route('pacientes.historial', menu.reporte.paciente_id)"
+                        @click="cerrarMenu"
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Historial del paciente
                     </Link>
                 </div>
             </transition>
         </Teleport>
+
+        <div v-if="aviso" role="status" aria-live="polite"
+            class="fixed bottom-6 right-6 z-50 max-w-md rounded-lg px-5 py-3 shadow-xl"
+            :class="aviso.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
+            <p class="text-sm font-medium">{{ aviso.texto }}</p>
+        </div>
     </AuthenticatedLayout>
 </template>

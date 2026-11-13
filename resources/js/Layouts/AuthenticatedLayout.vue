@@ -1,7 +1,7 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const sidebarOpen = ref(true);
 const mobileSidebarOpen = ref(false);
@@ -23,6 +23,7 @@ const navigation = [
     {
         name: 'Dashboard',
         route: 'dashboard',
+        permiso: 'ver_ventas',
         icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>`
@@ -37,6 +38,7 @@ const navigation = [
     {
         name: 'Gestión de Estudios',
         route: 'gestion.estudios',
+        permiso: 'gestionar_catalogo',
         icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
         </svg>`
@@ -44,6 +46,7 @@ const navigation = [
     {
         name: 'Gestión Landing',
         route: 'gestion.landing',
+        permiso: 'gestionar_catalogo',
         icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
         </svg>`
@@ -58,6 +61,7 @@ const navigation = [
     {
         name: 'Captura Rápida',
         route: 'captura.rapida',
+        permiso: 'captura_rapida',
         icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>`
@@ -86,11 +90,28 @@ const navigation = [
     {
         name: 'Médicos',
         route: 'gestion.medicos',
+        permiso: 'gestionar_catalogo',
         icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
         </svg>`
+    },
+    {
+        name: 'Usuarios',
+        route: 'usuarios.index',
+        permiso: 'gestionar_usuarios',
+        icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>`
     }
 ];
+
+// T6: las opciones sin permiso no aparecen (y el servidor tampoco las responde)
+const page = usePage();
+const navegacion = computed(() => {
+    const permisosUsuario = page.props.auth?.permisos ?? {};
+    return navigation.filter((item) => !item.permiso || permisosUsuario[item.permiso]);
+});
+const inicio = computed(() => (page.props.auth?.permisos?.ver_ventas ? 'dashboard' : 'captura.resultados'));
 
 </script>
 
@@ -107,7 +128,7 @@ const navigation = [
         >
             <!-- Logo Section -->
             <div class="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-                <Link :href="route('dashboard')" class="flex items-center space-x-3">
+                <Link :href="route(inicio)" class="flex items-center space-x-3">
                     <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-blue-500 shadow-lg">
                         <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
                     </div>
@@ -139,7 +160,7 @@ const navigation = [
             <!-- Navigation -->
             <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
                 <Link
-                    v-for="item in navigation"
+                    v-for="item in navegacion"
                     :key="item.route"
                     :href="route(item.route)"
                     :class="[
@@ -312,7 +333,7 @@ const navigation = [
             >
                 <!-- Mobile Logo -->
                 <div class="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-                    <Link :href="route('dashboard')" class="flex items-center space-x-3">
+                    <Link :href="route(inicio)" class="flex items-center space-x-3">
                         <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-blue-500 shadow-lg">
                             <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
                         </div>
@@ -331,7 +352,7 @@ const navigation = [
                 <!-- Mobile Navigation -->
                 <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
                     <Link
-                        v-for="item in navigation"
+                        v-for="item in navegacion"
                         :key="item.route"
                         :href="route(item.route)"
                         @click="toggleMobileSidebar"
@@ -397,7 +418,8 @@ const navigation = [
         >
             <!-- Top Bar -->
             <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-                <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                <!-- min-h: los encabezados con botones (p. ej. Reporte) ocupan dos renglones sin recortarse -->
+                <div class="flex items-center justify-between gap-3 min-h-[4rem] py-2 px-4 sm:px-6 lg:px-8">
                     <!-- Mobile Menu Button -->
                     <button
                         @click="toggleMobileSidebar"

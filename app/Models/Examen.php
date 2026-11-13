@@ -1,13 +1,8 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Estudio;
-use App\Models\Examen;
-use App\Models\ResultadoExamen;
 
 class Examen extends Model
 {
@@ -20,11 +15,14 @@ class Examen extends Model
         return $this->belongsTo(Estudio::class);
     }
 
-public function resultados()
-{
-    return $this->hasMany(ResultadoExamen::class);
+    public function resultados()
+    {
+        return $this->hasMany(ResultadoExamen::class);
+    }
+
+    /** T5: tabla de niveles de referencia, en el orden definido en el catalogo. */
+    public function niveles()
+    {
+        return $this->hasMany(ExamenNivel::class)->orderBy('orden')->orderBy('id');
+    }
 }
-
-
-}
-

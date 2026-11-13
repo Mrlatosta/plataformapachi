@@ -506,6 +506,14 @@
                                                 placeholder="Ej: Perfil lipídico"
                                             />
                                         </div>
+
+                                        <div class="sm:col-span-full">
+                                            <NivelesEditor
+                                                v-model="examen.niveles"
+                                                :id-base="`examen-niveles-${index}`"
+                                                :nombre-examen="examen.nombre_examen"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -611,6 +619,7 @@
 </template>
 
 <script setup>
+import NivelesEditor from '@/Components/Catalogo/NivelesEditor.vue'
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
@@ -791,7 +800,10 @@ const abrirEditor = (estudio = null) => {
             costo: Number(estudio.costo) || 0,
             visible_publico: Boolean(estudio.visible_publico),
             // Copia para no modificar el catálogo hasta guardar
-            examenes: estudio.examenes.map(examen => ({ ...examen })),
+            examenes: estudio.examenes.map(examen => ({
+                ...examen,
+                niveles: (examen.niveles || []).map(nivel => ({ ...nivel })),
+            })),
         }
         : estudioVacio()
 
@@ -819,7 +831,7 @@ const avisoReferencia = (valor) => {
         case 'minimo':
             return { clase: 'text-emerald-700', texto: `✓ Mínimo ${formatoNumero(ref.min)}: marcará ↓ si el resultado es menor.` }
         case 'texto':
-            return { clase: 'text-amber-700', texto: 'Texto libre: se imprime tal cual, sin flechas automáticas (se pueden marcar al capturar).' }
+            return { clase: 'text-amber-700', texto: 'Texto libre: se imprime tal cual. Si son varios niveles (Normal, Elevado...), usa la tabla de niveles de abajo.' }
         default:
             return { clase: 'text-gray-500', texto: 'Sin referencia: la columna quedará vacía en el reporte.' }
     }
@@ -852,6 +864,7 @@ const agregarExamen = async () => {
         nombre_examen: '',
         unidad: '',
         valor_referencia: '',
+        niveles: [],
     })
 
     await nextTick()

@@ -15,6 +15,11 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
+        // T6: Recepción no ve reportes de ventas; su pantalla de inicio es la captura
+        if (! $request->user()->esAdmin()) {
+            return redirect()->route('captura.resultados');
+        }
+
         $request->validate([
             'fecha_inicio' => ['nullable', 'date'],
             'fecha_fin' => ['nullable', 'date'],

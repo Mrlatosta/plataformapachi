@@ -17,12 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
+            \App\Http\Middleware\CerrarSesionInactivos::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
             'medico.auth' => \App\Http\Middleware\MedicoAuth::class,
+            'rol' => \App\Http\Middleware\EnsureRol::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
