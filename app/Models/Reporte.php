@@ -68,6 +68,12 @@ class Reporte extends Model
         return $this->belongsTo(Medico::class);
     }
 
+    /** T12: comision del medico que refirio la orden. */
+    public function comision()
+    {
+        return $this->hasOne(Comision::class);
+    }
+
     public function paciente()
     {
         return $this->belongsTo(Paciente::class);

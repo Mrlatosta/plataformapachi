@@ -290,12 +290,17 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">🧪 Tipo de muestra</label>
-                                    <input v-model="form.tipo_muestra" type="text" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Sangre, orina..." />
+                                    <label for="estudio-muestra" class="block text-sm font-medium text-gray-700 mb-1">🧪 Tipo de muestra (de siempre)</label>
+                                    <input id="estudio-muestra" v-model="form.tipo_muestra" type="text" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Suero, orina..." />
+                                    <label for="estudio-opciones-muestra" class="block text-xs font-medium text-gray-600 mt-2 mb-1">Otras muestras que se pueden elegir al capturar</label>
+                                    <textarea id="estudio-opciones-muestra" v-model="opcionesMuestraTexto" rows="2" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Una por renglón: Plasma, Sangre total..." />
+                                    <p class="mt-1 text-xs text-gray-500">Suero, plasma, sangre total, orina y heces ya salen en todos los estudios.</p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">🔬 Método</label>
-                                    <input v-model="form.metodo" type="text" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Automatizado, manual..." />
+                                    <label for="estudio-metodo" class="block text-sm font-medium text-gray-700 mb-1">🔬 Método (de siempre)</label>
+                                    <input id="estudio-metodo" v-model="form.metodo" type="text" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Automatizado, manual..." />
+                                    <label for="estudio-opciones-metodo" class="block text-xs font-medium text-gray-600 mt-2 mb-1">Otros métodos que se pueden elegir al capturar</label>
+                                    <textarea id="estudio-opciones-metodo" v-model="opcionesMetodoTexto" rows="2" class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Uno por renglón: Jaffé cinético, Enzimático..." />
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">⏱️ Tiempo de entrega</label>
@@ -620,7 +625,7 @@
 
 <script setup>
 import NivelesEditor from '@/Components/Catalogo/NivelesEditor.vue'
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
@@ -640,6 +645,8 @@ const estudioVacio = () => ({
     leyenda: '',
     tipo_muestra: '',
     metodo: '',
+    opciones_muestra: [],
+    opciones_metodo: [],
     tiempo_entrega: '',
     precio: 0,
     costo: 0,
@@ -785,6 +792,14 @@ const cambiarVisibilidad = async (estudio) => {
 }
 
 // ===== Editor =====
+// T13: otras opciones de muestra y método, una por renglón. El texto se guarda
+// aparte para poder escribir renglones nuevos; la lista se arma al escribir.
+const opcionesMuestraTexto = ref('')
+const opcionesMetodoTexto = ref('')
+const aLista = (texto) => texto.split(/\r?\n/).map((o) => o.trim()).filter(Boolean)
+watch(opcionesMuestraTexto, (texto) => { form.value.opciones_muestra = aLista(texto) })
+watch(opcionesMetodoTexto, (texto) => { form.value.opciones_metodo = aLista(texto) })
+
 const hayCambios = computed(() => JSON.stringify(form.value) !== formOriginal.value)
 
 const abrirEditor = (estudio = null) => {
@@ -795,6 +810,8 @@ const abrirEditor = (estudio = null) => {
             leyenda: estudio.leyenda || '',
             tipo_muestra: estudio.tipo_muestra || '',
             metodo: estudio.metodo || '',
+            opciones_muestra: [...(estudio.opciones_muestra || [])],
+            opciones_metodo: [...(estudio.opciones_metodo || [])],
             tiempo_entrega: estudio.tiempo_entrega || '',
             precio: Number(estudio.precio) || 0,
             costo: Number(estudio.costo) || 0,
@@ -807,6 +824,8 @@ const abrirEditor = (estudio = null) => {
         }
         : estudioVacio()
 
+    opcionesMuestraTexto.value = (form.value.opciones_muestra || []).join(String.fromCharCode(10))
+    opcionesMetodoTexto.value = (form.value.opciones_metodo || []).join(String.fromCharCode(10))
     formOriginal.value = JSON.stringify(form.value)
     editorAbierto.value = true
 }

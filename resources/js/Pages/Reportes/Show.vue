@@ -7,7 +7,12 @@ import { IVA_PORCENTAJE, calcularTotales } from '@/utils/iva';
 import EstadoBadge from '@/Components/Captura/EstadoBadge.vue';
 import Interruptor from '@/Components/Captura/Interruptor.vue';
 import ResultadoCelda from '@/Components/Captura/ResultadoCelda.vue';
+import FilasRenales from '@/Components/Captura/FilasRenales.vue';
+import ListaOpciones from '@/Components/Captura/ListaOpciones.vue';
+import SelectorMedico from '@/Components/Captura/SelectorMedico.vue';
+import { analizarFuncionRenal } from '@/utils/funcionRenal';
 import {
+    TIPOS_MUESTRA_COMUNES,
     aplicarMarcaManual,
     formatoFechaHora,
     marcarRango,
@@ -33,7 +38,8 @@ const busquedaEstudio = ref('');
 const guardando = ref(false);
 const validando = ref(false);
 const medicosDisponibles = ref([]);
-const modoMedico = ref('registrado');
+// T12: nombre escrito a mano en órdenes anteriores, hasta que se elija de la lista
+const medicoLegado = ref('');
 const seleccionados = ref([]); // ids para reporte complementario
 const hayCambios = ref(false);
 
@@ -93,14 +99,9 @@ const hydrateForm = () => {
     form.aplica_iva = Boolean(data.aplica_iva);
     form.descuento = Number(data.descuento) || 0;
 
-    if (data.medico_id) {
-        modoMedico.value = 'registrado';
-    } else if (!data.medico_solicitante || data.medico_solicitante === 'N/A') {
-        modoMedico.value = 'na';
-        form.medico_solicitante = 'N/A';
-    } else {
-        modoMedico.value = 'otro';
-    }
+    medicoLegado.value = !data.medico_id && !/^(n\/?a|a quien corresponda\.?)$/i.test(String(data.medico_solicitante || '').trim())
+        ? (data.medico_solicitante || '')
+        : '';
 
     form.cliente.nombre = data.nombre_cliente || '';
     form.cliente.email = data.email || '';
@@ -126,6 +127,12 @@ const hydrateForm = () => {
 
 const pacienteParaRango = computed(() => ({ sexo: form.cliente.sexo, edad: form.cliente.edad }));
 const listasDeExamenes = () => form.estudios.map((e) => e.resultados);
+
+// T10: TFGe y RAC debajo de su analito (se recalculan solos; no se guardan)
+const renal = computed(() => analizarFuncionRenal(
+    form.estudios.map((e) => ({ tipo_muestra: e.tipo_muestra, examenes: e.resultados })),
+    pacienteParaRango.value,
+));
 
 const onEscribir = (resultado) => {
     resultado.marca_manual = false;
@@ -158,14 +165,12 @@ onMounted(async () => {
     hayCambios.value = false;
     const [estudiosRes, medicosRes] = await Promise.all([axios.get('/api/estudios'), axios.get('/api/medicos')]);
     estudiosDisponibles.value = estudiosRes.data;
-    medicosDisponibles.value = medicosRes.data.filter((m) => m.activo);
+    medicosDisponibles.value = medicosRes.data;
     anteriores.cargar(props.reporte.paciente_id, props.reporte.id);
 });
 
-const onModoMedicoChange = (modo) => {
-    modoMedico.value = modo;
-    form.medico_id = null;
-    form.medico_solicitante = modo === 'na' ? 'N/A' : '';
+const agregarMedico = (medico) => {
+    if (!medicosDisponibles.value.some((m) => m.id === medico.id)) medicosDisponibles.value.push(medico);
 };
 
 const formatCurrency = (value) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value || 0);
@@ -213,6 +218,10 @@ const agregarEstudio = (estudio) => {
         nombre: estudio.nombre,
         tipo_muestra: estudio.tipo_muestra || '',
         metodo: estudio.metodo || '',
+        muestra_catalogo: estudio.tipo_muestra || '',
+        metodo_catalogo: estudio.metodo || '',
+        opciones_muestra: estudio.opciones_muestra || [],
+        opciones_metodo: estudio.opciones_metodo || [],
         elaboro: esAdmin.value ? RESPONSABLE : '',
         valido: RESPONSABLE,
         observaciones: '',
@@ -457,24 +466,9 @@ const imprimirComplementario = () => {
                                 class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" :class="{ 'bg-gray-100': !esAdmin }" />
                         </div>
                         <div class="sm:col-span-2 lg:col-span-4">
-                            <span class="block text-sm font-medium text-gray-700 mb-1">Médico solicitante</span>
-                            <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium mb-2" role="group" aria-label="Tipo de médico">
-                                <button type="button" @click="onModoMedicoChange('registrado')" :aria-pressed="modoMedico === 'registrado'"
-                                    :class="['flex-1 py-1.5', modoMedico === 'registrado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">Registrado</button>
-                                <button type="button" @click="onModoMedicoChange('otro')" :aria-pressed="modoMedico === 'otro'"
-                                    :class="['flex-1 py-1.5 border-x border-gray-300', modoMedico === 'otro' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">Otro</button>
-                                <button type="button" @click="onModoMedicoChange('na')" :aria-pressed="modoMedico === 'na'"
-                                    :class="['flex-1 py-1.5', modoMedico === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">N/A</button>
-                            </div>
-                            <select v-if="modoMedico === 'registrado'" v-model="form.medico_id" aria-label="Médico registrado"
-                                @change="form.medico_solicitante = medicosDisponibles.find(m => m.id === form.medico_id)?.nombre ?? ''"
-                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500 bg-white px-3 py-2">
-                                <option :value="null">— Selecciona un médico —</option>
-                                <option v-for="m in medicosDisponibles" :key="m.id" :value="m.id">{{ m.nombre }}{{ m.especialidad ? ` (${m.especialidad})` : '' }}</option>
-                            </select>
-                            <input v-else-if="modoMedico === 'otro'" v-model="form.medico_solicitante" type="text" placeholder="Nombre del médico" aria-label="Nombre del médico"
-                                class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2" />
-                            <div v-else class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-500">N/A — Sin médico solicitante</div>
+                            <label for="medico-solicitante" class="block text-sm font-medium text-gray-700 mb-1">Médico solicitante</label>
+                            <SelectorMedico id="medico-solicitante" v-model="form.medico_id" :medicos="medicosDisponibles" :legado="medicoLegado"
+                                @nombre="(n) => (form.medico_solicitante = n)" @creado="agregarMedico" />
                         </div>
                     </div>
                 </div>
@@ -550,6 +544,7 @@ const imprimirComplementario = () => {
                                         <span v-if="estudio.capturado_por">Capturó {{ estudio.capturado_por }} · {{ formatoFechaHora(estudio.capturado_at) }}</span>
                                         <span v-if="estudio.validado_por">· Validó {{ estudio.validado_por }} · {{ formatoFechaHora(estudio.validado_at) }}</span>
                                         <span v-if="estudio.entregado_at">· Entregado {{ formatoFechaHora(estudio.entregado_at) }}</span>
+                                        <span v-if="estudio.muestra_metodo_cambiado_por" class="text-amber-700">· Muestra/método cambiados por {{ estudio.muestra_metodo_cambiado_por }} · {{ formatoFechaHora(estudio.muestra_metodo_cambiado_at) }}</span>
                                     </p>
                                 </div>
                             </div>
@@ -582,11 +577,13 @@ const imprimirComplementario = () => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" :class="esAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'">
                             <div>
                                 <label :for="`muestra-${index}`" class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
-                                <input :id="`muestra-${index}`" v-model="estudio.tipo_muestra" type="text" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" />
+                                <ListaOpciones :id="`muestra-${index}`" v-model="estudio.tipo_muestra" :de-siempre="estudio.muestra_catalogo"
+                                    :opciones="estudio.opciones_muestra" :comunes="TIPOS_MUESTRA_COMUNES" :disabled="!esAdmin" />
                             </div>
                             <div>
                                 <label :for="`metodo-${index}`" class="block text-sm font-medium text-gray-700 mb-1">Método</label>
-                                <input :id="`metodo-${index}`" v-model="estudio.metodo" type="text" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" />
+                                <ListaOpciones :id="`metodo-${index}`" v-model="estudio.metodo" :de-siempre="estudio.metodo_catalogo"
+                                    :opciones="estudio.opciones_metodo" :disabled="!esAdmin" />
                             </div>
                             <div>
                                 <label :for="`elaboro-${index}`" class="block text-sm font-medium text-gray-700 mb-1">Elaboró</label>
@@ -622,7 +619,8 @@ const imprimirComplementario = () => {
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
-                                    <tr v-for="(resultado, rIndex) in estudio.resultados" :key="`${resultado.examen_id}-${resultado.id || 'nuevo'}`" class="align-top">
+                                    <template v-for="(resultado, rIndex) in estudio.resultados" :key="`${resultado.examen_id}-${resultado.id || 'nuevo'}`">
+                                    <tr class="align-top">
                                         <td class="px-3 py-2 text-sm text-gray-900">
                                             <label :for="`res-${index}-${rIndex}`">{{ resultado.nombre_examen }}</label>
                                             <span v-if="resultado.unidad" class="block text-xs text-gray-500">{{ resultado.unidad }}</span>
@@ -645,6 +643,8 @@ const imprimirComplementario = () => {
                                             />
                                         </td>
                                     </tr>
+                                    <FilasRenales :filas="renal.filas[`${index}:${rIndex}`]" />
+                                    </template>
                                 </tbody>
                             </table>
                         </div>

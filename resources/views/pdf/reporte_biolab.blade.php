@@ -261,6 +261,25 @@
             }
 
 
+            /* T10: hoja de perfil renal */
+            .perfil-renal { font-size: 10px; }
+            .pr-titulo { font-size: 13px; font-weight: bold; margin: 2px 0 6px 0; }
+            .pr-subtitulo { font-size: 10px; font-weight: bold; margin: 6px 0 2px 0; }
+            .pr-tabla { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 11px; }
+            .pr-tabla th { background-color: #08cc71; color: white; text-align: left; padding: 3px 4px; font-size: 11px; }
+            .pr-tabla td { padding: 3px 4px; border-bottom: 0.5px solid #e5e7eb; }
+            .pr-resaltada td { background-color: #ecfdf5; font-weight: bold; }
+            .pr-ecuacion { font-size: 8px; font-weight: normal; color: #6b7280; }
+            .pr-franja { width: 100%; border-collapse: collapse; margin-bottom: 6px; table-layout: fixed; }
+            .pr-franja td { border: 0.5px solid #d1d5db; text-align: center; font-size: 9px; padding: 3px 2px; vertical-align: top; }
+            .pr-franja td.pr-actual { background-color: #fef3c7; border: 1.5px solid #f59e0b; }
+            .pr-chico { font-size: 7.5px; color: #4b5563; }
+            .pr-kdigo { border: 1.5px solid #08cc71; border-radius: 4px; padding: 5px 8px; margin: 4px 0 6px 0; }
+            .pr-kdigo-etiqueta { font-weight: bold; font-size: 10px; }
+            .pr-kdigo-valor { font-weight: bold; font-size: 16px; margin: 0 10px; }
+            .pr-kdigo-texto { font-size: 9px; color: #374151; }
+            .pr-letra-chica { font-size: 7.5px; line-height: 1.3; color: #374151; text-align: justify; }
+
             .watermark {
                 position: fixed;
                 top: 40%;
@@ -412,6 +431,33 @@
                 </div>
             @endif
 
+            @php
+                $hayResultados = $reporte->estudios->contains(fn ($e) => collect($e->resultados)
+                    ->contains(fn ($r) => trim((string) $r->resultado) !== '' && strpos((string) $r->resultado, '*') === false));
+            @endphp
+            @php
+                // T10: TFGe / RAC calculados. Con cistatina C o albuminuria sale la hoja
+                // de perfil renal; los estudios que solo traen analitos renales se
+                // imprimen ahi (no en su tabla) para no repetirlos.
+                $renal = \App\Support\FuncionRenal::analizar($reporte);
+                $conPerfilRenal = $renal['valores']['cistatina'] !== null || $renal['valores']['albumina_orina'] !== null;
+                $estudiosPerfil = $conPerfilRenal
+                    ? $reporte->estudios->filter(function ($e) use ($renal) {
+                        $conValor = collect($e->resultados)->filter(fn ($r) => trim((string) $r->resultado) !== '' && strpos((string) $r->resultado, '*') === false);
+                        $renales = collect($renal['ubicados'])->filter(fn ($u) => $u['estudio'] === $e)->count();
+                        return $conValor->isNotEmpty() && $conValor->count() === $renales;
+                    })
+                    : collect();
+                $impresos = 0;
+            @endphp
+
+            @unless($hayResultados)
+                {{-- Orden sin nada capturado: en vez de una hoja vacia, un aviso --}}
+                <div class="study-block" style="margin-top: 30px; text-align: center; font-size: 12px; color: #6b7280;">
+                    Esta orden aún no tiene resultados capturados.
+                </div>
+            @endunless
+
             @foreach ($reporte->estudios as $estudio)
                 @php
                     // Un '*' capturado como resultado significa que ese examen no se imprime
@@ -421,8 +467,30 @@
 
                     // Estudios cortos se mantienen en una hoja; los largos pueden partirse
                     // entre renglones (nunca a la mitad de uno) y repiten su encabezado.
-                    $renglones = $visibles->count() + $visibles->sum(fn ($r) => count($r->examen->niveles ?? []));
-                    $cabeEnUnaHoja = $renglones <= 22;
+                    // Se estima la altura por lineas (no por renglones): una referencia de
+                    // 3 lineas triplica el renglon. Si la estimacion falla, ReportePdf lo
+                    // detecta y vuelve a generar con $mantenerJuntos = false.
+                    $lineas = fn ($texto, $ancho) => collect(preg_split('/\R/u', trim((string) $texto)))
+                        ->sum(fn ($l) => max(1, (int) ceil(mb_strlen($l) / $ancho)));
+                    $alturaPx = 70; // titulo + encabezado de columnas + Validó/método
+                    foreach ($visibles as $r) {
+                        $niv = count($r->examen->niveles ?? []);
+                        $alturaPx += 6 + 20 * max(
+                            $lineas($r->examen->nombre_examen, 42),
+                            // Texto largo sin unidad ni referencia sale como nota a todo el ancho (T7)
+                            $lineas($r->resultado, trim((string) $r->examen->unidad) === '' && trim((string) $r->examen->valor_referencia) === '' && mb_strlen((string) $r->resultado) > 30 ? 110 : 14),
+                            $lineas($r->examen->valor_referencia, 24),
+                        ) + ($niv ? 18 * ($niv + 1) + 8 : 0);
+                    }
+                    if (! $conPerfilRenal) {
+                        foreach ($visibles as $r) {
+                            $alturaPx += count($renal['filas'][\App\Support\FuncionRenal::claveResultado($r)] ?? []) * 175;
+                        }
+                    }
+                    $alturaPx += trim((string) $estudio->observaciones) !== '' ? 14 * $lineas($estudio->observaciones, 120) + 16 : 0;
+                    $alturaPx += ! empty($estudio->estudio->leyenda) ? 14 * $lineas($estudio->estudio->leyenda, 120) + 8 : 0;
+                    // Cuerpo de una hoja carta con estos margenes: ~720px
+                    $cabeEnUnaHoja = ($mantenerJuntos ?? true) && $alturaPx <= config('reportes.altura_util_px', 620);
 
                     $porSeccion = $visibles->groupBy(fn ($r) => ($r->examen->seccion ?? null) ?: 'Sin Sección');
                     $sexo = $reporte->sexo;
@@ -433,6 +501,8 @@
                 @endphp
 
                 @continue($sinResultados)
+                @continue($estudiosPerfil->contains(fn ($e) => $e === $estudio))
+                @php $impresos++; @endphp
 
                 <div class="study-block {{ $cabeEnUnaHoja ? 'sin-corte' : '' }}" @if(!$loop->first) style="margin-top: 8px;" @endif>
                     <table class="tablaExamenes">
@@ -518,13 +588,20 @@
                                                 </td>
                                             </tr>
                                         @endif
+
+                                        @php $filasRenales = $conPerfilRenal ? [] : ($renal['filas'][\App\Support\FuncionRenal::claveResultado($resultado)] ?? []); @endphp
+                                        @if(count($filasRenales))
+                                            {{-- T10: TFGe con su tabla G1–G5 y la nota fija, debajo de la creatinina --}}
+                                            @include('pdf.partials.renal_filas', ['filas' => $filasRenales])
+                                        @endif
                                     @endif
                                 @endforeach
                             @endforeach
                         </tbody>
                     </table>
 
-                    <table width="100%" style="margin-top: 8px; font-size: 8px;">
+                    {{-- No se queda solo en otra hoja: se lleva consigo el ultimo renglon --}}
+                    <table width="100%" style="margin-top: 8px; font-size: 8px; page-break-before: avoid;">
                         <tr>
                             <td style="vertical-align: top; width: 50%;">
                                 @if(! method_exists($estudio, 'estaValidado') || $estudio->estaValidado())
@@ -551,6 +628,10 @@
                     @endif
                 </div>
             @endforeach
+
+            @if($conPerfilRenal)
+                @include('pdf.partials.perfil_renal', ['saltoAntes' => $impresos > 0])
+            @endif
         </main>
     </body>
 </html>

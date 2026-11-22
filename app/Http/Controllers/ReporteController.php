@@ -6,11 +6,13 @@ use App\Models\CotizacionEstudio;
 use App\Models\Cotizacion;
 use App\Models\Estudio;
 use App\Models\Examen;
+use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Reporte;
 use App\Models\ReporteEstudio;
 use App\Models\ResultadoExamen;
 use App\Models\User;
+use App\Services\Comisiones;
 use App\Services\ReportePdf;
 use App\Support\QrVerificacion;
 use App\Support\RangoReferencia;
@@ -211,6 +213,41 @@ class ReporteController extends Controller
         ];
     }
 
+    /** T12: el nombre del medico sale de la lista; sin medico es "A quien corresponda". */
+    private function nombreMedico($medicoId): ?string
+    {
+        return $medicoId ? Medico::whereKey($medicoId)->value('nombre') : null;
+    }
+
+    /**
+     * T13: tipo de muestra y metodo que se guardan para un estudio de la orden.
+     * Recepcion no los cambia: se queda lo guardado o, si es nuevo, lo de siempre
+     * del catalogo. El administrador elige de la lista; si queda distinto a lo que
+     * habia (o a lo de siempre) se registra quien lo cambio y cuando.
+     */
+    private function muestraYMetodo(array $estudioData, ?Estudio $catalogo, User $usuario, ?ReporteEstudio $actual = null): array
+    {
+        $deSiempre = fn (string $campo) => $actual
+            ? (string) $actual->{$campo}
+            : (in_array(trim((string) $catalogo?->{$campo}), ['', 'N/A'], true) ? '' : trim((string) $catalogo->{$campo}));
+
+        if (! $usuario->esAdmin()) {
+            return ['tipo_muestra' => $deSiempre('tipo_muestra'), 'metodo' => $deSiempre('metodo')];
+        }
+
+        $datos = [
+            'tipo_muestra' => trim((string) ($estudioData['tipo_muestra'] ?? '')),
+            'metodo' => trim((string) ($estudioData['metodo'] ?? '')),
+        ];
+
+        if ($datos['tipo_muestra'] !== $deSiempre('tipo_muestra') || $datos['metodo'] !== $deSiempre('metodo')) {
+            $datos['muestra_metodo_cambiado_por'] = $usuario->id;
+            $datos['muestra_metodo_cambiado_at'] = now();
+        }
+
+        return $datos;
+    }
+
     public function store(Request $request)
     {
         $usuario = $request->user();
@@ -218,7 +255,9 @@ class ReporteController extends Controller
         [$precios, $descuento] = $this->preciosYDescuento($request, $validated);
         $cliente = $validated['cliente'];
 
-        $reporte = DB::transaction(function () use ($validated, $cliente, $usuario, $precios, $descuento) {
+        $catalogo = Estudio::whereIn('id', collect($validated['estudios'])->pluck('id'))->get()->keyBy('id');
+
+        $reporte = DB::transaction(function () use ($validated, $cliente, $usuario, $precios, $descuento, $catalogo) {
             $paciente = $this->resolverPaciente($cliente, $validated['paciente_id'] ?? null);
 
             $reporte = Reporte::create([
@@ -234,7 +273,7 @@ class ReporteController extends Controller
                 'fecha_reporte' => $validated['fecha_reporte'],
                 // Recepcion: la fecha de validacion se pone cuando el Q.F.B. valida
                 'fecha_validacion' => $usuario->esAdmin() ? $validated['fecha_validacion'] : null,
-                'medico_solicitante' => $validated['medico_solicitante'] ?? null,
+                'medico_solicitante' => $this->nombreMedico($validated['medico_id'] ?? null),
                 'medico_id' => $validated['medico_id'] ?? null,
                 'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'descuento' => $descuento,
@@ -244,8 +283,7 @@ class ReporteController extends Controller
                 $reporteEstudio = $reporte->estudios()->create([
                     'estudio_id' => $estudioData['id'],
                     'orden' => $estudioData['orden'] ?? $indice,
-                    'tipo_muestra' => $estudioData['tipo_muestra'] ?? '',
-                    'metodo' => $estudioData['metodo'] ?? '',
+                    ...$this->muestraYMetodo($estudioData, $catalogo->get($estudioData['id']), $usuario),
                     'elaboro' => ($estudioData['elaboro'] ?? '') ?: $usuario->name,
                     'precio' => $precios[$estudioData['id']] ?? 0,
                     'observaciones' => $estudioData['observaciones'] ?? null,
@@ -275,6 +313,9 @@ class ReporteController extends Controller
             return $reporte;
         });
 
+        // T12: comision del medico que refiere
+        Comisiones::sincronizar($reporte->fresh('estudios'));
+
         $pendientes = $reporte->estudios()->whereIn('estado', [ReporteEstudio::PENDIENTE, ReporteEstudio::CAPTURADO])->count();
 
         return response()->json([
@@ -303,7 +344,7 @@ class ReporteController extends Controller
             'toma_muestra' => $validated['toma_muestra'],
             'fecha_reporte' => $validated['fecha_reporte'],
             'fecha_validacion' => $validated['fecha_validacion'] ?? null,
-            'medico_solicitante' => $validated['medico_solicitante'] ?? null,
+            'medico_solicitante' => $this->nombreMedico($validated['medico_id'] ?? null),
             'medico_id' => $validated['medico_id'] ?? null,
             'aplica_iva' => filter_var($validated['aplica_iva'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'descuento' => $descuento,
@@ -322,8 +363,8 @@ class ReporteController extends Controller
                 $reporteEstudio = new ReporteEstudio([
                     'estudio_id' => $estudioData['id'],
                     'orden' => $estudioData['orden'] ?? $indice,
-                    'tipo_muestra' => $estudioData['tipo_muestra'] ?? null,
-                    'metodo' => $estudioData['metodo'] ?? null,
+                    ...collect($this->muestraYMetodo($estudioData, $estudios->get($estudioData['id']), $usuario))
+                        ->only(['tipo_muestra', 'metodo'])->all(),
                     'elaboro' => $estudioData['elaboro'] ?? null,
                     'precio' => $precios[$estudioData['id']] ?? 0,
                     'observaciones' => $estudioData['observaciones'] ?? null,
@@ -647,6 +688,7 @@ class ReporteController extends Controller
             'paciente_id' => 'nullable|integer|exists:pacientes,id',
             'estudios' => 'nullable|array',
             'estudios.*.incluir_en_reporte' => 'nullable|boolean',
+            'medico_id' => 'nullable|exists:medicos,id',
         ]);
 
         $usuario = $request->user();
@@ -654,11 +696,23 @@ class ReporteController extends Controller
         $reporte = Reporte::with('estudios.resultados')->findOrFail($id);
 
         DB::transaction(function () use ($request, $reporte, $usuario, $admin) {
-            $campos = ['toma_muestra', 'fecha_reporte', 'medico_solicitante', 'medico_id'];
+            $campos = ['toma_muestra', 'fecha_reporte'];
             if ($admin) {
                 $campos[] = 'fecha_validacion';
             }
             $reporte->update($request->only($campos));
+
+            // T12: el medico se elige de la lista. Una orden anterior con el nombre escrito
+            // a mano lo conserva mientras no se elija otro.
+            if ($request->exists('medico_id')) {
+                $medicoId = $request->input('medico_id') ?: null;
+                $reporte->update([
+                    'medico_id' => $medicoId,
+                    'medico_solicitante' => $medicoId
+                        ? $this->nombreMedico($medicoId)
+                        : ($request->input('medico_solicitante') === $reporte->medico_solicitante ? $reporte->medico_solicitante : null),
+                ]);
+            }
 
             if ($request->has('aplica_iva')) {
                 $reporte->update(['aplica_iva' => filter_var($request->input('aplica_iva'), FILTER_VALIDATE_BOOLEAN)]);
@@ -707,7 +761,8 @@ class ReporteController extends Controller
                     $estudio->delete();
                 });
 
-            $catalogo = Estudio::whereIn('id', $estudiosPayload->pluck('estudio_id')->filter())->pluck('precio', 'id');
+            $estudiosCatalogo = Estudio::whereIn('id', $estudiosPayload->pluck('estudio_id')->filter())->get()->keyBy('id');
+            $catalogo = $estudiosCatalogo->pluck('precio', 'id');
 
             foreach ($estudiosPayload as $indice => $estudioData) {
                 $reporteEstudio = ! empty($estudioData['id'])
@@ -716,8 +771,12 @@ class ReporteController extends Controller
 
                 $datos = [
                     'orden' => $estudioData['orden'] ?? $indice,
-                    'tipo_muestra' => $estudioData['tipo_muestra'] ?? '',
-                    'metodo' => $estudioData['metodo'] ?? '',
+                    ...$this->muestraYMetodo(
+                        $estudioData,
+                        $estudiosCatalogo->get($estudioData['estudio_id'] ?? $reporteEstudio?->estudio_id),
+                        $usuario,
+                        $reporteEstudio,
+                    ),
                     'elaboro' => $estudioData['elaboro'] ?? '',
                     'observaciones' => $estudioData['observaciones'] ?? null,
                 ];
@@ -763,6 +822,9 @@ class ReporteController extends Controller
                 $this->guardarResultados($nuevo, $resultados, $reporte);
             }
         });
+
+        // T12: si cambiaron estudios, descuento, IVA o medico, la comision se recalcula
+        Comisiones::sincronizar($reporte->fresh('estudios'));
 
         return response()->json(['message' => 'Reporte actualizado correctamente']);
     }
@@ -919,6 +981,7 @@ class ReporteController extends Controller
             'estudios.resultados.examen.niveles',
             'estudios.capturadoPor:id,name',
             'estudios.validadoPor:id,name',
+            'estudios.muestraMetodoCambiadoPor:id,name',
         ])->findOrFail($id);
 
         return Inertia::render('Reportes/Show', [
@@ -952,6 +1015,13 @@ class ReporteController extends Controller
                     'valido' => $re->valido,
                     'tipo_muestra' => $re->tipo_muestra,
                     'metodo' => $re->metodo,
+                    // T13: lo de siempre y las otras opciones del catalogo, y quien lo cambio
+                    'muestra_catalogo' => $re->estudio->tipo_muestra,
+                    'metodo_catalogo' => $re->estudio->metodo,
+                    'opciones_muestra' => $re->estudio->opciones_muestra ?? [],
+                    'opciones_metodo' => $re->estudio->opciones_metodo ?? [],
+                    'muestra_metodo_cambiado_por' => $re->muestraMetodoCambiadoPor?->name,
+                    'muestra_metodo_cambiado_at' => $re->muestra_metodo_cambiado_at,
                     'leyenda' => $re->estudio->leyenda,
                     'observaciones' => $re->observaciones,
                     'incluir_en_reporte' => $re->incluir_en_reporte !== false,

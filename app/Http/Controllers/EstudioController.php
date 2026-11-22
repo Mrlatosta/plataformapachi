@@ -19,6 +19,11 @@ class EstudioController extends Controller
             'precio' => 'nullable|numeric|min:0',
             'costo' => 'nullable|numeric|min:0',
             'visible_publico' => 'nullable|boolean',
+            // T13: otras opciones de tipo de muestra y metodo para elegir al capturar
+            'opciones_muestra' => 'nullable|array|max:20',
+            'opciones_muestra.*' => 'nullable|string|max:255',
+            'opciones_metodo' => 'nullable|array|max:20',
+            'opciones_metodo.*' => 'nullable|string|max:255',
             'examenes' => 'nullable|array',
             // T5: tabla de niveles de referencia por examen
             'examenes.*.niveles' => 'nullable|array|max:20',
@@ -76,7 +81,32 @@ class EstudioController extends Controller
             'precio' => $request->precio ?? 0,
             'costo' => $request->costo ?? 0,
             'visible_publico' => $request->boolean('visible_publico'),
+            'opciones_muestra' => self::opcionesLimpias($request->input('opciones_muestra'), $request->tipo_muestra),
+            'opciones_metodo' => self::opcionesLimpias($request->input('opciones_metodo'), $request->metodo),
         ];
+    }
+
+    /**
+     * Sin vacios, sin repetidos (sin importar mayusculas) y sin la opcion de siempre,
+     * que ya esta en tipo_muestra / metodo.
+     */
+    private static function opcionesLimpias($opciones, $deSiempre): array
+    {
+        $vistas = [mb_strtolower(trim((string) $deSiempre))];
+
+        return collect(is_array($opciones) ? $opciones : [])
+            ->map(fn ($o) => trim((string) $o))
+            ->filter(function ($o) use (&$vistas) {
+                $clave = mb_strtolower($o);
+                if ($o === '' || in_array($clave, $vistas, true)) {
+                    return false;
+                }
+                $vistas[] = $clave;
+
+                return true;
+            })
+            ->values()
+            ->all();
     }
 
     // Obtener todos los estudios con sus exámenes
@@ -87,7 +117,7 @@ class EstudioController extends Controller
                   ->orderBy('orden', 'asc');
         }, 'examenes.niveles'])
         ->orderBy('nombre', 'asc')
-        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'tiempo_entrega', 'precio', 'costo', 'visible_publico']);
+        ->get(['id', 'nombre', 'leyenda', 'tipo_muestra', 'metodo', 'opciones_muestra', 'opciones_metodo', 'tiempo_entrega', 'precio', 'costo', 'visible_publico']);
     }
 
     // Crear nuevo estudio con exámenes

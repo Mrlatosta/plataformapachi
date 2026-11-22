@@ -41,36 +41,9 @@
               </p>
             </div>
             <div class="space-y-2">
-              <span class="block text-sm font-medium text-gray-700">
-                Médico solicitante <span class="text-gray-400 text-xs">(opcional)</span>
-              </span>
-              <div class="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium" role="group" aria-label="Tipo de médico">
-                <button type="button" @click="onModoMedicoChange('registrado')" :aria-pressed="modoMedico === 'registrado'"
-                  :class="['flex-1 py-1.5 transition-colors', modoMedico === 'registrado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-                  Registrado
-                </button>
-                <button type="button" @click="onModoMedicoChange('otro')" :aria-pressed="modoMedico === 'otro'"
-                  :class="['flex-1 py-1.5 border-x border-gray-300 transition-colors', modoMedico === 'otro' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-                  Otro
-                </button>
-                <button type="button" @click="onModoMedicoChange('na')" :aria-pressed="modoMedico === 'na'"
-                  :class="['flex-1 py-1.5 transition-colors', modoMedico === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-                  N/A
-                </button>
-              </div>
-              <select v-if="modoMedico === 'registrado'" v-model="form.medico_id" aria-label="Médico registrado"
-                @change="form.medico_solicitante = medicosDisponibles.find(m => m.id === form.medico_id)?.nombre ?? ''"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm">
-                <option :value="null">— Selecciona un médico —</option>
-                <option v-for="m in medicosDisponibles" :key="m.id" :value="m.id">
-                  {{ m.nombre }}{{ m.especialidad ? ` (${m.especialidad})` : '' }}
-                </option>
-              </select>
-              <input v-else-if="modoMedico === 'otro'" v-model="form.medico_solicitante" type="text" placeholder="Nombre del médico" aria-label="Nombre del médico"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
-              <div v-else class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-500">
-                N/A — Sin médico solicitante
-              </div>
+              <label for="medico-solicitante" class="block text-sm font-medium text-gray-700">Médico solicitante</label>
+              <SelectorMedico id="medico-solicitante" v-model="form.medico_id" :medicos="medicosDisponibles"
+                @nombre="(n) => (form.medico_solicitante = n)" @creado="agregarMedico" />
             </div>
           </div>
         </section>
@@ -240,11 +213,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="esAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'">
                   <div class="space-y-1">
                     <label :for="`muestra-${index}`" class="block text-sm font-medium text-gray-700">Tipo de muestra</label>
-                    <input :id="`muestra-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.tipo_muestra" />
+                    <ListaOpciones :id="`muestra-${index}`" v-model="estudio.tipo_muestra" :de-siempre="estudio.muestra_catalogo"
+                      :opciones="estudio.opciones_muestra" :comunes="TIPOS_MUESTRA_COMUNES" :disabled="!esAdmin" />
                   </div>
                   <div class="space-y-1">
                     <label :for="`metodo-${index}`" class="block text-sm font-medium text-gray-700">Método</label>
-                    <input :id="`metodo-${index}`" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" v-model="estudio.metodo" />
+                    <ListaOpciones :id="`metodo-${index}`" v-model="estudio.metodo" :de-siempre="estudio.metodo_catalogo"
+                      :opciones="estudio.opciones_metodo" :disabled="!esAdmin" />
                   </div>
                   <div class="space-y-1">
                     <label :for="`elaboro-${index}`" class="block text-sm font-medium text-gray-700">Elaboró</label>
@@ -280,7 +255,8 @@
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                      <tr v-for="(examen, exIndex) in estudio.examenes" :key="examen.id" class="align-top">
+                      <template v-for="(examen, exIndex) in estudio.examenes" :key="examen.id">
+                      <tr class="align-top">
                         <td class="px-4 py-3 text-sm text-gray-900">
                           <label :for="`res-${index}-${exIndex}`">{{ examen.nombre_examen }}</label>
                           <span v-if="examen.unidad" class="block text-xs text-gray-500">{{ examen.unidad }}</span>
@@ -304,6 +280,8 @@
                           />
                         </td>
                       </tr>
+                      <FilasRenales :filas="renal.filas[`${index}:${exIndex}`]" />
+                      </template>
                     </tbody>
                   </table>
                 </div>
@@ -436,7 +414,12 @@ import { IVA_PORCENTAJE, calcularTotales } from '@/utils/iva'
 import PacienteBuscador from '@/Components/Captura/PacienteBuscador.vue'
 import ResultadoCelda from '@/Components/Captura/ResultadoCelda.vue'
 import Interruptor from '@/Components/Captura/Interruptor.vue'
+import FilasRenales from '@/Components/Captura/FilasRenales.vue'
+import ListaOpciones from '@/Components/Captura/ListaOpciones.vue'
+import SelectorMedico from '@/Components/Captura/SelectorMedico.vue'
+import { analizarFuncionRenal } from '@/utils/funcionRenal'
 import {
+  TIPOS_MUESTRA_COMUNES,
   aplicarMarcaManual,
   formatoFechaCorta,
   marcarRango,
@@ -502,14 +485,12 @@ const documentoPreview = ref('reporte')
 
 const estudiosDisponibles = ref([])
 const medicosDisponibles = ref([])
-const modoMedico = ref('registrado')
 const busquedaEstudio = ref('')
 const estudiosFiltrados = ref([])
 
-const onModoMedicoChange = (modo) => {
-  modoMedico.value = modo
-  form.medico_id = null
-  form.medico_solicitante = modo === 'na' ? 'N/A' : ''
+// T12: médico dado de alta desde la captura
+const agregarMedico = (medico) => {
+  if (!medicosDisponibles.value.some(m => m.id === medico.id)) medicosDisponibles.value.push(medico)
 }
 
 const cargarEstudios = async () => {
@@ -525,7 +506,7 @@ const cargarEstudios = async () => {
 const cargarMedicos = async () => {
   try {
     const { data } = await axios.get('/api/medicos')
-    medicosDisponibles.value = data.filter(m => m.activo)
+    medicosDisponibles.value = data
   } catch (e) {
     console.error('Error al cargar médicos:', e)
   }
@@ -581,6 +562,9 @@ watch(pacienteParaRango, () => {
   }))
 }, { deep: true })
 
+// T10: TFGe y RAC debajo de su analito; se recalculan al capturar o al cambiar edad/sexo
+const renal = computed(() => analizarFuncionRenal(form.estudios, pacienteParaRango.value))
+
 // ===== Estudios =====
 const listasDeExamenes = () => form.estudios.map(e => e.examenes)
 
@@ -590,6 +574,11 @@ function nuevoEstudio(estudio, precio) {
     nombre: estudio.nombre,
     tipo_muestra: (estudio.tipo_muestra && estudio.tipo_muestra !== 'N/A') ? estudio.tipo_muestra : '',
     metodo: (estudio.metodo && estudio.metodo !== 'N/A') ? estudio.metodo : '',
+    // T13: lo de siempre del catálogo y las otras opciones para elegir
+    muestra_catalogo: estudio.tipo_muestra || '',
+    metodo_catalogo: estudio.metodo || '',
+    opciones_muestra: estudio.opciones_muestra || [],
+    opciones_metodo: estudio.opciones_metodo || [],
     elaboro: esAdmin.value ? RESPONSABLE : nombreUsuario.value,
     valido: RESPONSABLE,
     precio,
@@ -788,7 +777,6 @@ function limpiarFormulario() {
   form.medico_id = null
   form.aplica_iva = false
   form.descuento = 0
-  modoMedico.value = 'registrado'
   pacienteSeleccionado.value = null
   anteriores.cargar(null)
 }

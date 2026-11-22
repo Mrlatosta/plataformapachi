@@ -6,6 +6,7 @@ use App\Models\Reporte;
 use App\Models\ReporteEstudio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Arma el PDF de resultados de una orden.
@@ -51,15 +52,80 @@ class ReportePdf
 
     public static function generar(Reporte $reporte, array $opciones = [])
     {
-        $pdf = Pdf::loadView('pdf.reporte_biolab', [
+        // 1er intento: los estudios que parecen caber en una hoja no se parten.
+        $pdf = self::cargar($reporte, $opciones, true);
+        $vacias = self::renderizarYContarHojasVacias($pdf);
+        $reintento = false;
+
+        // T3: si aun asi alguno no cupo, DomPDF lo manda entero a la hoja siguiente y
+        // deja una hoja sin resultados (la 1, si es el primer estudio). En ese caso se
+        // genera otra vez dejando que los estudios se partan entre renglones.
+        if ($vacias > 0) {
+            $reintento = true;
+            $pdf = self::cargar($reporte, $opciones, false);
+            $vacias = self::renderizarYContarHojasVacias($pdf);
+
+            if ($vacias > 0) {
+                Log::warning('Reporte PDF con hojas sin resultados', ['folio' => $reporte->folio, 'hojas_vacias' => $vacias]);
+            }
+        }
+
+        self::$ultimo = [
+            'hojas' => $pdf->getDomPDF()->getCanvas()->get_page_count(),
+            'hojas_vacias' => $vacias,
+            'reintento' => $reintento,
+        ];
+
+        self::escribirNumeroDePagina($pdf);
+
+        return $pdf;
+    }
+
+    /** Diagnostico del ultimo PDF generado (pruebas y log). */
+    public static array $ultimo = [];
+
+    private static function cargar(Reporte $reporte, array $opciones, bool $mantenerJuntos)
+    {
+        return Pdf::loadView('pdf.reporte_biolab', [
             'reporte' => $reporte,
             'preliminar' => $opciones['preliminar'] ?? false,
             'complementario' => $opciones['complementario'] ?? false,
+            'mantenerJuntos' => $mantenerJuntos,
         ])->setPaper('letter', 'portrait');
+    }
 
-        self::numerarPaginas($pdf);
+    /**
+     * Renderiza y regresa cuantas hojas quedaron sin ningun texto de resultados
+     * (lo que esta dentro de .study-block; encabezado y pie no cuentan).
+     */
+    public static function renderizarYContarHojasVacias($pdf): int
+    {
+        $dompdf = $pdf->getDomPDF();
+        $conContenido = [];
 
-        return $pdf;
+        $dompdf->setCallbacks([[
+            'event' => 'end_frame',
+            'f' => function ($frame, $canvas) use (&$conContenido) {
+                $nodo = $frame->get_node();
+                if ($nodo->nodeName !== '#text' || trim($nodo->nodeValue) === '') {
+                    return;
+                }
+                for ($padre = $nodo->parentNode; $padre; $padre = $padre->parentNode) {
+                    if ($padre instanceof \DOMElement && preg_match('/\bstudy-block\b/', $padre->getAttribute('class'))) {
+                        $conContenido[$canvas->get_page_number()] = true;
+
+                        return;
+                    }
+                }
+            },
+        ]]);
+
+        $dompdf->render();
+        $dompdf->setCallbacks([]);
+
+        $total = $dompdf->getCanvas()->get_page_count();
+
+        return count(array_diff(range(1, $total), array_keys($conContenido)));
     }
 
     /**
@@ -67,9 +133,14 @@ class ReportePdf
      */
     public static function numerarPaginas($pdf, int $tamano = 9): void
     {
-        $dompdf = $pdf->getDomPDF();
-        $dompdf->render();
+        $pdf->getDomPDF()->render();
 
+        self::escribirNumeroDePagina($pdf, $tamano);
+    }
+
+    private static function escribirNumeroDePagina($pdf, int $tamano = 9): void
+    {
+        $dompdf = $pdf->getDomPDF();
         $canvas = $dompdf->getCanvas();
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
 

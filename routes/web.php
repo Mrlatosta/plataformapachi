@@ -17,6 +17,7 @@ use App\Http\Controllers\GestionLandingController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\JornadaController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\ComisionController;
 
 
 Route::get('/', function () {
@@ -57,6 +58,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/gestion-landing', [GestionLandingController::class, 'page'])->name('gestion.landing');
         Route::get('/gestion-estudios', fn () => Inertia::render('GestionEstudios'))->name('gestion.estudios');
         Route::get('/gestion-medicos', [MedicoController::class, 'page'])->name('gestion.medicos');
+
+        // T12: comisiones por medico que refiere
+        Route::get('/comisiones', [ComisionController::class, 'page'])->name('comisiones.index');
+        Route::get('/comisiones/exportar/excel', [ComisionController::class, 'exportarExcel'])->name('comisiones.excel');
+        Route::get('/comisiones/exportar/pdf', [ComisionController::class, 'exportarPdf'])->name('comisiones.pdf');
         Route::get('/usuarios', [UsuarioController::class, 'page'])->name('usuarios.index');
         Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
         Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
@@ -80,6 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/estudios', [EstudioController::class, 'index']);
     Route::get('/api/estudios/{id}', [EstudioController::class, 'show']);
     Route::get('/api/medicos', [MedicoController::class, 'index']);
+    // T12: alta rapida del medico desde la captura (sin duplicados)
+    Route::post('/api/medicos/rapido', [MedicoController::class, 'rapido']);
 
     Route::get('/api/citas', [CitaController::class, 'index']);
     Route::post('/api/citas', [CitaController::class, 'store']);
@@ -127,6 +135,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/medicos', [MedicoController::class, 'store']);
         Route::put('/api/medicos/{id}', [MedicoController::class, 'update']);
         Route::delete('/api/medicos/{id}', [MedicoController::class, 'destroy']);
+
+        Route::get('/api/comisiones', [ComisionController::class, 'index']);
+        Route::post('/api/comisiones/pagar', [ComisionController::class, 'pagar']);
+        Route::post('/api/comisiones/{id}/revertir', [ComisionController::class, 'revertir'])->whereNumber('id');
 
         // Gestión Landing. Se usa POST también para editar porque PHP no lee archivos en PUT.
         Route::get('/api/landing/promociones', [GestionLandingController::class, 'promociones']);

@@ -63,6 +63,7 @@ class User extends Authenticatable
             'editar_precios' => $admin,
             'eliminar' => $admin,
             'captura_rapida' => $admin,
+            'ver_comisiones' => $admin,
         ];
     }
 }

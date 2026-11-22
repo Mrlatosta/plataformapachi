@@ -21,6 +21,7 @@ class ReporteEstudio extends Model
     protected $fillable = [
         'reporte_id', 'estudio_id', 'orden', 'elaboro', 'valido', 'tipo_muestra', 'metodo', 'precio', 'observaciones',
         'incluir_en_reporte', 'estado', 'capturado_por', 'capturado_at', 'validado_por', 'validado_at', 'entregado_at',
+        'muestra_metodo_cambiado_por', 'muestra_metodo_cambiado_at',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class ReporteEstudio extends Model
         'capturado_at' => 'datetime',
         'validado_at' => 'datetime',
         'entregado_at' => 'datetime',
+        'muestra_metodo_cambiado_at' => 'datetime',
     ];
 
     public function reporte()
@@ -54,6 +56,12 @@ class ReporteEstudio extends Model
     public function validadoPor()
     {
         return $this->belongsTo(User::class, 'validado_por');
+    }
+
+    /** T13: quien cambio el tipo de muestra o el metodo de esta orden. */
+    public function muestraMetodoCambiadoPor()
+    {
+        return $this->belongsTo(User::class, 'muestra_metodo_cambiado_por');
     }
 
     public function estaValidado(): bool

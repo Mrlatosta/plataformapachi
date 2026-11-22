@@ -7,6 +7,7 @@ use App\Models\Jornada;
 use App\Models\JornadaParticipante;
 use App\Models\Medico;
 use App\Models\Reporte;
+use App\Services\Comisiones;
 use App\Support\RangoReferencia;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -517,5 +518,8 @@ class JornadaController extends Controller
         }
 
         $participante->update(['reporte_id' => $reporte->id]);
+
+        // T12: comision del medico de la jornada (si tiene)
+        Comisiones::sincronizar($reporte->fresh('estudios'));
     }
 }

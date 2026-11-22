@@ -16,7 +16,9 @@ const formInicial = {
     usuario: '',
     password: '',
     activo: true,
+    porcentaje_comision: 0,
 };
+const aviso = ref('');
 
 const form = ref({ ...formInicial });
 const medicoEditId = ref(null);
@@ -47,9 +49,10 @@ const abrirEditar = (medico) => {
     form.value = {
         nombre: medico.nombre,
         especialidad: medico.especialidad ?? '',
-        usuario: medico.usuario,
+        usuario: medico.usuario ?? '',
         password: '',
         activo: medico.activo,
+        porcentaje_comision: Number(medico.porcentaje_comision) || 0,
     };
     errorMsg.value = '';
     showModal.value = true;
@@ -58,8 +61,12 @@ const abrirEditar = (medico) => {
 const guardar = async () => {
     errorMsg.value = '';
     try {
+        aviso.value = '';
         if (editando.value) {
-            await axios.put(`/api/medicos/${medicoEditId.value}`, form.value);
+            const { data } = await axios.put(`/api/medicos/${medicoEditId.value}`, form.value);
+            if (data.comisiones_recalculadas) {
+                aviso.value = `Se aplicó el nuevo % a ${data.comisiones_recalculadas} comisión(es) pendiente(s) de ${data.nombre}.`;
+            }
         } else {
             await axios.post('/api/medicos', form.value);
         }
@@ -74,9 +81,13 @@ const guardar = async () => {
 };
 
 const eliminar = async (id) => {
-    if (!confirm('¿Eliminar este médico? Sus reportes asignados quedarán sin médico.')) return;
-    await axios.delete(`/api/medicos/${id}`);
-    await cargarMedicos();
+    if (!confirm('¿Eliminar este médico?')) return;
+    try {
+        await axios.delete(`/api/medicos/${id}`);
+        await cargarMedicos();
+    } catch (err) {
+        alert(err.response?.data?.message ?? 'No se pudo eliminar');
+    }
 };
 </script>
 
@@ -92,6 +103,7 @@ const eliminar = async (id) => {
 
         <div class="py-8">
             <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                <div v-if="aviso" role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ aviso }}</div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                     <!-- Header -->
@@ -133,14 +145,15 @@ const eliminar = async (id) => {
                                 <tr>
                                     <th class="px-6 py-3 text-left">Nombre</th>
                                     <th class="px-6 py-3 text-left">Especialidad</th>
-                                    <th class="px-6 py-3 text-left">Usuario</th>
+                                    <th class="px-6 py-3 text-right">Comisión</th>
+                                    <th class="px-6 py-3 text-left">Portal</th>
                                     <th class="px-6 py-3 text-center">Estado</th>
                                     <th class="px-6 py-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <tr v-if="medicos.length === 0">
-                                    <td colspan="5" class="text-center py-12 text-gray-400">
+                                    <td colspan="6" class="text-center py-12 text-gray-400">
                                         <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                         </svg>
@@ -150,7 +163,8 @@ const eliminar = async (id) => {
                                 <tr v-for="medico in medicos" :key="medico.id" class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4 font-medium text-gray-900">{{ medico.nombre }}</td>
                                     <td class="px-6 py-4 text-gray-600">{{ medico.especialidad || '—' }}</td>
-                                    <td class="px-6 py-4 text-gray-600 font-mono text-xs">{{ medico.usuario }}</td>
+                                    <td class="px-6 py-4 text-right font-semibold" :class="Number(medico.porcentaje_comision) > 0 ? 'text-gray-900' : 'text-gray-400'">{{ Number(medico.porcentaje_comision || 0) }}%</td>
+                                    <td class="px-6 py-4 text-gray-600 font-mono text-xs">{{ medico.usuario || '—' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span :class="[
                                             'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -239,7 +253,18 @@ const eliminar = async (id) => {
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Usuario *</label>
+                                <label for="medico-comision" class="block text-sm font-medium text-gray-700 mb-1">Comisión por orden referida (%)</label>
+                                <input id="medico-comision" v-model.number="form.porcentaje_comision" type="number" min="0" max="100" step="0.5"
+                                    class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Sobre lo cobrado después de descuento, sin IVA.
+                                    <span v-if="editando">Si lo cambias, se aplica a sus comisiones pendientes; las pagadas no cambian.</span>
+                                </p>
+                            </div>
+
+                            <p class="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Portal de resultados (opcional)</p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
                                 <input
                                     v-model="form.usuario"
                                     type="text"
@@ -250,7 +275,7 @@ const eliminar = async (id) => {
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Contraseña {{ editando ? '(dejar en blanco para no cambiar)' : '*' }}
+                                    Contraseña {{ editando ? '(dejar en blanco para no cambiar)' : '(solo si tiene usuario)' }}
                                 </label>
                                 <input
                                     v-model="form.password"

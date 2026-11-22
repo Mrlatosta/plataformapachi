@@ -13,17 +13,30 @@ class Medico extends Model
         'usuario',
         'password',
         'activo',
+        // T12: % de comision por orden referida
+        'porcentaje_comision',
     ];
 
     protected $hidden = ['password'];
 
-    public function setPasswordAttribute(string $value): void
+    protected $casts = [
+        'activo' => 'boolean',
+        'porcentaje_comision' => 'decimal:2',
+    ];
+
+    public function setPasswordAttribute(?string $value): void
     {
-        $this->attributes['password'] = Hash::make($value);
+        // Usuario y contraseña solo si el medico entra al portal de resultados
+        $this->attributes['password'] = $value === null || $value === '' ? null : Hash::make($value);
     }
 
     public function reportes()
     {
         return $this->hasMany(Reporte::class);
+    }
+
+    public function comisiones()
+    {
+        return $this->hasMany(Comision::class);
     }
 }

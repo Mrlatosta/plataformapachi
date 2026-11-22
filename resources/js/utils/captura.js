@@ -125,3 +125,9 @@ export const useResultadosAnteriores = () => {
 
     return { cargar, anteriorDe, hayHistorial, cargando };
 };
+
+/**
+ * T13: tipos de muestra que se ofrecen en todos los estudios, además de los que el
+ * administrador configure para cada uno.
+ */
+export const TIPOS_MUESTRA_COMUNES = ['SUERO', 'PLASMA', 'SANGRE TOTAL', 'ORINA', 'ORINA DE 24 HORAS', 'HECES', 'EXUDADO'];

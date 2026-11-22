@@ -4,6 +4,7 @@
 import { computed } from 'vue';
 import { flechaRango, opcionesCualitativas } from '@/utils/rangoReferencia';
 import { formatoFechaCorta } from '@/utils/captura';
+import { alPresionarEnter } from '@/utils/navegacionCaptura';
 
 const props = defineProps({
     examen: { type: Object, required: true },
@@ -60,7 +61,10 @@ const textoAnterior = computed(() => {
                         examen.fuera_rango ? 'font-semibold text-red-700' : 'text-gray-900',
                     ]"
                     placeholder="Resultado"
+                    data-captura-resultado
+                    enterkeyhint="next"
                     @input="emit('escribir')"
+                    @keydown.enter="alPresionarEnter"
                 />
                 <span
                     v-if="examen.calculado"
