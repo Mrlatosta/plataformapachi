@@ -48,15 +48,29 @@
     ]));
     $G = $v['G'];
     $A = $v['A'];
+
+    // Leyenda editable: la del estudio de Cistatina C (Gestión de estudios → Leyenda).
+    // Si está vacía se usa el texto predeterminado del ticket.
+    $estudioCistatina = $medido('cistatina')['estudio'] ?? null;
+    $leyendaPerfil = trim((string) ($estudioCistatina?->estudio?->leyenda ?? ''));
+    // Reemplaza al texto predeterminado solo si habla de la TFG (la editada desde
+    // "Cargar el texto actual del perfil renal"); una nota genérica ("NOTA: Los
+    // resultados...") se imprime al final, como en los demás estudios.
+    $leyendaReemplaza = $leyendaPerfil !== '' && preg_match('/tfg|filtraci/iu', $leyendaPerfil);
+    $observacionesPerfil = $leyendaReemplaza ? $leyendaPerfil : FuncionRenal::observacionesPredeterminadas();
+    $otrasLeyendas = $estudiosPerfil
+        ->reject(fn ($e) => $leyendaReemplaza && $e === $estudioCistatina)
+        ->map(fn ($e) => trim((string) ($e->estudio->leyenda ?? '')))->filter()->unique()->values();
 @endphp
 
 <div class="study-block perfil-renal {{ ($mantenerJuntos ?? true) ? 'sin-corte' : '' }}" @if($saltoAntes) style="page-break-before: always;" @endif>
-    <div class="pr-titulo">FUNCIÓN RENAL · FILTRACIÓN GLOMERULAR ESTIMADA Y ALBUMINURIA</div>
+    @php $num = 0; $conAlbuminuria = count($orina) || $v['rac'] !== null; @endphp
+    <div class="pr-titulo">FUNCIÓN RENAL · FILTRACIÓN GLOMERULAR ESTIMADA{{ $conAlbuminuria ? ' Y ALBUMINURIA' : '' }}</div>
 
     {{-- 1. Marcadores de función renal (suero) --}}
     @if(count($suero))
         <table class="pr-tabla">
-            <tr><th style="width: 46%;">1. Marcadores de función renal (suero)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
+            <tr><th style="width: 46%;">{{ ++$num }}. Marcadores de función renal (suero)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
             @foreach ($suero as $f)
                 <tr>
                     <td class="{{ $f['marca'] ? 'fuera-rango' : '' }}">{{ $f['nombre'] }}</td>
@@ -71,7 +85,7 @@
     {{-- 2. Filtración glomerular estimada (calculada) --}}
     @if(count($tfges))
         <table class="pr-tabla">
-            <tr><th style="width: 46%;">2. Filtración glomerular estimada (calculada)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
+            <tr><th style="width: 46%;">{{ ++$num }}. Filtración glomerular estimada (calculada)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
             @foreach ($tfges as $t)
                 <tr class="{{ $t['resaltar'] ? 'pr-resaltada' : '' }}">
                     <td class="{{ $t['valor'] < 60 ? 'fuera-rango' : '' }}">{{ $t['nombre'] }} <span class="pr-ecuacion">({{ $t['ecuacion'] }})</span></td>
@@ -83,7 +97,7 @@
         </table>
 
         {{-- 3. Franja KDIGO G1 – G5 --}}
-        <div class="pr-subtitulo">3. Categoría de filtración (KDIGO)</div>
+        <div class="pr-subtitulo">{{ ++$num }}. Categoría de filtración (KDIGO)</div>
         <table class="pr-franja">
             <tr>
                 @foreach (FuncionRenal::CATEGORIAS_G as $c)
@@ -98,7 +112,7 @@
     {{-- 4. Albuminuria (orina) --}}
     @if(count($orina) || $v['rac'] !== null)
         <table class="pr-tabla">
-            <tr><th style="width: 46%;">4. Albuminuria (orina al azar)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
+            <tr><th style="width: 46%;">{{ ++$num }}. Albuminuria (orina al azar)</th><th style="width: 16%;">Resultado</th><th style="width: 14%;">Unidad</th><th>Referencia</th></tr>
             @foreach ($orina as $f)
                 <tr>
                     <td class="{{ $f['marca'] ? 'fuera-rango' : '' }}">{{ $f['nombre'] }}</td>
@@ -132,7 +146,7 @@
     {{-- 5. Clasificación KDIGO combinada --}}
     @if($G || $A)
         <div class="pr-kdigo">
-            <span class="pr-kdigo-etiqueta">5. Clasificación KDIGO</span>
+            <span class="pr-kdigo-etiqueta">{{ ++$num }}. Clasificación KDIGO</span>
             <span class="pr-kdigo-valor">{{ trim(($G['codigo'] ?? '').' '.($A['codigo'] ?? '')) }}</span>
             <span class="pr-kdigo-texto">
                 @if($G) Filtración: {{ $G['nombre'] }}. @endif
@@ -143,12 +157,11 @@
 
     {{-- 6. Ecuaciones y observaciones fijas --}}
     <div class="pr-letra-chica">
-        <strong>6. Ecuaciones:</strong>
+        <strong>{{ ++$num }}. Ecuaciones:</strong>
         TFGe por creatinina: CKD-EPI 2021 sin coeficiente racial (142 × min(Cr/κ,1)^α × max(Cr/κ,1)^−1.200 × 0.9938^edad [× 1.012 mujer]).
         TFGe por cistatina C: CKD-EPI 2012 (133 × min(Cys/0.8,1)^−0.499 × max(Cys/0.8,1)^−1.328 × 0.996^edad [× 0.932 mujer]).
         Combinada: CKD-EPI 2021 creatinina-cistatina C. ACR (mg/g) = albúmina (mg/L) ÷ creatinina (mg/dL) × 100.
-        <br><strong>Observaciones:</strong> {{ FuncionRenal::NOTA_TFGE }}
-        @foreach (FuncionRenal::OBSERVACIONES_PERFIL as $obs) {{ $obs }} @endforeach
+        <br><strong>Observaciones:</strong> {!! nl2br(e($observacionesPerfil)) !!}
         @if($v['tfge_cr'] === null && $v['tfge_cis'] === null && ($v['creatinina'] !== null || $v['cistatina'] !== null))
             <br><strong>La TFGe no se calcula en menores de 18 años.</strong>
         @endif
@@ -173,4 +186,8 @@
             @endif
         @endforeach
     </table>
+
+    @foreach ($otrasLeyendas as $leyenda)
+        <p class="leyenda-estudio">{{ $leyenda }}</p>
+    @endforeach
 </div>

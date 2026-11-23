@@ -603,7 +603,7 @@ function nuevoEstudio(estudio, precio) {
 function onEscribir(examen) {
   examen.marca_manual = false
   marcarRango(examen, pacienteParaRango.value)
-  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value, form.estudios)
 }
 
 function precargarDesdeCotizacion(cotizacion) {
@@ -625,7 +625,7 @@ function precargarDesdeCotizacion(cotizacion) {
     form.estudios.push(nuevoEstudio(estudioCompleto, parseFloat(ce.precio) || parseFloat(estudioCompleto.precio) || 0))
   })
 
-  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value, form.estudios)
 
   if (form.estudios.length) {
     const origen = cotizacion.origen || `Cotización ${cotizacion.folio}`
@@ -658,7 +658,7 @@ function seleccionarEstudio(estudio) {
   }
 
   form.estudios.push(nuevoEstudio(estudio, parseFloat(estudio.precio) || 0))
-  recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+  recalcularOrden(listasDeExamenes(), pacienteParaRango.value, form.estudios)
   mostrarNotificacion(`${estudio.nombre} agregado`, 'success', 2500)
 }
 
@@ -666,7 +666,7 @@ function eliminarEstudio(index) {
   const nombreEstudio = form.estudios[index].nombre
   if (confirm(`¿Quitar "${nombreEstudio}" de la orden?`)) {
     form.estudios.splice(index, 1)
-    recalcularOrden(listasDeExamenes(), pacienteParaRango.value)
+    recalcularOrden(listasDeExamenes(), pacienteParaRango.value, form.estudios)
   }
 }
 

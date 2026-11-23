@@ -6,6 +6,7 @@ import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
 import { evaluarResultado } from '@/utils/rangoReferencia';
 import { aplicarCalculos } from '@/utils/calculosClinicos';
+import { aplicarRelacionAlbuminaCreatinina } from '@/utils/funcionRenal';
 
 export const ESTADOS_ESTUDIO = {
     pendiente: { etiqueta: 'Pendiente', clase: 'bg-gray-100 text-gray-700 ring-gray-300', ayuda: 'Sin resultados capturados' },
@@ -72,8 +73,11 @@ export const aplicarMarcaManual = (examen, valor) => {
  * T9 + T4: recalcula los valores derivados de toda la orden y vuelve a marcar
  * el rango de los que cambiaron. `listas` es un arreglo con los exámenes de cada estudio.
  */
-export const recalcularOrden = (listas, paciente) => {
-    aplicarCalculos(listas).forEach((examen) => marcarRango(examen, paciente));
+export const recalcularOrden = (listas, paciente, estudios = null) => {
+    const cambiados = aplicarCalculos(listas);
+    // T10: relación albúmina/creatinina en el renglón del propio estudio (necesita la muestra)
+    if (estudios) cambiados.push(...aplicarRelacionAlbuminaCreatinina(estudios));
+    cambiados.forEach((examen) => marcarRango(examen, paciente));
 };
 
 const normalizarNombre = (texto) =>

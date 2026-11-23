@@ -261,4 +261,26 @@ class ComisionesTest extends TestCase
         $this->assertSame(2, Medico::count());
         $this->assertSame(5, Comision::count()); // 4 de Yama + 1 de Sainz
     }
+
+    public function test_el_comando_liga_nombres_incompletos_al_medico_que_ya_existe_y_respeta_desde(): void
+    {
+        $chac = Medico::create(['nombre' => 'DR. LUIS YAMA CHAC', 'porcentaje_comision' => 15]);
+        $crear = fn (string $texto, string $fecha) => Reporte::create([
+            'folio' => Reporte::siguienteFolio(), 'nombre_cliente' => 'X', 'fecha_nacimiento' => '1990-01-01', 'edad' => 36, 'sexo' => 'Masculino',
+            'toma_muestra' => $fecha, 'fecha_reporte' => $fecha, 'medico_solicitante' => $texto,
+        ])->estudios()->create(['estudio_id' => $this->quimica->id, 'precio' => 300, 'tipo_muestra' => '', 'metodo' => '', 'elaboro' => '', 'valido' => ''])->reporte;
+
+        $viejo = $crear('DR. LUIS YAMA', '2025-09-01');
+        $nuevo = $crear('dr. uis yama', '2026-11-05');      // error de dedo + nombre incompleto
+        $soloNombre = $crear('DR. MARIA', '2026-11-05');    // una palabra: no se liga a un médico existente
+
+        $this->artisan('medicos:vincular-reportes --aplicar --desde=2026-11-01')->assertSuccessful();
+
+        $this->assertSame($chac->id, $viejo->fresh()->medico_id);
+        $this->assertSame($chac->id, $nuevo->fresh()->medico_id);
+        $this->assertNotSame($chac->id, $soloNombre->fresh()->medico_id);
+        // Comisión solo de lo que es desde el 1 de noviembre
+        $this->assertNull($viejo->fresh()->comision);
+        $this->assertEquals(45.00, $nuevo->fresh()->comision->comision); // 300 × 15 %
+    }
 }

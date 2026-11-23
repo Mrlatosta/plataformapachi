@@ -436,11 +436,12 @@
                     ->contains(fn ($r) => trim((string) $r->resultado) !== '' && strpos((string) $r->resultado, '*') === false));
             @endphp
             @php
-                // T10: TFGe / RAC calculados. Con cistatina C o albuminuria sale la hoja
-                // de perfil renal; los estudios que solo traen analitos renales se
-                // imprimen ahi (no en su tabla) para no repetirlos.
+                // T10: TFGe / ACR calculados. Con cistatina C sale la hoja de perfil
+                // renal; los estudios que solo traen analitos renales se imprimen ahi
+                // (no en su tabla) para no repetirlos. La albuminuria sola sale en su
+                // propia tabla con la relacion calculada y la franja A1-A3.
                 $renal = \App\Support\FuncionRenal::analizar($reporte);
-                $conPerfilRenal = $renal['valores']['cistatina'] !== null || $renal['valores']['albumina_orina'] !== null;
+                $conPerfilRenal = $renal['valores']['cistatina'] !== null;
                 $estudiosPerfil = $conPerfilRenal
                     ? $reporte->estudios->filter(function ($e) use ($renal) {
                         $conValor = collect($e->resultados)->filter(fn ($r) => trim((string) $r->resultado) !== '' && strpos((string) $r->resultado, '*') === false);
@@ -483,9 +484,7 @@
                         ) + ($niv ? 18 * ($niv + 1) + 8 : 0);
                     }
                     if (! $conPerfilRenal) {
-                        foreach ($visibles as $r) {
-                            $alturaPx += count($renal['filas'][\App\Support\FuncionRenal::claveResultado($r)] ?? []) * 175;
-                        }
+                        $alturaPx += count($renal['alFinal'][spl_object_id($estudio)] ?? []) * 175;
                     }
                     $alturaPx += trim((string) $estudio->observaciones) !== '' ? 14 * $lineas($estudio->observaciones, 120) + 16 : 0;
                     $alturaPx += ! empty($estudio->estudio->leyenda) ? 14 * $lineas($estudio->estudio->leyenda, 120) + 8 : 0;
@@ -527,6 +526,12 @@
                                 @endif
 
                                 @foreach ($resultados as $resultado)
+                                    @php $reemplazo = $renal['reemplazos'][\App\Support\FuncionRenal::claveResultado($resultado)] ?? null; @endphp
+                                    @if($reemplazo)
+                                        {{-- T10: renglon "Relacion albumina/creatinina" del estudio, con el valor calculado --}}
+                                        @include('pdf.partials.renal_filas', ['filas' => [$reemplazo]])
+                                        @continue
+                                    @endif
                                     @php
                                         $examen = $resultado->examen;
                                         $valorResultado = (string) $resultado->resultado;
@@ -588,15 +593,15 @@
                                                 </td>
                                             </tr>
                                         @endif
-
-                                        @php $filasRenales = $conPerfilRenal ? [] : ($renal['filas'][\App\Support\FuncionRenal::claveResultado($resultado)] ?? []); @endphp
-                                        @if(count($filasRenales))
-                                            {{-- T10: TFGe con su tabla G1–G5 y la nota fija, debajo de la creatinina --}}
-                                            @include('pdf.partials.renal_filas', ['filas' => $filasRenales])
-                                        @endif
                                     @endif
                                 @endforeach
                             @endforeach
+
+                            @php $filasAlFinal = $conPerfilRenal ? [] : ($renal['alFinal'][spl_object_id($estudio)] ?? []); @endphp
+                            @if(count($filasAlFinal))
+                                {{-- T10: TFGe (y su tabla G1-G5 con la nota) al final del estudio, para no cortar la secuencia --}}
+                                @include('pdf.partials.renal_filas', ['filas' => $filasAlFinal])
+                            @endif
                         </tbody>
                     </table>
 

@@ -326,8 +326,18 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">📄 Leyenda / notas</label>
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                    <label for="estudio-leyenda" class="block text-sm font-medium text-gray-700">📄 Leyenda / notas</label>
+                                    <button v-if="esCistatina" type="button" @click="cargarLeyendaPerfil"
+                                        class="text-xs font-medium text-blue-700 hover:underline">
+                                        Cargar el texto actual del perfil renal para editarlo
+                                    </button>
+                                </div>
+                                <p v-if="esCistatina" class="mb-1 text-xs text-gray-500">
+                                    Si esta leyenda habla de la TFG, sale como «Observaciones» en la hoja de función renal en lugar del texto predeterminado.
+                                </p>
                                 <textarea
+                                    id="estudio-leyenda"
                                     v-model="form.leyenda"
                                     rows="3"
                                     class="w-full text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
@@ -630,6 +640,7 @@ import axios from 'axios'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
 import { interpretarReferencia } from '@/utils/rangoReferencia'
+import { OBSERVACIONES_PERFIL_PREDETERMINADAS } from '@/utils/funcionRenal'
 
 const estudios = ref([])
 const cargando = ref(true)
@@ -792,6 +803,13 @@ const cambiarVisibilidad = async (estudio) => {
 }
 
 // ===== Editor =====
+// T10: la leyenda de Cistatina C es el texto de "Observaciones" de la hoja de perfil renal
+const esCistatina = computed(() => /cistatina/i.test(form.value.nombre || ''))
+const cargarLeyendaPerfil = () => {
+    if (form.value.leyenda?.trim() && !confirm('¿Reemplazar la leyenda actual por el texto predeterminado del perfil renal?')) return
+    form.value.leyenda = OBSERVACIONES_PERFIL_PREDETERMINADAS
+}
+
 // T13: otras opciones de muestra y método, una por renglón. El texto se guarda
 // aparte para poder escribir renglones nuevos; la lista se arma al escribir.
 const opcionesMuestraTexto = ref('')

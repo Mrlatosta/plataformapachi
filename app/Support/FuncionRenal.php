@@ -19,6 +19,8 @@ class FuncionRenal
 
     public const UNIDAD_RAC = 'mg/g';
 
+    public const FORMULA_RAC = 'albúmina (mg/L) ÷ creatinina (mg/dL) × 100';
+
     public const CATEGORIAS_G = [
         ['codigo' => 'G1', 'rango' => '≥ 90', 'nombre' => 'Normal'],
         ['codigo' => 'G2', 'rango' => '60 – 89', 'nombre' => 'Levemente disminuida'],
@@ -41,6 +43,16 @@ class FuncionRenal
         'La creatinina varía con la masa muscular y la dieta; la cistatina C puede alterarse con disfunción tiroidea y corticoides.',
         'Un ACR elevado debe confirmarse en 2 de 3 muestras en 3 a 6 meses; el ejercicio intenso, la fiebre, la infección urinaria y la menstruación lo elevan de forma transitoria.',
     ];
+
+    /**
+     * Texto de "Observaciones" de la hoja de perfil renal cuando el estudio de
+     * Cistatina C no tiene leyenda propia. El laboratorio lo puede reemplazar
+     * escribiendo la leyenda de ese estudio en Gestion de estudios.
+     */
+    public static function observacionesPredeterminadas(): string
+    {
+        return self::NOTA_TFGE.' '.implode(' ', self::OBSERVACIONES_PERFIL);
+    }
 
     public static function sexoCorto($sexo): ?string
     {
@@ -157,12 +169,35 @@ class FuncionRenal
         return trim(preg_replace('/\s+/u', ' ', Str::lower(Str::ascii((string) $texto))));
     }
 
-    public static function claveRenal($nombre, $unidad, $muestraEstudio = ''): ?string
+    /**
+     * El estudio es de orina si su muestra o su nombre lo dicen ("Relacion albumina
+     * creatinina en orina al azar", "Microalbuminuria"...), aunque el analito se
+     * llame solo "Creatinina" o "Albumina".
+     */
+    private static function esDeOrina($muestraEstudio, $nombreEstudio): bool
+    {
+        $m = self::normalizar($muestraEstudio);
+        $e = self::normalizar($nombreEstudio);
+
+        return (bool) preg_match('/orina|urin/', $m)
+            || (bool) preg_match('/orina|urin|microalbumin/', $e)
+            || (str_contains($e, 'albumin') && str_contains($e, 'creatinin'));
+    }
+
+    public static function claveRenal($nombre, $unidad, $muestraEstudio = '', $nombreEstudio = ''): ?string
     {
         $n = self::normalizar($nombre);
         $u = self::normalizar($unidad);
-        $orina = (bool) preg_match('/orina|urin/', $n) || (bool) preg_match('/orina|urin/', self::normalizar($muestraEstudio));
+        // "Creatinina serica" dentro de una depuracion de 24 h sigue siendo de sangre
+        $sangre = (bool) preg_match('/seric|suero|sangre|plasma/', $n);
+        $orina = ! $sangre && ((bool) preg_match('/orina|urin/', $n) || self::esDeOrina($muestraEstudio, $nombreEstudio));
+        // Orina de 24 h (depuracion, microalbumina en mg/24 h) no entra en la relacion al azar
+        $de24h = (bool) preg_match('/24\s*h/', $n.' '.$u.' '.self::normalizar($nombreEstudio).' '.self::normalizar($muestraEstudio));
 
+        // El propio renglon de la relacion albumina/creatinina: se calcula solo
+        if ((str_contains($n, 'albumin') && str_contains($n, 'creatinin')) || preg_match('/\b(acr|rac)\b/', $n)) {
+            return ($orina || str_contains($n, 'albumin')) && ! $de24h ? 'rac' : null;
+        }
         if (preg_match('/relacion|indice|depuracion|aclaramiento|\/|24 ?h/', $n)) {
             return null;
         }
@@ -170,10 +205,14 @@ class FuncionRenal
             return 'cistatina';
         }
         if (str_contains($n, 'microalbumin') || (str_starts_with($n, 'albumina') && $orina)) {
-            return 'albumina_orina';
+            return $de24h ? null : 'albumina_orina';
         }
-        if (preg_match('/^creatinina\b/', $n) && preg_match('/mg\s*\/\s*dl/', $u)) {
-            return $orina ? 'creatinina_orina' : 'creatinina';
+        if (preg_match('/^creatinina\b/', $n) && (preg_match('/mg\s*\/\s*dl/', $u) || ($orina && $u === ''))) {
+            if (! $orina) {
+                return 'creatinina';
+            }
+
+            return $de24h ? null : 'creatinina_orina';
         }
 
         return null;
@@ -197,11 +236,12 @@ class FuncionRenal
         $ubicados = [];
         foreach ($reporte->estudios as $i => $estudio) {
             $muestra = $estudio->tipo_muestra ?: ($estudio->estudio->tipo_muestra ?? '');
+            $nombreEstudio = $estudio->estudio->nombre ?? '';
             foreach ($estudio->resultados as $j => $resultado) {
                 if (str_contains((string) $resultado->resultado, '*')) {
                     continue; // no se imprime
                 }
-                $clave = self::claveRenal($resultado->examen->nombre_examen ?? '', $resultado->examen->unidad ?? '', $muestra);
+                $clave = self::claveRenal($resultado->examen->nombre_examen ?? '', $resultado->examen->unidad ?? '', $muestra, $nombreEstudio);
                 if ($clave) {
                     $ubicados[] = [
                         'clave' => $clave, 'i' => $i, 'j' => $j,
@@ -251,10 +291,15 @@ class FuncionRenal
             'tabla' => 'G',
         ];
 
+        // filas: por resultado (debajo de su analito, en pantalla)
+        // alFinal: por estudio, en el orden en que aparecen (en el PDF van al final
+        // del estudio para no cortar la secuencia de una quimica extensa)
         $filas = [];
-        $agregar = function (?array $ubicado, array $fila) use (&$filas) {
+        $alFinal = [];
+        $agregar = function (?array $ubicado, array $fila) use (&$filas, &$alFinal) {
             if ($ubicado && $fila['valor'] !== null) {
                 $filas[self::claveResultado($ubicado['resultado'])][] = $fila;
+                $alFinal[spl_object_id($ubicado['estudio'])][] = $fila;
             }
         };
 
@@ -267,24 +312,35 @@ class FuncionRenal
             $agregar($cis, $filaTfge('tfge_cis', 'TFGe por cistatina C', $valores['tfge_cis'], 'CKD-EPI 2012'));
             $agregar($cis, $filaTfge('tfge_comb', 'TFGe combinada creatinina + cistatina C', $valores['tfge_comb'], 'CKD-EPI 2021'));
         }
+        // Relacion albumina/creatinina (ACR). Si el estudio trae su propio renglon, ese
+        // se imprime con el valor calculado (reemplazos); si no, se agrega uno AUTO.
+        $reemplazos = [];
         if ($valores['rac'] !== null) {
-            $ultimo = collect([$alb, $crOrina])->sortBy(fn ($u) => [$u['i'], $u['j']])->last();
-            $agregar($ultimo, [
+            $filaRac = [
                 'clave' => 'rac',
-                'nombre' => 'Relación albúmina/creatinina (RAC)',
+                'nombre' => 'Relación albúmina/creatinina (ACR)',
                 'valor' => $valores['rac'],
                 'texto' => number_format($valores['rac'], 1, '.', ''),
                 'unidad' => self::UNIDAD_RAC,
                 'referencia' => '< 30',
                 'bajo' => false,
                 'alto' => $valores['rac'] >= 30,
-                'formula' => 'Albúmina ÷ creatinina en orina',
+                'formula' => self::FORMULA_RAC,
                 'categoria' => $valores['A'],
                 'tabla' => 'A',
-            ]);
+            ];
+            $propios = collect($ubicados)->where('clave', 'rac');
+            if ($propios->isNotEmpty()) {
+                foreach ($propios as $u) {
+                    $reemplazos[self::claveResultado($u['resultado'])] = $filaRac;
+                }
+            } else {
+                $ultimo = collect([$alb, $crOrina])->sortBy(fn ($u) => [$u['i'], $u['j']])->last();
+                $agregar($ultimo, $filaRac);
+            }
         }
 
-        return ['filas' => $filas, 'valores' => $valores, 'ubicados' => $ubicados];
+        return ['filas' => $filas, 'alFinal' => $alFinal, 'reemplazos' => $reemplazos, 'valores' => $valores, 'ubicados' => $ubicados];
     }
 
     /**

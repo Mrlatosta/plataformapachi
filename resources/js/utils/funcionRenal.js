@@ -26,6 +26,15 @@ export const CATEGORIAS_A = [
 
 export const NOTA_TFGE = 'La TFG estimada no debe interpretarse sola para concluir daño renal; considere otros marcadores como la relación albúmina/creatinina. Se calcula con la ecuación CKD-EPI 2021, sin coeficiente racial. En pacientes con TFGe por creatinina de 45–59 mL/min/1.73 m² y relación albúmina/creatinina menor de 30 mg/g, las guías sugieren medir cistatina C para confirmar. No es válida en embarazo, insuficiencia renal aguda, amputaciones o masa muscular muy alta o muy baja.';
 
+export const OBSERVACIONES_PERFIL = [
+    'Ecuaciones validadas para adultos (≥ 18 años). La TFGe no es válida con función renal inestable o lesión renal aguda.',
+    'La creatinina varía con la masa muscular y la dieta; la cistatina C puede alterarse con disfunción tiroidea y corticoides.',
+    'Un ACR elevado debe confirmarse en 2 de 3 muestras en 3 a 6 meses; el ejercicio intenso, la fiebre, la infección urinaria y la menstruación lo elevan de forma transitoria.',
+];
+
+/** Observaciones de la hoja de perfil renal si el estudio de Cistatina C no tiene leyenda propia. */
+export const OBSERVACIONES_PERFIL_PREDETERMINADAS = [NOTA_TFGE, ...OBSERVACIONES_PERFIL].join(' ');
+
 /** 'F' o 'M' a partir de lo que guarde el sistema ('Femenino', 'masculino', 'F'...). */
 export const sexoCorto = (sexo) => {
     const s = String(sexo ?? '').trim().toLowerCase();
@@ -115,16 +124,71 @@ const aNumero = (valor) => {
  * 'creatinina' (suero), 'cistatina', 'albumina_orina', 'creatinina_orina' o null.
  * La muestra del estudio distingue la creatinina en orina de la sérica.
  */
-export const claveRenal = (nombre, unidad, muestraEstudio = '') => {
+// El estudio es de orina si su muestra o su nombre lo dicen ("Relación albúmina
+// creatinina en orina al azar", "Microalbuminuria"...), aunque el analito se llame
+// solo "Creatinina" o "Albúmina".
+const esDeOrina = (muestraEstudio, nombreEstudio) => {
+    const m = normalizar(muestraEstudio);
+    const e = normalizar(nombreEstudio);
+    return /orina|urin/.test(m) || /orina|urin|microalbumin/.test(e) || (/albumin/.test(e) && /creatinin/.test(e));
+};
+
+export const claveRenal = (nombre, unidad, muestraEstudio = '', nombreEstudio = '') => {
     const n = normalizar(nombre);
     const u = normalizar(unidad);
-    const orina = /orina|urin/.test(n) || /orina|urin/.test(normalizar(muestraEstudio));
+    // "Creatinina sérica" dentro de una depuración de 24 h sigue siendo de sangre
+    const sangre = /seric|suero|sangre|plasma/.test(n);
+    const orina = !sangre && (/orina|urin/.test(n) || esDeOrina(muestraEstudio, nombreEstudio));
+    // Orina de 24 h (depuración, microalbúmina en mg/24 h) no entra en la relación al azar
+    const de24h = /24\s*h/.test([n, u, normalizar(nombreEstudio), normalizar(muestraEstudio)].join(' '));
 
+    // El propio renglón de la relación albúmina/creatinina: se llena solo
+    if ((/albumin/.test(n) && /creatinin/.test(n)) || /\b(acr|rac)\b/.test(n)) return (orina || /albumin/.test(n)) && !de24h ? 'rac' : null;
     if (/relacion|indice|depuracion|aclaramiento|\/|24 ?h/.test(n)) return null;
     if (/cistatina/.test(n)) return 'cistatina';
-    if (/microalbumin/.test(n) || (/^albumina/.test(n) && orina)) return 'albumina_orina';
-    if (/^creatinina\b/.test(n) && /mg\s*\/\s*dl/.test(u)) return orina ? 'creatinina_orina' : 'creatinina';
+    if (/microalbumin/.test(n) || (/^albumina/.test(n) && orina)) return de24h ? null : 'albumina_orina';
+    if (/^creatinina\b/.test(n) && (/mg\s*\/\s*dl/.test(u) || (orina && u === ''))) {
+        if (!orina) return 'creatinina';
+        return de24h ? null : 'creatinina_orina';
+    }
     return null;
+};
+
+export const FORMULA_RAC = 'albúmina (mg/L) ÷ creatinina (mg/dL) × 100';
+
+/**
+ * Si el estudio trae su propio renglón "Relación albúmina/creatinina", lo llena
+ * (solo lectura, AUTO) con la albúmina y la creatinina en orina de la orden.
+ * Modifica los exámenes en su lugar y devuelve los que cambiaron.
+ */
+export const aplicarRelacionAlbuminaCreatinina = (estudios) => {
+    const ubicados = [];
+    (estudios || []).forEach((estudio) => {
+        (estudio.examenes || []).forEach((examen) => {
+            const clave = claveRenal(examen.nombre_examen, examen.unidad, estudio.tipo_muestra, estudio.nombre);
+            if (clave) ubicados.push({ clave, examen, valor: aNumero(examen.resultado) });
+        });
+    });
+
+    const alb = ubicados.find((u) => u.clave === 'albumina_orina' && u.valor !== null);
+    const cr = ubicados.find((u) => u.clave === 'creatinina_orina' && u.valor !== null);
+    const rac = alb && cr ? relacionAlbuminaCreatinina(alb.valor, alb.examen.unidad, cr.valor) : null;
+
+    const cambiados = [];
+    ubicados.filter((u) => u.clave === 'rac').forEach(({ examen }) => {
+        examen.formula = FORMULA_RAC;
+        if (rac === null) {
+            if (examen.calculado) {
+                examen.calculado = false;
+                if (examen.resultado !== '') { examen.resultado = ''; cambiados.push(examen); }
+            }
+            return;
+        }
+        examen.calculado = true;
+        const texto = rac.toFixed(1);
+        if (examen.resultado !== texto) { examen.resultado = texto; cambiados.push(examen); }
+    });
+    return cambiados;
 };
 
 /**
@@ -140,7 +204,7 @@ export const analizarFuncionRenal = (estudios, paciente) => {
     const ubicados = [];
     (estudios || []).forEach((estudio, i) => {
         (estudio.examenes || []).forEach((examen, j) => {
-            const clave = claveRenal(examen.nombre_examen, examen.unidad, estudio.tipo_muestra);
+            const clave = claveRenal(examen.nombre_examen, examen.unidad, estudio.tipo_muestra, estudio.nombre);
             if (clave) ubicados.push({ clave, i, j, examen, valor: aNumero(examen.resultado) });
         });
     });
@@ -192,17 +256,18 @@ export const analizarFuncionRenal = (estudios, paciente) => {
         agregar(cis, filaTfge('tfge_comb', 'TFGe combinada creatinina + cistatina C', valores.tfge_comb, 'CKD-EPI 2021'));
     }
 
-    // RAC debajo del último de los dos que aparezca (albúmina o creatinina en orina)
-    if (valores.rac !== null) {
+    // RAC debajo del último de los dos que aparezca (albúmina o creatinina en orina),
+    // salvo que el estudio ya tenga su renglón de la relación (ese se llena solo)
+    if (valores.rac !== null && !ubicados.some((u) => u.clave === 'rac')) {
         const ultimo = [alb, crOrina].sort((a, b) => a.i - b.i || a.j - b.j)[1];
         agregar(ultimo, {
             clave: 'rac',
-            nombre: 'Relación albúmina/creatinina (RAC)',
+            nombre: 'Relación albúmina/creatinina (ACR)',
             valor: valores.rac,
             texto: valores.rac.toFixed(1),
             unidad: UNIDAD_RAC,
             referencia: '< 30',
-            formula: 'Albúmina ÷ creatinina en orina',
+            formula: FORMULA_RAC,
             bajo: false,
             alto: valores.rac >= 30,
             categoria: valores.A,

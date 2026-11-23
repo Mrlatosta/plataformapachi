@@ -19,7 +19,9 @@ use Illuminate\Support\Str;
  */
 class VincularReportesMedicos extends Command
 {
-    protected $signature = 'medicos:vincular-reportes {--aplicar : Guarda los cambios (sin esto solo muestra lo que haria)}';
+    protected $signature = 'medicos:vincular-reportes
+        {--aplicar : Guarda los cambios (sin esto solo muestra lo que haria)}
+        {--desde= : Crea comisiones solo de ordenes con toma de muestra desde esta fecha (AAAA-MM-DD); las anteriores solo se ligan al medico}';
 
     protected $description = 'Liga las ordenes con el medico escrito a mano a un medico de la lista y crea sus comisiones';
 
@@ -33,8 +35,13 @@ class VincularReportesMedicos extends Command
             ->reject(fn ($r) => Comisiones::esSinMedico($r->medico_solicitante));
 
         $existentes = Medico::all()->keyBy(fn (Medico $m) => Comisiones::claveNombre($m->nombre));
-        $grupos = self::juntarErroresDeDedo(
-            $reportes->groupBy(fn ($r) => Comisiones::claveNombre($r->medico_solicitante)),
+        // Primero los errores de dedo ("UIS YAMA" → "LUIS YAMA"), luego los nombres
+        // incompletos de un medico que ya existe ("LUIS YAMA" → "LUIS YAMA CHAC")
+        $grupos = self::juntarConExistentes(
+            self::juntarErroresDeDedo(
+                $reportes->groupBy(fn ($r) => Comisiones::claveNombre($r->medico_solicitante)),
+                $existentes->keys()->all(),
+            ),
             $existentes->keys()->all(),
         );
 
@@ -71,12 +78,18 @@ class VincularReportesMedicos extends Command
             $this->warn('Se parecen y quedan separados; si son el mismo médico, corrígelos en la orden: '.implode('; ', $parecidos));
         }
 
-        $sinComision = Reporte::whereNotNull('medico_id')->whereDoesntHave('comision')->count();
+        $desde = $this->option('desde') ? \Carbon\Carbon::parse($this->option('desde'))->startOfDay() : null;
+        // Ordenes con medico (las que ya lo tenian y las que se van a ligar) sin comision
+        $sinComisionQuery = fn () => Reporte::where(fn ($q) => $q->whereNotNull('medico_id')->orWhereIn('id', $grupos->flatten()->pluck('id')))
+            ->whereDoesntHave('comision')
+            ->when($desde, fn ($q) => $q->where('toma_muestra', '>=', $desde));
+        $sinComision = $sinComisionQuery()->count();
 
         if (! $aplicar) {
             $this->line('');
-            $this->line(sprintf('Se ligarían %d órdenes a %d médicos (%d nuevos). %d órdenes con médico aún sin comisión registrada.',
-                $reportes->count(), $grupos->count(), $grupos->keys()->diff($existentes->keys())->count(), $sinComision));
+            $this->line(sprintf('Se ligarían %d órdenes a %d médicos (%d nuevos). Se registrarían %d comisiones pendientes%s.',
+                $reportes->count(), $grupos->count(), $grupos->keys()->diff($existentes->keys())->count(), $sinComision,
+                $desde ? ' (órdenes desde '.$desde->format('d/m/Y').')' : ' (de todas las fechas; usa --desde=AAAA-MM-DD para empezar en una fecha)'));
             $this->comment('Nada se guardó. Corre con --aplicar para hacerlo.');
 
             return self::SUCCESS;
@@ -97,9 +110,10 @@ class VincularReportesMedicos extends Command
             }
         });
 
-        // Comision (pendiente) de toda orden con medico que aun no la tenga
+        // Comision (pendiente) de las ordenes con medico que aun no la tengan (desde --desde)
         $comisiones = 0;
         Reporte::whereNotNull('medico_id')->whereDoesntHave('comision')->with('estudios')
+            ->when($desde, fn ($q) => $q->where('toma_muestra', '>=', $desde))
             ->chunkById(200, function ($lote) use (&$comisiones) {
                 foreach ($lote as $reporte) {
                     Comisiones::sincronizar($reporte) && $comisiones++;
@@ -113,19 +127,47 @@ class VincularReportesMedicos extends Command
     }
 
     /**
+     * Nombre incompleto de un medico que ya existe ("DR. LUIS YAMA" → "DR. LUIS YAMA
+     * CHAC"): se liga a ese medico si es el unico que empieza asi y el nombre escrito
+     * tiene al menos dos palabras ("DR. MARIA" no se liga a nadie).
+     */
+    private static function juntarConExistentes($grupos, array $clavesExistentes)
+    {
+        foreach ($grupos->keys()->all() as $clave) {
+            if (in_array($clave, $clavesExistentes, true) || substr_count($clave, ' ') < 1) {
+                continue;
+            }
+            $coinciden = array_values(array_filter($clavesExistentes, fn ($e) => str_starts_with($e, $clave.' ')));
+            if (count($coinciden) === 1) {
+                $grupos[$coinciden[0]] = ($grupos[$coinciden[0]] ?? collect())->merge($grupos[$clave]);
+                $grupos->forget($clave);
+            }
+        }
+
+        return $grupos;
+    }
+
+    /**
      * Errores de una letra en nombres largos ("uis yama", "wilber vazquez") se
      * juntan con el nombre mas usado (o con un medico que ya existe).
      */
     private static function juntarErroresDeDedo($grupos, array $clavesExistentes)
     {
-        $tamano = fn (string $clave) => in_array($clave, $clavesExistentes, true) ? PHP_INT_MAX : ($grupos[$clave] ?? collect())->count();
+        // Peso de cada nombre: primero si es (o empieza) un medico que ya existe,
+        // luego cuantas ordenes lo usan y al final el mas largo. El de menor peso
+        // se junta con el de mayor peso (nunca al reves, aunque empaten en ordenes).
+        $peso = fn (string $clave) => [
+            in_array($clave, $clavesExistentes, true) || collect($clavesExistentes)->contains(fn ($e) => str_starts_with($e, $clave.' ')) ? 1 : 0,
+            ($grupos[$clave] ?? collect())->count(),
+            mb_strlen($clave),
+        ];
         $candidatos = collect($grupos->keys())->merge($clavesExistentes)->unique()->values();
 
-        foreach ($grupos->keys()->sortBy(fn ($k) => $tamano($k))->values() as $clave) {
+        foreach ($grupos->keys()->sortBy(fn ($k) => $peso($k))->values() as $clave) {
             $destino = $candidatos
                 ->reject(fn ($c) => $c === $clave || ! isset($grupos[$clave]))
-                ->filter(fn ($c) => min(mb_strlen($c), mb_strlen($clave)) >= 8 && levenshtein($c, $clave) <= 1 && $tamano($c) >= $tamano($clave))
-                ->sortByDesc(fn ($c) => $tamano($c))
+                ->filter(fn ($c) => min(mb_strlen($c), mb_strlen($clave)) >= 8 && levenshtein($c, $clave) <= 1 && $peso($c) > $peso($clave))
+                ->sortByDesc(fn ($c) => $peso($c))
                 ->first();
 
             if ($destino !== null) {

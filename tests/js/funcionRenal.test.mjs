@@ -1,6 +1,7 @@
 // node tests/js/funcionRenal.test.mjs — casos de prueba del ticket T10 (y T11)
 import assert from 'node:assert/strict';
 import {
+    aplicarRelacionAlbuminaCreatinina,
     analizarFuncionRenal,
     categoriaA,
     categoriaG,
@@ -67,6 +68,38 @@ assert.equal(claveRenal('Albumina', 'g/dL', 'Suero'), null); // la de la químic
 assert.equal(claveRenal('Cistatina C', 'mg/L', 'SUERO'), 'cistatina');
 assert.equal(claveRenal('Creatine Kinase (CK)', 'U/L', 'suero'), null);
 assert.equal(claveRenal('Depuración de creatinina', 'mL/min', ''), null);
+
+// Catálogo real: orina de 24 h no entra en la relación al azar; la creatinina sérica sigue siendo de sangre
+const dep24 = 'DEPURACIÓN DE CREATININA EN ORINA DE 24 HORAS';
+assert.equal(claveRenal('Creatinina sérica', 'mg/dL', 'ORINA DE 24 HRS', dep24), 'creatinina');
+assert.equal(claveRenal('Creatinina en orina', 'mg/dL', 'ORINA DE 24 HRS', dep24), null);
+assert.equal(claveRenal('Microalbúmina MAU', 'mg/24 h', 'Orina', 'MICROALBUMINA EN ORINA DE 24 horas (MAU)'), null);
+assert.equal(claveRenal('Microalbuminuria', '', 'Orina', 'MICROALBUMINA EN ORINA DE 24 horas (MAU)'), null);
+assert.equal(claveRenal('Creatinina', 'mg/dL', 'SUERO', 'CREATININA SERICA'), 'creatinina');
+
+// Estudio del laboratorio: analitos sin "orina" en el nombre; lo dice el estudio
+const azar = 'Relación albúmina creatinina en orina al azar';
+assert.equal(claveRenal('Creatinina', 'mg/dL', '', azar), 'creatinina_orina');
+assert.equal(claveRenal('Albúmina', 'mg/L', '', azar), 'albumina_orina');
+assert.equal(claveRenal('Relación albúmina/creatinina', 'mg/g', '', azar), 'rac');
+assert.equal(claveRenal('ACR', 'mg/g', 'ORINA'), 'rac');
+
+const estudioAzar = { nombre: azar, tipo_muestra: '', examenes: [
+    { nombre_examen: 'Albúmina', unidad: 'mg/L', resultado: '45' },
+    { nombre_examen: 'Creatinina', unidad: 'mg/dL', resultado: '150' },
+    { nombre_examen: 'Relación albúmina/creatinina', unidad: 'mg/g', resultado: '' },
+] };
+const cambiados = aplicarRelacionAlbuminaCreatinina([estudioAzar]);
+assert.equal(cambiados.length, 1);
+assert.equal(estudioAzar.examenes[2].resultado, '30.0');
+assert.equal(estudioAzar.examenes[2].calculado, true);
+// Con su propio renglón no se agrega otro AUTO, y la creatinina de orina no da TFGe
+assert.deepEqual(analizarFuncionRenal([estudioAzar], { edad: 50, sexo: 'F' }).filas, {});
+// Si se borra un dato, el renglón se vacía y vuelve a ser editable
+estudioAzar.examenes[0].resultado = '';
+aplicarRelacionAlbuminaCreatinina([estudioAzar]);
+assert.equal(estudioAzar.examenes[2].resultado, '');
+assert.equal(estudioAzar.examenes[2].calculado, false);
 
 // Orden completa: química + cistatina + albuminuria
 const orden = [

@@ -21,6 +21,7 @@ class FuncionRenalPdfTest extends TestCase
     private Estudio $cistatina;
     private Estudio $albuminuria;
     private Estudio $biometria;
+    private Estudio $racAzar;
 
     protected function setUp(): void
     {
@@ -30,6 +31,7 @@ class FuncionRenalPdfTest extends TestCase
             ['Glucosa', 'mg/dL', '70 a 100'],
             ['Urea', 'mg/dL', '10 a 55'],
             ['Creatinina', 'mg/dL', '0.6 a 1.3'],
+            ['Ácido úrico', 'mg/dL', '2.4 a 7.0'],
         ]);
         $this->cistatina = $this->estudio('Cistatina C', 'SUERO', [['Cistatina C', 'mg/L', '0.51-1.09']]);
         $this->albuminuria = $this->estudio('Relación albúmina/creatinina en orina', 'ORINA', [
@@ -37,6 +39,13 @@ class FuncionRenalPdfTest extends TestCase
             ['Creatinina en orina', 'mg/dL', '20 a 300'],
         ]);
         $this->biometria = $this->estudio('Biometría hemática', 'SANGRE TOTAL', [['Hemoglobina', 'g/dL', '12 a 16']]);
+        // Como lo tiene el laboratorio: analitos sin decir "orina", muestra vacía y
+        // su propio renglón de la relación
+        $this->racAzar = $this->estudio('Relación albúmina creatinina en orina al azar', '', [
+            ['Albúmina', 'mg/L', 'SEGÚN INSERTO'],
+            ['Creatinina', 'mg/dL', 'SEGÚN INSERTO'],
+            ['Relación albúmina/creatinina', 'mg/g', '< 30'],
+        ]);
     }
 
     private function estudio(string $nombre, string $muestra, array $examenes): Estudio
@@ -52,7 +61,7 @@ class FuncionRenalPdfTest extends TestCase
     /** @param array<string, array<string, string>> $resultados nombre de estudio → [examen => valor] */
     private function orden(array $resultados, string $nacimiento = '1956-01-01', string $sexo = 'Masculino'): Reporte
     {
-        $estudios = collect([$this->quimica, $this->cistatina, $this->albuminuria, $this->biometria])
+        $estudios = collect([$this->quimica, $this->cistatina, $this->albuminuria, $this->biometria, $this->racAzar])
             ->filter(fn ($e) => isset($resultados[$e->nombre]));
 
         $respuesta = $this->actingAs(User::factory()->create(['rol' => 'admin']))->postJson('/api/reportes', [
@@ -92,7 +101,7 @@ class FuncionRenalPdfTest extends TestCase
     public function test_la_tfge_sale_debajo_de_la_creatinina_con_su_tabla_y_nota(): void
     {
         // 1.3 mg/dL, 70 años, hombre → 59 (G3a) con ↓
-        $reporte = $this->orden(['Química sanguínea de 6 elementos' => ['Glucosa' => '95', 'Urea' => '40', 'Creatinina' => '1.3']]);
+        $reporte = $this->orden(['Química sanguínea de 6 elementos' => ['Glucosa' => '95', 'Urea' => '40', 'Creatinina' => '1.3', 'Ácido úrico' => '5.0']]);
 
         [$html, $diag] = $this->generar($reporte, 'tfge_quimica');
 
@@ -100,8 +109,8 @@ class FuncionRenalPdfTest extends TestCase
         $this->assertMatchesRegularExpression('/59\s*<span class="flecha-rango">↓<\/span>/u', $html);
         $this->assertStringContainsString('G3a Leve a moderadamente disminuida &nbsp;◄ Resultado', $html);
         $this->assertStringContainsString('No es válida en embarazo', $html);
-        // Debajo de la creatinina, no antes
-        $this->assertGreaterThan(strpos($html, '>Creatinina<'), strpos($html, 'Tasa de filtración glomerular'));
+        // Al final del estudio (no corta la secuencia de la química): después del ácido úrico
+        $this->assertGreaterThan(strpos($html, '>Ácido úrico<'), strpos($html, 'Tasa de filtración glomerular'));
         // Sin cistatina ni albuminuria no hay hoja de perfil
         $this->assertStringNotContainsString('FUNCIÓN RENAL ·', $html);
         $this->assertSame(0, $diag['hojas_vacias']);
@@ -193,5 +202,43 @@ class FuncionRenalPdfTest extends TestCase
 
         $respuesta->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertSame(0, ReportePdf::$ultimo['hojas_vacias']);
+    }
+
+    public function test_albuminuria_al_azar_calcula_la_relacion_en_su_propia_tabla(): void
+    {
+        // 45 mg/L ÷ 150 mg/dL × 100 = 30.0 (A2). El renglón del estudio venía vacío.
+        $reporte = $this->orden(['Relación albúmina creatinina en orina al azar' => ['Albúmina' => '45', 'Creatinina' => '150']]);
+
+        [$html, $diag] = $this->generar($reporte, 'rac_azar');
+
+        $this->assertStringContainsString('RELACIÓN ALBÚMINA CREATININA EN ORINA AL AZAR', $html);
+        $this->assertStringContainsString('Calculada: albúmina (mg/L) ÷ creatinina (mg/dL) × 100', $html);
+        $this->assertMatchesRegularExpression('/30\.0\s*<span class="flecha-rango">↑<\/span>/u', $html);
+        $this->assertMatchesRegularExpression('/class="pr-actual">\s*<strong>A2<\/strong>/u', $html);
+        // Un solo renglón de la relación (el del estudio, ya calculado)
+        $this->assertSame(1, substr_count($html, 'Calculada: albúmina'));
+        // La creatinina de orina no da TFGe y sin cistatina no hay hoja de perfil
+        $this->assertStringNotContainsString('Tasa de filtración glomerular', $html);
+        $this->assertStringNotContainsString('FUNCIÓN RENAL ·', $html);
+        $this->assertSame(0, $diag['hojas_vacias']);
+    }
+
+    public function test_la_leyenda_de_cistatina_reemplaza_las_observaciones_del_perfil(): void
+    {
+        $datos = [
+            'Química sanguínea de 6 elementos' => ['Creatinina' => '1.11'],
+            'Cistatina C' => ['Cistatina C' => '1.19'],
+        ];
+
+        $this->cistatina->update(['leyenda' => 'La TFG estimada se interpreta por el médico tratante. Texto del laboratorio.']);
+        [$html] = $this->generar($this->orden($datos, '1956-02-01', 'Femenino'), 'perfil_leyenda');
+        $this->assertStringContainsString('Texto del laboratorio.', $html);
+        $this->assertStringNotContainsString('No es válida en embarazo', $html);
+
+        // Una nota genérica no borra el texto del perfil: sale al final
+        $this->cistatina->update(['leyenda' => 'NOTA: Los resultados corresponden a la muestra analizada.']);
+        [$html] = $this->generar($this->orden($datos, '1956-02-01', 'Femenino'), 'perfil_nota');
+        $this->assertStringContainsString('No es válida en embarazo', $html);
+        $this->assertStringContainsString('<p class="leyenda-estudio">NOTA: Los resultados corresponden a la muestra analizada.</p>', $html);
     }
 }

@@ -129,15 +129,13 @@ const pacienteParaRango = computed(() => ({ sexo: form.cliente.sexo, edad: form.
 const listasDeExamenes = () => form.estudios.map((e) => e.resultados);
 
 // T10: TFGe y RAC debajo de su analito (se recalculan solos; no se guardan)
-const renal = computed(() => analizarFuncionRenal(
-    form.estudios.map((e) => ({ tipo_muestra: e.tipo_muestra, examenes: e.resultados })),
-    pacienteParaRango.value,
-));
+const estudiosRenal = () => form.estudios.map((e) => ({ tipo_muestra: e.tipo_muestra, nombre: e.nombre, examenes: e.resultados }));
+const renal = computed(() => analizarFuncionRenal(estudiosRenal(), pacienteParaRango.value));
 
 const onEscribir = (resultado) => {
     resultado.marca_manual = false;
     marcarRango(resultado, pacienteParaRango.value);
-    recalcularOrden(listasDeExamenes(), pacienteParaRango.value);
+    recalcularOrden(listasDeExamenes(), pacienteParaRango.value, estudiosRenal());
 };
 
 const calcularEdad = (fechaNacimiento) => {
@@ -244,7 +242,7 @@ const eliminarEstudio = (index) => {
     }
     if (!window.confirm(`¿Quitar "${estudio.nombre}" de la orden? Se borrarán sus resultados al guardar.`)) return;
     form.estudios.splice(index, 1);
-    recalcularOrden(listasDeExamenes(), pacienteParaRango.value);
+    recalcularOrden(listasDeExamenes(), pacienteParaRango.value, estudiosRenal());
 };
 
 const moverEstudio = (index, direccion) => {

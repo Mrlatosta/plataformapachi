@@ -79,5 +79,15 @@ class FuncionRenalTest extends TestCase
         $this->assertSame('cistatina', FuncionRenal::claveRenal('Cistatina C', 'mg/L', 'SUERO'));
         $this->assertNull(FuncionRenal::claveRenal('Albumina', 'g/dL', 'Suero'));
         $this->assertNull(FuncionRenal::claveRenal('Creatine Kinase (CK)', 'U/L', 'suero'));
+
+        // Catalogo real de produccion
+        $azar = 'Relación albúmina creatinina en orina al azar';
+        $this->assertSame('creatinina_orina', FuncionRenal::claveRenal('Creatinina', 'mg/dL', '', $azar));
+        $this->assertSame('albumina_orina', FuncionRenal::claveRenal('Albúmina', 'mg/L', '', $azar));
+        $this->assertSame('rac', FuncionRenal::claveRenal('Relación albúmina/creatinina', 'mg/g', '', $azar));
+        $dep24 = 'DEPURACIÓN DE CREATININA EN ORINA DE 24 HORAS';
+        $this->assertSame('creatinina', FuncionRenal::claveRenal('Creatinina sérica', 'mg/dL', 'ORINA DE 24 HRS', $dep24));
+        $this->assertNull(FuncionRenal::claveRenal('Creatinina en orina', 'mg/dL', 'ORINA DE 24 HRS', $dep24));
+        $this->assertNull(FuncionRenal::claveRenal('Microalbúmina MAU', 'mg/24 h', 'Orina', 'MICROALBUMINA EN ORINA DE 24 horas (MAU)'));
     }
 }
